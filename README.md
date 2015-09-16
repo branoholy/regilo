@@ -1,9 +1,11 @@
 NeatoC
 ======
 
-*A simple library for communication with the Neato XV robot.*
+*A simple C++ library for communication with the Neato XV robot.*
 
-`neatoc` allows you to communicate with the Neato robot through sockets.
+`neatoc` allows you to communicate with the Neato robot through sockets. You 
+can use some build-in methods like `setMotor()`, `getLdsScan()`, or run any 
+other command with `sendCommand()` method.
 
 Download
 --------
