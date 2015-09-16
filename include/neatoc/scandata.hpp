@@ -1,0 +1,61 @@
+/*
+ * NeatoC
+ * Copyright (C) 2015  Branislav Holý <branoholy@gmail.com>
+ *
+ * This file is part of NeatoC.
+ *
+ * NeatoC is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * NeatoC is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with NeatoC.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef NEATOC_SCANDATA_HPP
+#define NEATOC_SCANDATA_HPP
+
+#include <iostream>
+#include <vector>
+
+#include "scanrecord.hpp"
+
+namespace neatoc {
+
+/**
+ * @brief The ScanData class is used to store LDS data.
+ */
+class ScanData : public std::vector<ScanRecord>
+{
+public:
+	int scanId; ///< The scan id (starting from zero).
+	double rotationSpeed; ///< The rotation speed (in Hz).
+
+	/**
+	 * @brief Default constructor.
+	 */
+	ScanData();
+
+	/**
+	 * @brief Construct ScanData.
+	 * @param scanId The scan id (starting from zero).
+	 * @param rotationSpeed The rotation speed (in Hz).
+	 */
+	ScanData(int scanId, double rotationSpeed);
+
+	/**
+	 * @brief Output the data as a string.
+	 */
+	friend std::ostream& operator<<(std::ostream& stream, const ScanData& record);
+};
+
+}
+
+#endif // NEATOC_SCANDATA_HPP
