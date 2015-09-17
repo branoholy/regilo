@@ -14,7 +14,7 @@ the [build instructions](#build) below.
 
 Usage
 -----
-```c++
+```cpp
 // Create the controller
 neatoc::Controller controller;
 

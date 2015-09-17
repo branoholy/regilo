@@ -35,7 +35,7 @@ namespace neatoc {
 class ScanData : public std::vector<ScanRecord>
 {
 public:
-	int scanId; ///< The scan id (starting from zero).
+	std::size_t scanId; ///< The scan id (starting from zero).
 	double rotationSpeed; ///< The rotation speed (in Hz).
 
 	/**
@@ -48,7 +48,7 @@ public:
 	 * @param scanId The scan id (starting from zero).
 	 * @param rotationSpeed The rotation speed (in Hz).
 	 */
-	ScanData(int scanId, double rotationSpeed);
+	ScanData(std::size_t scanId, double rotationSpeed);
 
 	/**
 	 * @brief Output the data as a string.

@@ -55,21 +55,16 @@ bool NeatocScanApp::OnInit()
 		{
 			controllerMutex.lock();
 
-			wxTheApp->GetTopWindow()->GetEventHandler()->CallAfter([this]()
-			{
-				frame->SetStatusText("Scanning...", 0);
-			});
-
 			data = controller.getLdsScan();
 			controllerMutex.unlock();
 
-			wxTheApp->GetTopWindow()->GetEventHandler()->CallAfter([this]()
+			this->GetTopWindow()->GetEventHandler()->CallAfter([this]()
 			{
-				frame->Update();
+				frame->Refresh();
 			});
 
 			std::unique_lock<std::mutex> lock(scanThreadCVMutex);
-			scanThreadCV.wait_for(lock, std::chrono::seconds(1));
+			scanThreadCV.wait_for(lock, std::chrono::milliseconds(500));
 		}
 	});
 
@@ -94,7 +89,10 @@ void NeatocScanApp::setMotorByKey(wxKeyEvent& keyEvent)
 		case WXK_UP:
 			controllerMutex.lock();
 			frame->SetStatusText("Going up...", 0);
-			controller.setMotor(100, 100, 50);
+
+			if(keyEvent.ControlDown()) controller.setMotor(500, 500, 100);
+			else controller.setMotor(100, 100, 50);
+
 			controllerMutex.unlock();
 			break;
 

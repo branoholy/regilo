@@ -116,6 +116,7 @@ neatoc::ScanData neatoc::Controller::getLdsScan()
 
 	std::string line;
 	std::getline(neatoOutput, line);
+	boost::algorithm::trim(line);
 
 	if(line == LDS_SCAN_HEADER)
 	{
@@ -127,6 +128,7 @@ neatoc::ScanData neatoc::Controller::getLdsScan()
 		while(true)
 		{
 			std::getline(neatoOutput, line);
+			boost::algorithm::trim(line);
 
 			if(boost::algorithm::starts_with(line, LDS_SCAN_FOOTER))
 			{

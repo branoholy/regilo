@@ -21,11 +21,12 @@
 
 #include "neatoc/scandata.hpp"
 
-neatoc::ScanData::ScanData()
+neatoc::ScanData::ScanData() :
+	scanId(-1), rotationSpeed(-1)
 {
 }
 
-neatoc::ScanData::ScanData(int scanId, double rotationSpeed) :
+neatoc::ScanData::ScanData(std::size_t scanId, double rotationSpeed) :
 	scanId(scanId), rotationSpeed(rotationSpeed)
 {
 }
@@ -38,6 +39,9 @@ std::ostream& operator<<(std::ostream& stream, const neatoc::ScanData& data)
 		   << data.scanId
 		   << ", "
 		   << data.rotationSpeed
+		   << ", "
+		   << data.size()
+		   << ')'
 		   << std::endl;
 
 	for(const neatoc::ScanRecord& record : data)

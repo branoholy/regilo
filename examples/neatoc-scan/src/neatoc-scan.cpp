@@ -19,7 +19,9 @@
  *
  */
 
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 #include <neatoc/controller.hpp>
 
@@ -41,6 +43,8 @@ int main(int argc, char** argv)
 
 	controller.setLdsRotation(true);
 	std::cout << "LDS rotation: " << controller.getLdsRotation() << std::endl;
+
+	std::this_thread::sleep_for(std::chrono::seconds(5));
 
 	neatoc::ScanData data = controller.getLdsScan();
 	std::cout << "LDS data:" << std::endl << data << std::endl;
