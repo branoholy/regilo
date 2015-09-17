@@ -4,8 +4,8 @@ NeatoC
 *A simple C++ library for communication with the Neato XV robot.*
 
 `neatoc` allows you to communicate with the Neato robot through sockets. You 
-can use some build-in methods like `setMotor()`, `getLdsScan()`, or run any 
-other command with `sendCommand()` method.
+can use some implemented methods like `setMotor()`, `getLdsScan()`, or run any 
+other command with the `sendCommand()` method.
 
 Download
 --------
@@ -57,6 +57,13 @@ $ cmake ..
 $ cmake --build .
 ```
 
+Use the following option if you want to build the [examples](https://github.com/branoholy/neatoc/tree/master/examples) 
+as well:
+
+```bash
+$ cmake -Dexamples:bool=on ..
+```
+
 For faster build on a multicore processor, you can use:
 
 ```bash
@@ -70,5 +77,4 @@ License
 NeatoC is licensed under GNU GPL v3 (see 
 [LICENSE](https://github.com/branoholy/neatoc/blob/master/LICENSE) 
 file).
-
 

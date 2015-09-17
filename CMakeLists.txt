@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 # Set project name
 project("neatoc")
 
+option(examples "Build examples" "off")
+
 # Set build type and definitions
 if($ENV{DEBUG})
     # Debug
@@ -23,4 +25,6 @@ include_directories("include")
 
 add_library(${PROJECT_NAME} SHARED ${CPPS} ${HPPS})
 
-add_subdirectory("examples")
+if(${examples})
+    add_subdirectory("examples")
+endif(${examples})
