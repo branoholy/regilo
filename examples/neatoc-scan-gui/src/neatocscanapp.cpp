@@ -23,8 +23,8 @@
 
 #include <chrono>
 
-NeatocScanApp::NeatocScanApp(neatoc::Controller &controller) : wxApp(),
-	controller(controller)
+NeatocScanApp::NeatocScanApp(neatoc::Controller &controller, bool useScanner, bool manualScanning) : wxApp(),
+	controller(controller), useScanner(useScanner), manualScanning(manualScanning)
 {
 }
 
@@ -36,9 +36,12 @@ bool NeatocScanApp::OnInit()
 	// Frame StatusBar
 	wxStatusBar *statusBar = frame->CreateStatusBar(2);
 
-	std::string ipPort = controller.getEndpoint().address().to_string() + ':' + std::to_string(controller.getEndpoint().port());
+	std::string endpoint;
+	if(useScanner) endpoint = controller.getEndpoint().address().to_string() + ':' + std::to_string(controller.getEndpoint().port());
+	else endpoint = controller.getLogPath();
+
 	frame->SetStatusText("", 0);
-	frame->SetStatusText("Connected to " + ipPort, 1);
+	frame->SetStatusText("Connected to " + endpoint, 1);
 
 	int sbWidths[] = { -1, 300 };
 	statusBar->SetStatusWidths(2, sbWidths);
@@ -48,25 +51,23 @@ bool NeatocScanApp::OnInit()
 	panel->GetEventHandler()->Bind(wxEVT_KEY_DOWN, &NeatocScanApp::setMotorByKey, this);
 	panel->GetEventHandler()->Bind(wxEVT_PAINT, &NeatocScanApp::repaint, this);
 
-	scanThreadRunning = true;
-	scanThread = std::thread([this]()
+	if(!manualScanning)
 	{
-		while(scanThreadRunning)
+		scanThreadRunning = true;
+		scanThread = std::thread([this]()
 		{
-			controllerMutex.lock();
-
-			data = controller.getLdsScan();
-			controllerMutex.unlock();
-
-			this->GetTopWindow()->GetEventHandler()->CallAfter([this]()
+			while(scanThreadRunning)
 			{
-				frame->Refresh();
-			});
+				scanAndShow();
 
-			std::unique_lock<std::mutex> lock(scanThreadCVMutex);
-			scanThreadCV.wait_for(lock, std::chrono::milliseconds(500));
-		}
-	});
+				if(scanThreadRunning)
+				{
+					std::unique_lock<std::mutex> lock(scanThreadCVMutex);
+					scanThreadCV.wait_for(lock, std::chrono::milliseconds(500));
+				}
+			}
+		});
+	}
 
 	frame->Show(true);
 
@@ -75,8 +76,7 @@ bool NeatocScanApp::OnInit()
 
 int NeatocScanApp::OnExit()
 {
-	scanThreadRunning = false;
-	scanThreadCV.notify_one();
+	stopScanThread();
 	scanThread.join();
 
 	return wxApp::OnExit();
@@ -119,6 +119,13 @@ void NeatocScanApp::setMotorByKey(wxKeyEvent& keyEvent)
 			controllerMutex.unlock();
 			break;
 
+		case 'S':
+			if(manualScanning)
+			{
+				frame->SetStatusText("Manual scanning...", 0);
+				scanAndShow();
+			}
+
 		default:
 			keyEvent.Skip();
 	}
@@ -149,6 +156,32 @@ void NeatocScanApp::repaint(wxPaintEvent&)
 	}
 
 	controllerMutex.unlock();
+}
+
+void NeatocScanApp::stopScanThread()
+{
+	if(scanThreadRunning)
+	{
+		scanThreadRunning = false;
+		scanThreadCV.notify_one();
+	}
+}
+
+void NeatocScanApp::scanAndShow()
+{
+	controllerMutex.lock();
+
+	data = controller.getLdsScan(useScanner);
+	bool emptyData = data.empty();
+	if(emptyData) stopScanThread();
+
+	controllerMutex.unlock();
+
+	this->GetTopWindow()->GetEventHandler()->CallAfter([this, emptyData]()
+	{
+		if(emptyData) frame->SetStatusText("No more scans to show (EOF).", 0);
+		else frame->Refresh();
+	});
 }
 
 void NeatocScanApp::Display(wxApp *app, int& argc, char **argv)

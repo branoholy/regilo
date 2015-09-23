@@ -22,26 +22,29 @@
 #include "neatoc/controller.hpp"
 
 #include <cmath>
+#include <fstream>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/asio/read_until.hpp>
 
+#include "neatoc/log.hpp"
+
 namespace bai = boost::asio::ip;
 
-const std::string neatoc::Controller::ON = "on";
-const std::string neatoc::Controller::OFF = "off";
-const std::string neatoc::Controller::LDS_SCAN_HEADER = "AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX";
-const std::string neatoc::Controller::LDS_SCAN_FOOTER = "ROTATION_SPEED,";
+std::string neatoc::Controller::ON = "on";
+std::string neatoc::Controller::OFF = "off";
+std::string neatoc::Controller::LDS_SCAN_HEADER = "AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX";
+std::string neatoc::Controller::LDS_SCAN_FOOTER = "ROTATION_SPEED,";
 
-const std::string neatoc::Controller::TEST_MODE = "testmode ";
-const std::string neatoc::Controller::SET_LDS_ROTATION = "setldsrotation ";
-const std::string neatoc::Controller::SET_MOTOR = "setmotor ";
-const std::string neatoc::Controller::GET_TIME = "gettime";
-const std::string neatoc::Controller::GET_LDS_SCAN = "getldsscan";
+std::string neatoc::Controller::TEST_MODE = "testmode %s";
+std::string neatoc::Controller::SET_LDS_ROTATION = "setldsrotation %s";
+std::string neatoc::Controller::SET_MOTOR = "setmotor %d %d %d";
+std::string neatoc::Controller::GET_TIME = "gettime";
+std::string neatoc::Controller::GET_LDS_SCAN = "getldsscan";
 
-const char neatoc::Controller::REQUEST_END = '\n';
-const char neatoc::Controller::RESPONSE_END = 0x1a;
+char neatoc::Controller::REQUEST_END = '\n';
+char neatoc::Controller::RESPONSE_END = 0x1a;
 
 neatoc::Controller::Controller() :
 	lastScanId(0),
@@ -49,12 +52,31 @@ neatoc::Controller::Controller() :
 	ldsRotation(false),
 	socket(ioService),
 	socketIStream(&socketIStreamBuffer),
-	socketOStream(&socketOStreamBuffer)
+	socketOStream(&socketOStreamBuffer),
+	log(nullptr), logFile(nullptr)
 {
+}
+
+neatoc::Controller::Controller(const std::string& logPath) : Controller()
+{
+	if(logPath.length() > 0)
+	{
+		logFile = new std::fstream(logPath, std::fstream::in | std::fstream::out | std::fstream::app);
+		log = new Log(*logFile);
+		this->logPath = logPath;
+	}
+}
+
+neatoc::Controller::Controller(std::iostream& logStream) : Controller()
+{
+	this->log = new Log(logStream);
 }
 
 neatoc::Controller::~Controller()
 {
+	if(log != nullptr) delete log;
+	if(logFile != nullptr) delete logFile;
+
 	if(socket.is_open())
 	{
 		socket.shutdown(bai::tcp::socket::shutdown_both);
@@ -89,71 +111,36 @@ void neatoc::Controller::connect(const bai::tcp::endpoint& endpoint)
 
 void neatoc::Controller::setTestMode(bool testMode)
 {
-	neatoInput << TEST_MODE << (testMode ? ON : OFF);
-	sendCommand();
-
+	createAndSendCommand(TEST_MODE, (testMode ? ON : OFF).c_str());
 	this->testMode = testMode;
 }
 
 void neatoc::Controller::setLdsRotation(bool ldsRotation)
 {
-	neatoInput << SET_LDS_ROTATION << (ldsRotation ? ON : OFF);
-	sendCommand();
-
+	createAndSendCommand(SET_LDS_ROTATION, (ldsRotation ? ON : OFF).c_str());
 	this->ldsRotation = ldsRotation;
 }
 
 void neatoc::Controller::setMotor(int left, int right, int speed)
 {
-	neatoInput << SET_MOTOR << left << ' ' << right << ' ' << speed;
-	sendCommand();
+	createAndSendCommand(SET_MOTOR, left, right, speed);
 }
 
-neatoc::ScanData neatoc::Controller::getLdsScan()
+neatoc::ScanData neatoc::Controller::getLdsScan(bool fromScanner)
 {
 	neatoc::ScanData data;
-	sendCommand(GET_LDS_SCAN);
 
-	std::string line;
-	std::getline(neatoOutput, line);
-	boost::algorithm::trim(line);
-
-	if(line == LDS_SCAN_HEADER)
+	if(fromScanner)
 	{
-		data.scanId = lastScanId++;
-
-		int lastId = 0;
-		double M_PI_180 = M_PI / 180.0;
-
-		while(true)
-		{
-			std::getline(neatoOutput, line);
-			boost::algorithm::trim(line);
-
-			if(boost::algorithm::starts_with(line, LDS_SCAN_FOOTER))
-			{
-				std::vector<std::string> values;
-				boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
-				data.rotationSpeed = std::stod(values.at(1));
-
-				break;
-			}
-			else
-			{
-				std::vector<std::string> values;
-				boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
-
-				int id = lastId++;
-				double angle = std::stod(values.at(0)) * M_PI_180;
-				double distance = std::stod(values.at(1));
-				int intensity = std::stoi(values.at(2));
-				int errorCode = std::stoi(values.at(3));
-
-				data.emplace_back(id, angle, distance, intensity, errorCode);
-			}
-		}
+		sendCommand(GET_LDS_SCAN);
+		neatoOutput >> data;
 	}
-
+	else
+	{
+		std::istringstream response(log->readCommand(GET_LDS_SCAN));
+		response >> data;
+	}
+	if(!data.empty()) data.scanId = lastScanId++;
 
 	return data;
 }
@@ -191,6 +178,8 @@ std::string neatoc::Controller::sendCommand()
 	std::getline(socketIStream, output, RESPONSE_END);
 	neatoOutput.clear();
 	neatoOutput.str(output);
+
+	if(log != nullptr) log->write(input, output);
 
 	return output;
 }

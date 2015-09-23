@@ -38,6 +38,8 @@ class NeatocScanApp : public wxApp
 private:
 	std::mutex controllerMutex;
 	neatoc::Controller& controller;
+	bool useScanner;
+	bool manualScanning;
 
 	wxFrame *frame;
 	wxPanel *panel;
@@ -48,8 +50,11 @@ private:
 	std::condition_variable scanThreadCV;
 	std::mutex scanThreadCVMutex;
 
+	void stopScanThread();
+	void scanAndShow();
+
 public:
-	NeatocScanApp(neatoc::Controller& controller);
+	NeatocScanApp(neatoc::Controller& controller, bool useScanner = true, bool manualScanning = false);
 
 	virtual bool OnInit();
 	virtual int OnExit();

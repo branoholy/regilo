@@ -22,6 +22,7 @@
 #ifndef NEATOC_CONTROLLER_HPP
 #define NEATOC_CONTROLLER_HPP
 
+#include <cstdio>
 #include <sstream>
 
 #include <boost/asio/streambuf.hpp>
@@ -33,6 +34,8 @@
 namespace neatoc {
 
 namespace bai = boost::asio::ip;
+
+class Log;
 
 /**
  * @brief The Controller class is used to communicate with the Neato robot.
@@ -56,29 +59,48 @@ private:
 	std::ostream socketOStream;
 	std::ostringstream neatoInput;
 
+	Log *log;
+	std::string logPath;
+	std::fstream *logFile;
+
 	std::string sendCommand();
 
 public:
-	static const std::string ON;
-	static const std::string OFF;
-	static const std::string LDS_SCAN_HEADER;
-	static const std::string LDS_SCAN_FOOTER;
+	static std::string ON;
+	static std::string OFF;
+	static std::string LDS_SCAN_HEADER;
+	static std::string LDS_SCAN_FOOTER;
 
-	static const std::string TEST_MODE;
-	static const std::string SET_LDS_ROTATION;
-	static const std::string SET_MOTOR;
-	static const std::string GET_TIME;
-	static const std::string GET_LDS_SCAN;
+	static std::string TEST_MODE;
+	static std::string SET_LDS_ROTATION;
+	static std::string SET_MOTOR;
+	static std::string GET_TIME;
+	static std::string GET_LDS_SCAN;
 
-	static const char REQUEST_END;
-	static const char RESPONSE_END;
+	static char REQUEST_END;
+	static char RESPONSE_END;
 
 	/**
 	 * @brief Default constructor.
 	 */
 	Controller();
 
-	~Controller();
+	/**
+	 * @brief Controller with a log file specified by a path.
+	 * @param logPath Path to the log file.
+	 */
+	Controller(const std::string& logPath);
+
+	/**
+	 * @brief Controller with a log specified by a stream.
+	 * @param logStream The log stream.
+	 */
+	Controller(std::iostream& logStream);
+
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~Controller();
 
 	/**
 	 * @brief Connect the controller to the Neato robot.
@@ -104,6 +126,12 @@ public:
 	 * @return The endpoint.
 	 */
 	inline bai::tcp::endpoint getEndpoint() const { return socket.local_endpoint(); }
+
+	/**
+	 * @brief Get the path of log file if the controller was created with a log path otherwise the empty string.
+	 * @return The path or empty string.
+	 */
+	inline std::string getLogPath() const { return logPath; }
 
 	/**
 	 * @brief Get whether the Neato is in the test mode.
@@ -139,9 +167,10 @@ public:
 
 	/**
 	 * @brief Get a scan from LDS.
+	 * @param fromScanner Specify if you want to get a scan from Neato scanner (true) or log (false). Default: true
 	 * @return ScanData
 	 */
-	ScanData getLdsScan();
+	ScanData getLdsScan(bool fromScanner = true);
 
 	/**
 	 * @brief Get the current scheduler time.
@@ -152,10 +181,47 @@ public:
 	/**
 	 * @brief Send a command to the Neato robot
 	 * @param command A commmand with all parameter.
-	 * @return The response to the command.
+	 * @return A response to the command.
 	 */
 	std::string sendCommand(const std::string& command);
+
+	/**
+	 * @brief Create a command with the specified parameters (printf formatting is used).
+	 * @param command A command without parameters (e.g. neatoc::Controller::SET_MOTOR).
+	 * @param params Parameters that will be inserted into the command.
+	 * @return The command with the parameters.
+	 */
+	template<typename... Args>
+	std::string createCommand(const std::string& command, Args... params);
+
+	/**
+	 * @brief createAndSendCommand Create a command with the specified parameters (printf formatting is used) and send it to the Neato robot.
+	 * @param command A command without parameters (e.g. neatoc::Controller::SET_MOTOR).
+	 * @param params Parameters that will be inserted into the command.
+	 * @return A response to the command.
+	 */
+	template<typename... Args>
+	std::string createAndSendCommand(const std::string& command, Args... params);
 };
+
+template<typename... Args>
+std::string Controller::createCommand(const std::string& command, Args... params)
+{
+	std::size_t size = std::snprintf(nullptr, 0, command.c_str(), params...) + 1;
+	char* buffer = new char[size];
+	std::snprintf(buffer, size, command.c_str(), params...);
+
+	std::string result(buffer, buffer + size - 1);
+	delete[] buffer;
+
+	return result;
+}
+
+template<typename... Args>
+std::string Controller::createAndSendCommand(const std::string& command, Args... params)
+{
+	return sendCommand(createCommand(command, params...));
+}
 
 /**
  * @brief The NetworkException class is used for communication errors of the controller.

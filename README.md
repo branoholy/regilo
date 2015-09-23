@@ -72,6 +72,17 @@ $ cmake --build . -- -j4
 
 Where the option `-j4` means you want to use 4 cores for building.
 
+Examples
+--------
+See [examples](https://github.com/branoholy/neatoc/tree/master/examples) for 
+more information about using of this library.
+
+`neatoc-scan` is a simple example that connects to the Neato and performs one 
+scan that is printed.
+
+`neatoc-scan-gui` is more complex and requires wxWidgets library. It can be used
+ to drive with the Neato, scan automatically or manually, and log the output.
+
 License
 -------
 NeatoC is licensed under GNU GPL v3 (see 

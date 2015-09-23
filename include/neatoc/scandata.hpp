@@ -51,6 +51,11 @@ public:
 	ScanData(std::size_t scanId, double rotationSpeed);
 
 	/**
+	 * @brief Input the data to the record.
+	 */
+	friend std::istream& operator>>(std::istream& stream, ScanData& record);
+
+	/**
 	 * @brief Output the data as a string.
 	 */
 	friend std::ostream& operator<<(std::ostream& stream, const ScanData& record);

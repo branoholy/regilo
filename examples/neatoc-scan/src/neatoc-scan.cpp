@@ -25,18 +25,36 @@
 
 #include <neatoc/controller.hpp>
 
+void printHelp()
+{
+	std::cout << "Usage: neatoc-scan [options]" << std::endl
+			  << "Options:" << std::endl
+			  << "  -e <endpoint>             The IP address and port that is used to connect to" << std::endl
+			  << "                            the Neato robot (default: 10.0.0.1:12345)." << std::endl
+			  << "  -h                        Show this help." << std::endl;
+}
+
 int main(int argc, char** argv)
 {
 	std::cout.setf(std::ios_base::boolalpha);
 
-	std::string ip = "10.0.0.1:12345";
-	if(argc > 1) ip = std::string(argv[1]);
+	std::string endpoint = "10.0.0.1:12345";
+	for(int i = 1; i < argc; i++)
+	{
+		std::string arg(argv[i]);
+		if(arg == "-e") endpoint = std::string(argv[++i]);
+		else
+		{
+			printHelp();
+			return 0;
+		}
+	}
 
 	neatoc::Controller controller;
 	std::cout << "Hello NeatoC!" << std::endl;
 
-	std::cout << "Connecting to " << ip << std::endl;
-	controller.connect(ip);
+	std::cout << "Connecting to " << endpoint << std::endl;
+	controller.connect(endpoint);
 
 	controller.setTestMode(true);
 	std::cout << "Test mode: " << controller.getTestMode() << std::endl;

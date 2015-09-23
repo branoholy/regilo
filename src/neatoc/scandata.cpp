@@ -21,6 +21,12 @@
 
 #include "neatoc/scandata.hpp"
 
+#include <cmath>
+
+#include <boost/algorithm/string.hpp>
+
+#include "neatoc/controller.hpp"
+
 neatoc::ScanData::ScanData() :
 	scanId(-1), rotationSpeed(-1)
 {
@@ -32,6 +38,49 @@ neatoc::ScanData::ScanData(std::size_t scanId, double rotationSpeed) :
 }
 
 namespace neatoc {
+
+std::istream& operator>>(std::istream& stream, neatoc::ScanData& data)
+{
+	int lastId = 0;
+	double M_PI_180 = M_PI / 180.0;
+
+	std::string line;
+	std::getline(stream, line);
+	boost::algorithm::trim(line);
+
+	if(line == Controller::LDS_SCAN_HEADER)
+	{
+		while(true)
+		{
+			std::getline(stream, line);
+			boost::algorithm::trim(line);
+
+			if(boost::algorithm::starts_with(line, Controller::LDS_SCAN_FOOTER))
+			{
+				std::vector<std::string> values;
+				boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
+				data.rotationSpeed = std::stod(values.at(1));
+
+				break;
+			}
+			else
+			{
+				std::vector<std::string> values;
+				boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
+
+				int id = lastId++;
+				double angle = std::stod(values.at(0)) * M_PI_180;
+				double distance = std::stod(values.at(1));
+				int intensity = std::stoi(values.at(2));
+				int errorCode = std::stoi(values.at(3));
+
+				data.emplace_back(id, angle, distance, intensity, errorCode);
+			}
+		}
+	}
+
+	return stream;
+}
 
 std::ostream& operator<<(std::ostream& stream, const neatoc::ScanData& data)
 {
