@@ -77,7 +77,7 @@ bool NeatocScanApp::OnInit()
 int NeatocScanApp::OnExit()
 {
 	stopScanThread();
-	scanThread.join();
+	if(scanThread.joinable()) scanThread.join();
 
 	return wxApp::OnExit();
 }

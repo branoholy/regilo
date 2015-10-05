@@ -125,7 +125,7 @@ public:
 	 * @brief Get the endpoint of the connected Neato robot.
 	 * @return The endpoint.
 	 */
-	inline bai::tcp::endpoint getEndpoint() const { return socket.local_endpoint(); }
+	inline bai::tcp::endpoint getEndpoint() const { return socket.remote_endpoint(); }
 
 	/**
 	 * @brief Get the path of log file if the controller was created with a log path otherwise the empty string.
