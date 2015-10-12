@@ -1,5 +1,6 @@
 NeatoC
 ======
+[![Build Status](https://travis-ci.org/branoholy/neatoc.svg?branch=master)](https://travis-ci.org/branoholy/neatoc)
 
 *A simple C++ library for communication with the Neato XV robot.*
 
