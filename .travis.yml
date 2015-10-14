@@ -9,6 +9,7 @@ before_install:
 
 install:
   - export CXX="g++-4.9"
+  - gcc --version
 
 before_script:
   - cd $cwd
