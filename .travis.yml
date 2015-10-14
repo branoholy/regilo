@@ -7,6 +7,9 @@ compiler: gcc
 before_install:
   - export cwd=$(pwd)
 
+install:
+  - export CXX="g++-4.9"
+
 before_script:
   - cd $cwd
   - mkdir build && cd build
@@ -21,7 +24,7 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - boost-latest-ppa
+      - boost-latest
     packages:
       - g++-4.9
       - libboost1.55-dev
