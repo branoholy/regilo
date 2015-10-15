@@ -5,19 +5,16 @@ language: cpp
 compiler: gcc
 
 before_install:
-  - export cwd=$(pwd)
-
-install:
   - export CXX="g++-4.9"
-  - gcc --version
+  - g++-4.9 --version
 
 before_script:
-  - cd $cwd
+  - cd $TRAVIS_BUILD_DIR
   - mkdir build && cd build
   - cmake ..
 
 script:
-  - cd $cwd
+  - cd $TRAVIS_BUILD_DIR
   - cd build
   - make -j$(nproc)
 
