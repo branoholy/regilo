@@ -34,6 +34,7 @@ void printHelp()
 			  << "                            Use string \"log\" to load a log file." << std::endl
 			  << "  -l <file>                 The path to the log file." << std::endl
 			  << "  -m                        Turn on manual scanning (by pressing key S)." << std::endl
+			  << "  -a                        Turn on automatic scanning before move." << std::endl
 			  << "  -h                        Show this help." << std::endl;
 }
 
@@ -44,12 +45,14 @@ int main(int argc, char** argv)
 	std::string logPath;
 	std::string endpoint = "10.0.0.1:12345";
 	bool manualScanning = false;
+	bool moveScanning = false;
 	for(int i = 1; i < argc; i++)
 	{
 		std::string arg(argv[i]);
 		if(arg == "-e") endpoint = std::string(argv[++i]);
 		else if(arg == "-l") logPath = std::string(argv[++i]);
 		else if(arg == "-m") manualScanning = true;
+		else if(arg == "-a") moveScanning = true;
 		else
 		{
 			printHelp();
@@ -73,7 +76,7 @@ int main(int argc, char** argv)
 		std::cout << "LDS rotation: " << controller.getLdsRotation() << std::endl;
 	}
 
-	NeatocScanApp *app = new NeatocScanApp(controller, useScanner, manualScanning);
+	NeatocScanApp *app = new NeatocScanApp(controller, useScanner, manualScanning, moveScanning);
 	NeatocScanApp::Display(app, argc, argv);
 
 	if(useScanner)

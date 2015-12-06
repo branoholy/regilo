@@ -40,6 +40,7 @@ private:
 	neatoc::Controller& controller;
 	bool useScanner;
 	bool manualScanning;
+	bool moveScanning;
 
 	wxFrame *frame;
 	wxPanel *panel;
@@ -54,7 +55,7 @@ private:
 	void scanAndShow();
 
 public:
-	NeatocScanApp(neatoc::Controller& controller, bool useScanner = true, bool manualScanning = false);
+	NeatocScanApp(neatoc::Controller& controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
 
 	virtual bool OnInit();
 	virtual int OnExit();

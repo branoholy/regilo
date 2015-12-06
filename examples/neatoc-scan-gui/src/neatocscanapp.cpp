@@ -23,8 +23,8 @@
 
 #include <chrono>
 
-NeatocScanApp::NeatocScanApp(neatoc::Controller &controller, bool useScanner, bool manualScanning) : wxApp(),
-	controller(controller), useScanner(useScanner), manualScanning(manualScanning)
+NeatocScanApp::NeatocScanApp(neatoc::Controller &controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
+	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning)
 {
 }
 
@@ -51,7 +51,7 @@ bool NeatocScanApp::OnInit()
 	panel->GetEventHandler()->Bind(wxEVT_KEY_DOWN, &NeatocScanApp::setMotorByKey, this);
 	panel->GetEventHandler()->Bind(wxEVT_PAINT, &NeatocScanApp::repaint, this);
 
-	if(!manualScanning)
+	if(!manualScanning && !moveScanning)
 	{
 		scanThreadRunning = true;
 		scanThread = std::thread([this]()
@@ -84,6 +84,15 @@ int NeatocScanApp::OnExit()
 
 void NeatocScanApp::setMotorByKey(wxKeyEvent& keyEvent)
 {
+	if(keyEvent.GetKeyCode() == WXK_UP || keyEvent.GetKeyCode() == WXK_DOWN || keyEvent.GetKeyCode() == WXK_LEFT || keyEvent.GetKeyCode() == WXK_RIGHT)
+	{
+		if(moveScanning)
+		{
+			frame->SetStatusText("Move scanning...", 0);
+			scanAndShow();
+		}
+	}
+
 	switch(keyEvent.GetKeyCode())
 	{
 		case WXK_UP:

@@ -28,6 +28,8 @@
 #include <boost/asio/write.hpp>
 #include <boost/asio/read_until.hpp>
 
+#include <chrono>
+
 #include "neatoc/log.hpp"
 
 namespace bai = boost::asio::ip;
