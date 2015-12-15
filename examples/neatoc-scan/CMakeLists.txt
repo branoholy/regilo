@@ -1,20 +1,17 @@
 # Set project name
 project("neatoc-scan")
 
-# Set build type and definitions
-#if($ENV{DEBUG})
-    # Debug
-#    set(CMAKE_BUILD_TYPE "Debug")
-#else($ENV{DEBUG})
-    # Release
-#    set(CMAKE_BUILD_TYPE "Release")
-#    add_definitions("-O3")
-#endif($ENV{DEBUG})
+# Find libraries
+find_package(Boost 1.54 COMPONENTS system REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
 
-#add_definitions("-std=c++11")
-#add_definitions("-Wall -Wextra -pedantic")
-
+# Create executable
 add_executable(${PROJECT_NAME} "src/neatoc-scan.cpp")
 
-target_link_libraries(${PROJECT_NAME} boost_system)
+# Install executable
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+
+# Link libraries
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} neatoc)
+
