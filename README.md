@@ -47,7 +47,7 @@ The `neatoc-scan-gui` example also needs:
 ## Build
 Make sure you have installed all [dependencies](#dependencies) before building.
 
-```bash
+```text
 $ mkdir build && cd build
 $ cmake ..
 $ make
@@ -56,29 +56,31 @@ $ make
 Use the following option if you want to build the [examples](https://github.com/branoholy/neatoc/tree/master/examples)
 as well:
 
-```bash
+```text
 $ cmake -Dexamples:bool=on ..
 ```
 
 For faster build on a multicore processor, you can use:
 
-```bash
+```text
 $ make -j$(nproc)
 ```
 
 ## Installation
 To install the `neatoc` library (and its examples), simply run as root:
 
-```bash
-$ make install
-$ ldconfig
+```text
+# make install
 ```
 
 To uninstall:
 
-```bash
-$ make uninstall
+```text
+# make uninstall
 ```
+
+### Packages
+You can also install `neatoc` in Arch Linux from the [AUR](https://aur.archlinux.org/packages/neatoc).
 
 ## Examples
 See [examples](https://github.com/branoholy/neatoc/tree/master/examples) for
