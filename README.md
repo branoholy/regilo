@@ -82,6 +82,13 @@ To uninstall:
 ### Packages
 You can also install `neatoc` in Arch Linux from the [AUR](https://aur.archlinux.org/packages/neatoc).
 
+Do not forget to add my PGP key ([FBAC61E6](http://pgp.mit.edu/pks/lookup?search=0xFBAC61E6&fingerprint=on),
+fingerprint `D258 09BF 3563 AA56 A12B  0F4D 545E DD46 FBAC 61E6`).
+
+```text
+$ gpg --recv-key FBAC61E6
+```
+
 ## Examples
 See [examples](https://github.com/branoholy/neatoc/tree/master/examples) for
 more information about using of this library.
