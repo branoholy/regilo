@@ -4,7 +4,9 @@ cmake_minimum_required(VERSION 2.8)
 project("neatoc")
 
 # Set options
-option(examples "Build examples" "off")
+option(example "Build the console example")
+option(example-gui "Build the GUI example")
+option(examples "Build all examples")
 
 # Set build type and definitions
 if($ENV{DEBUG})
@@ -18,6 +20,10 @@ endif()
 
 add_definitions("-std=c++11")
 add_definitions("-Wall -Wextra -pedantic")
+
+# Find libraries
+find_package(Boost 1.54 COMPONENTS system REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
 
 # Find source code
 file(GLOB_RECURSE CPPS "src/neatoc/*.cpp")
@@ -37,8 +43,14 @@ install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION include/${PROJECT_NAME})
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake)
 
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+
 # Add examples
-if(${examples})
-    add_subdirectory("examples")
-endif(${examples})
+if((${example}) OR (${examples}))
+    add_subdirectory("examples/neatoc-scan")
+endif()
+
+if((${example-gui}) OR (${examples}))
+    add_subdirectory("examples/neatoc-scan-gui")
+endif()
 

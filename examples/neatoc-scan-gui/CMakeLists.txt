@@ -2,9 +2,6 @@
 project("neatoc-scan-gui")
 
 # Find libraries
-find_package(Boost 1.54 COMPONENTS system REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
-
 find_package(wxWidgets REQUIRED core base)
 include(${wxWidgets_USE_FILE})
 include_directories(${wxWidgets_INCLUDE_DIRS})
@@ -25,7 +22,6 @@ add_executable(${PROJECT_NAME} ${CPPS} ${HPPS})
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
 # Link libraries
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} neatoc)
 

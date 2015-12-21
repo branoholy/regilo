@@ -32,15 +32,14 @@ controller.setTestMode(false);
 ```
 
 ## Dependencies
-The library uses:
+The library uses
 
 * [Boost.Asio](http://www.boost.org/doc/libs/release/doc/html/boost_asio.html)
-library (version 1.54 or newer). It is necessary to link the `boost_system`
-library.
+library (version 1.54 or newer),
 * [Boost String Algorithms Library](http://www.boost.org/doc/libs/release/doc/html/string_algo.html)
 (version 1.54 or newer).
 
-The `neatoc-scan-gui` example also needs:
+The `neatoc-scan-gui` example also needs
 
 * [wxWidgets](https://www.wxwidgets.org) library (version 3.0 or newer).
 
@@ -53,14 +52,14 @@ $ cmake ..
 $ make
 ```
 
-Use the following option if you want to build the [examples](https://github.com/branoholy/neatoc/tree/master/examples)
-as well:
+Use one of the following options if you want to build the [examples](https://github.com/branoholy/neatoc/tree/master/examples)
+as well.
 
-```text
-$ cmake -Dexamples:bool=on ..
-```
+* `$ cmake -Dexample:bool=on ..` for the console example.
+* `$ cmake -Dexample-gui:bool=on ..` for the GUI example.
+* `$ cmake -Dexamples:bool=on ..` for all examples.
 
-For faster build on a multicore processor, you can use:
+For a faster build on a multicore processor, you can use:
 
 ```text
 $ make -j$(nproc)
@@ -80,13 +79,25 @@ To uninstall:
 ```
 
 ### Packages
-You can also install `neatoc` in Arch Linux from the [AUR](https://aur.archlinux.org/packages/neatoc).
+
+#### Arch Linux
+You can install `neatoc` in Arch Linux from the [AUR](https://aur.archlinux.org/packages/neatoc).
 
 Do not forget to add [my PGP key](http://pgp.mit.edu/pks/lookup?search=0xD25809BF3563AA56A12B0F4D545EDD46FBAC61E6&fingerprint=on)
 (fingerprint `D258 09BF 3563 AA56 A12B  0F4D 545E DD46 FBAC 61E6`).
 
 ```text
 $ gpg --recv-key D25809BF3563AA56A12B0F4D545EDD46FBAC61E6
+```
+
+#### Ubuntu
+In Ubuntu, you can use my [ppa:branoholy/neatoc](https://launchpad.net/~branoholy/+archive/ubuntu/neatoc)
+and install the `libneatoc-dev` package.
+
+```text
+sudo add-apt-repository ppa:branoholy/neatoc
+sudo apt-get update
+sudo apt-get install libneatoc-dev
 ```
 
 ## Examples
