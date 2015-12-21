@@ -11,7 +11,7 @@ before_install:
 before_script:
   - cd $TRAVIS_BUILD_DIR
   - mkdir build && cd build
-  - cmake ..
+  - cmake -Dexample:bool=on ..
 
 script:
   - cd $TRAVIS_BUILD_DIR
@@ -25,4 +25,4 @@ addons:
       - boost-latest
     packages:
       - g++-4.9
-      - libboost1.55-dev
+      - libboost-system1.55-dev
