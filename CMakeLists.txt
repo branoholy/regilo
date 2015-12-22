@@ -22,6 +22,8 @@ add_definitions("-std=c++11")
 add_definitions("-Wall -Wextra -pedantic")
 
 # Find libraries
+find_package(Threads)
+
 find_package(Boost 1.54 COMPONENTS system REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
@@ -43,6 +45,7 @@ install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION include/${PROJECT_NAME})
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake)
 
+target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 
 # Add examples
