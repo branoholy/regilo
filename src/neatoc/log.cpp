@@ -25,20 +25,22 @@
 
 #include <boost/algorithm/string.hpp>
 
-char neatoc::Log::MESSAGE_END = '$';
+namespace neatoc {
 
-neatoc::Log::Log(std::iostream& stream) :
+char Log::MESSAGE_END = '$';
+
+Log::Log(std::iostream& stream) :
 	stream(stream)
 {
 }
 
-std::string neatoc::Log::read()
+std::string Log::read()
 {
 	std::string command;
 	return read(command);
 }
 
-std::string neatoc::Log::read(std::string& logCommand)
+std::string Log::read(std::string& logCommand)
 {
 	std::string secondsEpoch, response;
 
@@ -49,13 +51,13 @@ std::string neatoc::Log::read(std::string& logCommand)
 	return response;
 }
 
-std::string neatoc::Log::readCommand(const std::string& command)
+std::string Log::readCommand(const std::string& command)
 {
 	std::string logCommand;
 	return readCommand(command, logCommand);
 }
 
-std::string neatoc::Log::readCommand(const std::string& command, std::string& logCommand)
+std::string Log::readCommand(const std::string& command, std::string& logCommand)
 {
 	std::string response;
 	do
@@ -67,7 +69,7 @@ std::string neatoc::Log::readCommand(const std::string& command, std::string& lo
 	return response;
 }
 
-void neatoc::Log::write(const std::string& command, const std::string& response)
+void Log::write(const std::string& command, const std::string& response)
 {
 	auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
 	long secondsEpoch = sinceEpoch.count() * std::chrono::system_clock::period::num / std::chrono::system_clock::period::den;
@@ -75,4 +77,6 @@ void neatoc::Log::write(const std::string& command, const std::string& response)
 	stream << secondsEpoch << MESSAGE_END;
 	stream << command << MESSAGE_END;
 	stream << response << MESSAGE_END;
+}
+
 }

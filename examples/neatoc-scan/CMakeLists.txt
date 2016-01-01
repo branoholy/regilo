@@ -2,7 +2,7 @@
 project("neatoc-scan")
 
 # Create executable
-add_executable(${PROJECT_NAME} "src/neatoc-scan.cpp")
+add_executable(${PROJECT_NAME} "src/main.cpp")
 
 # Install executable
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)

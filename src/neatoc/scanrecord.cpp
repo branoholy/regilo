@@ -23,11 +23,13 @@
 
 #include <cmath>
 
-neatoc::ScanRecord::ScanRecord()
+namespace neatoc {
+
+ScanRecord::ScanRecord()
 {
 }
 
-neatoc::ScanRecord::ScanRecord(int id, double angle, double distance, int intensity, int errorCode) :
+ScanRecord::ScanRecord(int id, double angle, double distance, int intensity, int errorCode) :
 	id(id),
 	angle(angle),
 	distance(distance),
@@ -36,9 +38,7 @@ neatoc::ScanRecord::ScanRecord(int id, double angle, double distance, int intens
 {
 }
 
-namespace neatoc {
-
-std::ostream& operator<<(std::ostream& stream, const neatoc::ScanRecord& record)
+std::ostream& operator<<(std::ostream& stream, const ScanRecord& record)
 {
 	return stream << "ScanRecord("
 		   << record.id

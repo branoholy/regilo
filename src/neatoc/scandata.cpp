@@ -27,19 +27,19 @@
 
 #include "neatoc/controller.hpp"
 
-neatoc::ScanData::ScanData() :
+namespace neatoc {
+
+ScanData::ScanData() :
 	scanId(-1), rotationSpeed(-1)
 {
 }
 
-neatoc::ScanData::ScanData(std::size_t scanId, double rotationSpeed) :
+ScanData::ScanData(std::size_t scanId, double rotationSpeed) :
 	scanId(scanId), rotationSpeed(rotationSpeed)
 {
 }
 
-namespace neatoc {
-
-std::istream& operator>>(std::istream& stream, neatoc::ScanData& data)
+std::istream& operator>>(std::istream& stream, ScanData& data)
 {
 	int lastId = 0;
 	double M_PI_180 = M_PI / 180.0;
@@ -82,7 +82,7 @@ std::istream& operator>>(std::istream& stream, neatoc::ScanData& data)
 	return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const neatoc::ScanData& data)
+std::ostream& operator<<(std::ostream& stream, const ScanData& data)
 {
 	stream << "ScanData("
 		   << data.scanId
@@ -93,7 +93,7 @@ std::ostream& operator<<(std::ostream& stream, const neatoc::ScanData& data)
 		   << ')'
 		   << std::endl;
 
-	for(const neatoc::ScanRecord& record : data)
+	for(const ScanRecord& record : data)
 	{
 		stream << record << std::endl;
 	}

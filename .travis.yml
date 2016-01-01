@@ -25,4 +25,4 @@ addons:
       - boost-latest
     packages:
       - g++-4.9
-      - libboost-system1.55-dev
+      - libboost-system1.54-dev
