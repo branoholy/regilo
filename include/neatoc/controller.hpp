@@ -1,6 +1,6 @@
 /*
  * NeatoC
- * Copyright (C) 2015  Branislav Holý <branoholy@gmail.com>
+ * Copyright (C) 2015-2016  Branislav Holý <branoholy@gmail.com>
  *
  * This file is part of NeatoC.
  *
