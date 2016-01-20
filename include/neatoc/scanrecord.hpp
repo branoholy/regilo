@@ -22,12 +22,12 @@
 #ifndef NEATOC_SCANRECORD_HPP
 #define NEATOC_SCANRECORD_HPP
 
-#include <iostream>
+#include <iosfwd>
 
 namespace neatoc {
 
 /**
- * @brief The ScanRecord class represents one record from LDS data.
+ * @brief The ScanRecord class represents one record from laser data.
  */
 class ScanRecord
 {
@@ -36,7 +36,8 @@ public:
 	double angle; ///< The angle of the record (in radians).
 	double distance; ///< The distance that was measured in the angle (in millimeters).
 	int intensity; ///< The normalized spot intensity that was measured in the angle.
-	int errorCode; ///< The error code (zero means no error).
+	int errorCode; ///< The error code.
+	bool error; ///< True if this record has an error.
 
 	/**
 	 * @brief Default constructor.
@@ -49,14 +50,15 @@ public:
 	 * @param angle The angle of the record (in radians).
 	 * @param distance The distance that was measured in the angle (in millimeters).
 	 * @param intensity The normalized spot intensity that was measured in the angle.
-	 * @param errorCode The error code (zero means no error).
+	 * @param errorCode The error code.
+	 * @param error True if this record has an error.
 	 */
-	ScanRecord(int id, double angle, double distance, int intensity, int errorCode);
+	ScanRecord(int id, double angle, double distance, int intensity, int errorCode, bool error = false);
 
 	/**
 	 * @brief Output the record as a string.
 	 */
-	friend std::ostream& operator<<(std::ostream& stream, const ScanRecord& record);
+	friend std::ostream& operator<<(std::ostream& out, const ScanRecord& record);
 };
 
 }

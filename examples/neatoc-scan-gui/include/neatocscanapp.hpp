@@ -37,7 +37,7 @@ class NeatocScanApp : public wxApp
 {
 private:
 	std::mutex controllerMutex;
-	neatoc::Controller& controller;
+	neatoc::Controller *controller;
 	bool useScanner;
 	bool manualScanning;
 	bool moveScanning;
@@ -55,7 +55,7 @@ private:
 	void scanAndShow();
 
 public:
-	NeatocScanApp(neatoc::Controller& controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
+	NeatocScanApp(neatoc::Controller *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
 
 	virtual bool OnInit();
 	virtual int OnExit();

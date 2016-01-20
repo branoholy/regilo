@@ -83,7 +83,6 @@ public:
 	 * @param response The response of the command.
 	 */
 	void write(const std::string& command, const std::string& response);
-
 };
 
 }
