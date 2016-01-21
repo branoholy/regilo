@@ -69,21 +69,30 @@ void HokuyoController::connect(const std::string& endpoint)
 	stream.set_option(charSize);
 }
 
-std::map<std::string, std::string> HokuyoController::getVersion()
+std::map<std::string, std::string> HokuyoController::getVersionInfo()
 {
 	std::map<std::string, std::string> versionInfo;
 
-	std::string line;
-	while(std::getline(deviceOutput, line))
+	char status;
+	sendCommand(CMD_GET_VERSION);
+	deviceOutput >> status;;
+
+	if(status == '0')
 	{
-		std::size_t colonPos = line.find(':');
-		std::string name = line.substr(0, colonPos);
-		std::string value = line.substr(colonPos + 1);
+		std::string line;
+		while(std::getline(deviceOutput, line))
+		{
+			if(line.empty()) continue;
 
-		boost::algorithm::trim(name);
-		boost::algorithm::trim(value);
+			std::size_t colonPos = line.find(':');
+			std::string name = line.substr(0, colonPos);
+			std::string value = line.substr(colonPos + 1);
 
-		versionInfo[name] = value;
+			boost::algorithm::trim(name);
+			boost::algorithm::trim(value);
+
+			versionInfo[name] = value;
+		}
 	}
 
 	return versionInfo;
@@ -103,6 +112,10 @@ void HokuyoController::setScanParameters(std::size_t fromStep, std::size_t toSte
 
 bool HokuyoController::parseScanData(std::istream& in, ScanData& data)
 {
+	char status;
+	in >> status;
+	if(status != '0') return false;
+
 	double resolution = M_PI / 512;
 
 	int lastId = 0;

@@ -100,6 +100,17 @@ int main(int argc, char** argv)
 		neatoController->setTestMode(false);
 		std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
 	}
+	else if(controllerName == "hokuyo")
+	{
+		neatoc::HokuyoController *hokuyoController = static_cast<neatoc::HokuyoController*>(controller);
+		std::map<std::string, std::string> info = hokuyoController->getVersionInfo();
+		std::cout << "Version info: " << std::endl;
+		for(const auto& kw : info)
+		{
+			std::cout << kw.first << " = " << kw.second << std::endl;
+		}
+		std::cout << std::endl;
+	}
 
 	delete controller;
 

@@ -170,8 +170,11 @@ void NeatocScanApp::repaint(wxPaintEvent&)
 
 	controllerMutex.lock();
 
+	dc.SetPen(*wxBLACK_PEN);
 	for(const neatoc::ScanRecord& record : data)
 	{
+		if(record.error) continue;
+
 		double distance = record.distance / 10;
 		double x = width2 + distance * std::cos(record.angle);
 		double y = height2 - distance * std::sin(record.angle);

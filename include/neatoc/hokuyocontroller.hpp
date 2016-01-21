@@ -86,7 +86,7 @@ public:
 	 * @brief Return information about version.
 	 * @return Key-value pairs with the information
 	 */
-	std::map<std::string, std::string> getVersion();
+	std::map<std::string, std::string> getVersionInfo();
 
 	/**
 	 * @brief Set parameters for the scan command.
