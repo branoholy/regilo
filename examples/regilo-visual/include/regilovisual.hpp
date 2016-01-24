@@ -31,7 +31,7 @@
 	#include <wx/wx.h>
 #endif
 
-#include "regilo/controller.hpp"
+#include <regilo/controller.hpp>
 
 class RegiloVisual : public wxApp
 {

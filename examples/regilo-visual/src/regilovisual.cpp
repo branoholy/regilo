@@ -23,7 +23,7 @@
 
 #include <chrono>
 
-#include <regilo/controller.hpp>
+#include <regilo/neatocontroller.hpp>
 
 RegiloVisual::RegiloVisual(regilo::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning)
@@ -33,7 +33,7 @@ RegiloVisual::RegiloVisual(regilo::Controller *controller, bool useScanner, bool
 bool RegiloVisual::OnInit()
 {
 	// Frame
-	frame = new wxFrame(NULL, wxID_ANY, "Regilo Scan", wxDefaultPosition, wxSize(600, 400));
+	frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
 
 	// Frame StatusBar
 	wxStatusBar *statusBar = frame->CreateStatusBar(2);
