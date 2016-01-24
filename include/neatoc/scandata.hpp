@@ -22,7 +22,6 @@
 #ifndef NEATOC_SCANDATA_HPP
 #define NEATOC_SCANDATA_HPP
 
-#include <iostream>
 #include <vector>
 
 #include "scanrecord.hpp"
@@ -30,7 +29,7 @@
 namespace neatoc {
 
 /**
- * @brief The ScanData class is used to store LDS data.
+ * @brief The ScanData class is used to store laser data.
  */
 class ScanData : public std::vector<ScanRecord>
 {
@@ -51,14 +50,9 @@ public:
 	ScanData(std::size_t scanId, double rotationSpeed);
 
 	/**
-	 * @brief Input the data to the record.
-	 */
-	friend std::istream& operator>>(std::istream& stream, ScanData& record);
-
-	/**
 	 * @brief Output the data as a string.
 	 */
-	friend std::ostream& operator<<(std::ostream& stream, const ScanData& record);
+	friend std::ostream& operator<<(std::ostream& out, const ScanData& record);
 };
 
 }

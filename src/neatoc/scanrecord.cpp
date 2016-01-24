@@ -22,6 +22,7 @@
 #include "neatoc/scanrecord.hpp"
 
 #include <cmath>
+#include <iostream>
 
 namespace neatoc {
 
@@ -29,25 +30,31 @@ ScanRecord::ScanRecord()
 {
 }
 
-ScanRecord::ScanRecord(int id, double angle, double distance, int intensity, int errorCode) :
+ScanRecord::ScanRecord(int id, double angle, double distance, int intensity, int errorCode, bool error) :
 	id(id),
 	angle(angle),
 	distance(distance),
 	intensity(intensity),
-	errorCode(errorCode)
+	errorCode(errorCode),
+	error(error)
 {
 }
 
-std::ostream& operator<<(std::ostream& stream, const ScanRecord& record)
+std::ostream& operator<<(std::ostream& out, const ScanRecord& record)
 {
-	return stream << "ScanRecord("
-		   << record.id
-		   << ": "
-		   << record.angle * 180 * M_1_PI
-		   << "°; "
-		   << record.distance
-		   << "mm"
-		   << ')';
+	out << "ScanRecord("
+		<< record.id
+		<< ": "
+		<< record.angle * 180 * M_1_PI
+		<< "°; "
+		<< record.distance
+		<< "mm";
+
+	if(record.error) out << "; error";
+
+	out << ')';
+
+	return out;
 }
 
 }

@@ -21,7 +21,8 @@
 
 #include <iostream>
 
-#include <neatoc/controller.hpp>
+#include <neatoc/neatocontroller.hpp>
+#include <neatoc/hokuyocontroller.hpp>
 
 #include "neatocscanapp.hpp"
 
@@ -29,27 +30,39 @@ void printHelp()
 {
 	std::cout << "Usage: neatoc-scan-gui [options]" << std::endl
 			  << "Options:" << std::endl
-			  << "  -e <endpoint>             The IP address and port that is used to connect to" << std::endl
-			  << "                            the Neato robot (default: 10.0.0.1:12345)." << std::endl
-			  << "                            Use string \"log\" to load a log file." << std::endl
-			  << "  -l <file>                 The path to the log file." << std::endl
-			  << "  -m                        Turn on manual scanning (by pressing key S)." << std::endl
-			  << "  -a                        Turn on automatic scanning before move." << std::endl
-			  << "  -h                        Show this help." << std::endl;
+			  << "  -c <controller>    The controller name (\"neato\" or \"hokuyo\", default: \"neato\")." << std::endl
+			  << "  -e <endpoint>      The endpoint that is used to connect to the device" << std::endl
+			  << "                     (path or ip and port, default: \"10.0.0.1:12345\")." << std::endl
+			  << "                     Use string \"log\" to load a log file." << std::endl
+			  << "  -l <file>          The path to the log file." << std::endl
+			  << "  -m                 Turn on manual scanning (by pressing key S)." << std::endl
+			  << "  -a                 Turn on automatic scanning before move." << std::endl
+			  << "  -h                 Show this help." << std::endl;
 }
 
 int main(int argc, char** argv)
 {
 	std::cout.setf(std::ios_base::boolalpha);
 
-	std::string logPath;
+	std::string controllerName = "neato";
 	std::string endpoint = "10.0.0.1:12345";
+	std::string logPath;
 	bool manualScanning = false;
 	bool moveScanning = false;
 	for(int i = 1; i < argc; i++)
 	{
 		std::string arg(argv[i]);
-		if(arg == "-e") endpoint = std::string(argv[++i]);
+		if(arg == "-c")
+		{
+			controllerName = std::string(argv[++i]);
+
+			if(controllerName != "neato" && controllerName != "hokuyo")
+			{
+				std::cout << "Error: Unknown controller (use \"neato\" or \"hokuyo\")." << std::endl;
+				return 1;
+			}
+		}
+		else if(arg == "-e") endpoint = std::string(argv[++i]);
 		else if(arg == "-l") logPath = std::string(argv[++i]);
 		else if(arg == "-m") manualScanning = true;
 		else if(arg == "-a") moveScanning = true;
@@ -61,32 +74,46 @@ int main(int argc, char** argv)
 	}
 	bool useScanner = (endpoint != "log");
 
-	neatoc::Controller controller(logPath);
 	std::cout << "Hello NeatoC!" << std::endl;
+
+	neatoc::Controller *controller;
+	if(controllerName == "neato") controller = new neatoc::NeatoController(logPath);
+	else controller = new neatoc::HokuyoController(logPath);
+
+	std::cout << "Using " << controllerName << " controller." << std::endl;
 
 	std::cout << "Connecting to " << endpoint << std::endl;
 	if(useScanner)
 	{
-		controller.connect(endpoint);
+		controller->connect(endpoint);
 
-		controller.setTestMode(true);
-		std::cout << "Test mode: " << controller.getTestMode() << std::endl;
+		if(controllerName == "neato")
+		{
+			neatoc::NeatoController *neatoController = static_cast<neatoc::NeatoController*>(controller);
 
-		controller.setLdsRotation(true);
-		std::cout << "LDS rotation: " << controller.getLdsRotation() << std::endl;
+			neatoController->setTestMode(true);
+			std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
+
+			neatoController->setLdsRotation(true);
+			std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
+		}
 	}
 
 	NeatocScanApp *app = new NeatocScanApp(controller, useScanner, manualScanning, moveScanning);
 	NeatocScanApp::Display(app, argc, argv);
 
-	if(useScanner)
+	if(useScanner && controllerName == "neato")
 	{
-		controller.setLdsRotation(false);
-		std::cout << "LDS rotation: " << controller.getLdsRotation() << std::endl;
+		neatoc::NeatoController *neatoController = static_cast<neatoc::NeatoController*>(controller);
 
-		controller.setTestMode(false);
-		std::cout << "Test mode: " << controller.getTestMode() << std::endl;
+		neatoController->setLdsRotation(false);
+		std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
+
+		neatoController->setTestMode(false);
+		std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
 	}
+
+	delete controller;
 
 	return 0;
 }

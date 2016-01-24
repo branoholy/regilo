@@ -22,190 +22,280 @@
 #ifndef NEATOC_CONTROLLER_HPP
 #define NEATOC_CONTROLLER_HPP
 
-#include <cstdio>
+#include <fstream>
 #include <sstream>
 
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/read_until.hpp>
 #include <boost/asio/streambuf.hpp>
-#include <boost/asio/ip/address.hpp>
-#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/write.hpp>
 
+#include "log.hpp"
 #include "scandata.hpp"
 
 namespace neatoc {
 
-namespace bai = boost::asio::ip;
-
-class Log;
+namespace ba = boost::asio;
 
 /**
- * @brief The Controller class is used to communicate with the Neato robot.
+ * @brief The Controller class is the interface for all controller classes.
  */
 class Controller
 {
-private:
-	std::size_t lastScanId;
-
-	bool testMode;
-	bool ldsRotation;
-
-	boost::asio::io_service ioService;
-	bai::tcp::socket socket;
-
-	boost::asio::streambuf socketIStreamBuffer;
-	std::istream socketIStream;
-	std::istringstream neatoOutput;
-
-	boost::asio::streambuf socketOStreamBuffer;
-	std::ostream socketOStream;
-	std::ostringstream neatoInput;
-
-	Log *log;
-	std::string logPath;
-	std::fstream *logFile;
-
-	std::string sendCommand();
-
 public:
-	static std::string ON;
-	static std::string OFF;
-	static std::string LDS_SCAN_HEADER;
-	static std::string LDS_SCAN_FOOTER;
-
-	static std::string TEST_MODE;
-	static std::string SET_LDS_ROTATION;
-	static std::string SET_MOTOR;
-	static std::string GET_TIME;
-	static std::string GET_LDS_SCAN;
-
-	static char REQUEST_END;
-	static char RESPONSE_END;
-
-	/**
-	 * @brief Default constructor.
-	 */
-	Controller();
-
-	/**
-	 * @brief Controller with a log file specified by a path.
-	 * @param logPath Path to the log file.
-	 */
-	Controller(const std::string& logPath);
-
-	/**
-	 * @brief Controller with a log specified by a stream.
-	 * @param logStream The log stream.
-	 */
-	Controller(std::iostream& logStream);
-
 	/**
 	 * @brief Default destructor.
 	 */
-	virtual ~Controller();
+	virtual ~Controller() = default;
 
 	/**
-	 * @brief Connect the controller to the Neato robot.
-	 * @param endpoint The endpoint with the IP address and port of the Neato robot (e.g. "10.0.0.1:12345").
+	 * @brief Connect the controller to the device.
+	 * @param endpoint The endpoint of device.
 	 */
-	void connect(const std::string& endpoint);
-
-	/**
-	 * @brief Connect the controller to the Neato robot.
-	 * @param ip The IP address of the Neato robot (e.g. "10.0.0.1")
-	 * @param port The port number of the Neato robot (e.g. 12345)
-	 */
-	void connect(const std::string& ip, unsigned short port);
-
-	/**
-	 * @brief Connect the controller to the Neato robot.
-	 * @param endpoint The endpoint of the Neato robot.
-	 */
-	void connect(const bai::tcp::endpoint& endpoint);
-
-	/**
-	 * @brief Get the endpoint of the connected Neato robot.
-	 * @return The endpoint.
-	 */
-	inline bai::tcp::endpoint getEndpoint() const { return socket.remote_endpoint(); }
+	virtual void connect(const std::string& endpoint) = 0;
 
 	/**
 	 * @brief Get the path of log file if the controller was created with a log path otherwise the empty string.
 	 * @return The path or empty string.
 	 */
-	inline std::string getLogPath() const { return logPath; }
+	virtual std::string getLogPath() const = 0;
 
 	/**
-	 * @brief Get whether the Neato is in the test mode.
-	 * @return true/false
+	 * @brief Get the endpoint of device.
+	 * @return The endpoint.
 	 */
-	inline bool getTestMode() const { return testMode; }
+	virtual std::string getEndpoint() const = 0;
 
 	/**
-	 * @brief Set or unset the test mode.
-	 * @param testMode true/false
-	 */
-	void setTestMode(bool testMode);
-
-	/**
-	 * @brief Get whether the Neato has LDS rotation on or off.
-	 * @return true/false
-	 */
-	inline bool getLdsRotation() const { return ldsRotation; }
-
-	/**
-	 * @brief Set LDS rotation on or off.
-	 * @param ldsRotation true/false
-	 */
-	void setLdsRotation(bool ldsRotation);
-
-	/**
-	 * @brief Set the specified motor to run in a direction at a requested speed.
-	 * @param left Distance in millimeters to drive the left wheel (pos = forward, neg = backward).
-	 * @param right Distance in millimeters to drive the right wheel (pos = forward, neg = backward).
-	 * @param speed Speed in millimeters/second.
-	 */
-	void setMotor(int left, int right, int speed);
-
-	/**
-	 * @brief Get a scan from LDS.
-	 * @param fromScanner Specify if you want to get a scan from Neato scanner (true) or log (false). Default: true
+	 * @brief Get a scan from the device.
+	 * @param fromDevice Specify if you want to get a scan from the device (true) or log (false). Default: true
 	 * @return ScanData
 	 */
-	ScanData getLdsScan(bool fromScanner = true);
+	virtual ScanData getScan(bool fromDevice = true) = 0;
+};
+
+/**
+ * @brief The BaseController class is used to communicate with a device.
+ */
+template<typename Stream>
+class BaseController : public Controller
+{
+private:
+	ba::streambuf istreamBuffer;
+	std::istream istream;
+
+	ba::streambuf ostreamBuffer;
+	std::ostream ostream;
+
+	static void getLine(std::istream& stream, std::string& line, const std::string& delim);
+
+protected:
+	std::istringstream deviceOutput;
+	std::ostringstream deviceInput;
+
+	std::size_t lastScanId;
+	ba::io_service ioService;
+	Stream stream;
+
+	Log *log;
+	std::string logPath;
+	std::fstream *logFile;
+
+	virtual std::string sendCommand() final;
+	virtual std::string getScanCommand() const = 0;
+	virtual bool parseScanData(std::istream& in, ScanData& data) = 0;
+
+public:
+	typedef Stream StreamType;
+
+	std::string REQUEST_END;
+	std::string RESPONSE_END;
 
 	/**
-	 * @brief Get the current scheduler time.
-	 * @return "DayOfWeek HourOf24:Min:Sec" (example: "Sunday 13:57:09")
+	 * @brief Default constructor.
 	 */
-	std::string getTime();
+	BaseController();
 
 	/**
-	 * @brief Send a command to the Neato robot
+	 * @brief Controller with a log file specified by a path.
+	 * @param logPath Path to the log file.
+	 */
+	BaseController(const std::string& logPath);
+
+	/**
+	 * @brief Controller with a log specified by a stream.
+	 * @param logStream The log stream.
+	 */
+	BaseController(std::iostream& logStream);
+
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~BaseController();
+
+	/**
+	 * @brief Get the path of log file if the controller was created with a log path otherwise the empty string.
+	 * @return The path or empty string.
+	 */
+	virtual inline std::string getLogPath() const { return logPath; }
+
+	/**
+	 * @brief Get a scan from the device.
+	 * @param fromDevice Specify if you want to get a scan from the device (true) or log (false). Default: true
+	 * @return ScanData
+	 */
+	virtual ScanData getScan(bool fromDevice = true) final;
+
+	/**
+	 * @brief Send a command to the device.
 	 * @param command A commmand with all parameter.
 	 * @return A response to the command.
 	 */
-	std::string sendCommand(const std::string& command);
+	virtual std::string sendCommand(const std::string& command) final;
 
 	/**
 	 * @brief Create a command with the specified parameters (printf formatting is used).
-	 * @param command A command without parameters (e.g. neatoc::Controller::SET_MOTOR).
+	 * @param command A command without parameters.
 	 * @param params Parameters that will be inserted into the command.
 	 * @return The command with the parameters.
 	 */
 	template<typename... Args>
-	std::string createCommand(const std::string& command, Args... params);
+	std::string createCommand(const std::string& command, Args... params) const;
 
 	/**
-	 * @brief createAndSendCommand Create a command with the specified parameters (printf formatting is used) and send it to the Neato robot.
-	 * @param command A command without parameters (e.g. neatoc::Controller::SET_MOTOR).
+	 * @brief createAndSendCommand Create a command with the specified parameters (printf formatting is used) and send it to the device.
+	 * @param command A command without parameters.
 	 * @param params Parameters that will be inserted into the command.
 	 * @return A response to the command.
 	 */
 	template<typename... Args>
-	std::string createAndSendCommand(const std::string& command, Args... params);
+	std::string createCommandAndSend(const std::string& command, Args... params);
 };
 
+template<typename Stream>
+BaseController<Stream>::BaseController() :
+	istream(&istreamBuffer),
+	ostream(&ostreamBuffer),
+	lastScanId(0),
+	stream(ioService),
+	log(nullptr), logFile(nullptr),
+	REQUEST_END("\n"),
+	RESPONSE_END("\n")
+{
+}
+
+template<typename Stream>
+BaseController<Stream>::BaseController(const std::string& logPath) : BaseController()
+{
+	if(logPath.length() > 0)
+	{
+		logFile = new std::fstream(logPath, std::fstream::in | std::fstream::out | std::fstream::app);
+		log = new Log(*logFile);
+		this->logPath = logPath;
+	}
+}
+
+template<typename Stream>
+BaseController<Stream>::BaseController(std::iostream& logStream) : BaseController()
+{
+	this->log = new Log(logStream);
+}
+
+template<typename Stream>
+BaseController<Stream>::~BaseController()
+{
+	if(log != nullptr) delete log;
+	if(logFile != nullptr) delete logFile;
+	if(stream.is_open()) stream.close();
+}
+
+template<typename Stream>
+ScanData BaseController<Stream>::getScan(bool fromDevice)
+{
+	ScanData data;
+
+	if(fromDevice)
+	{
+		sendCommand(getScanCommand());
+		parseScanData(deviceOutput, data);
+	}
+	else
+	{
+		std::istringstream response(log->readCommand(getScanCommand()));
+		parseScanData(response, data);
+	}
+	if(!data.empty()) data.scanId = lastScanId++;
+
+	return data;
+}
+
+template<typename Stream>
+std::string BaseController<Stream>::sendCommand(const std::string& command)
+{
+	deviceInput << command;
+	return sendCommand();
+}
+
+template<typename Stream>
+std::string BaseController<Stream>::sendCommand()
+{
+	deviceInput << REQUEST_END;
+
+	std::string input = deviceInput.str();
+	ostream << input;
+	ba::write(stream, ostreamBuffer);
+	deviceInput.clear();
+	deviceInput.str("");
+
+	ba::read_until(stream, istreamBuffer, RESPONSE_END);
+
+	std::string cmdInput;
+	getLine(istream, cmdInput, REQUEST_END);
+	cmdInput.pop_back();
+
+	std::string output;
+	getLine(istream, output, RESPONSE_END);
+	deviceOutput.clear();
+	deviceOutput.str(output);
+
+	if(log != nullptr) log->write(input, output);
+
+	return output;
+}
+
+template<typename Stream>
+void BaseController<Stream>::getLine(std::istream& stream, std::string& line, const std::string& delim)
+{
+	if(delim.empty()) std::getline(stream, line);
+	else if(delim.size() == 1) std::getline(stream, line, delim.front());
+	else
+	{
+		std::string delimPart;
+		while(stream)
+		{
+			char ch = stream.get();
+			if(ch == delim.at(delimPart.size()))
+			{
+				delimPart += ch;
+				if(delimPart.size() == delim.size()) break;
+			}
+			else
+			{
+				if(!delimPart.empty())
+				{
+					line += delimPart;
+					delimPart.clear();
+				}
+
+				line += ch;
+			}
+		}
+	}
+}
+
+template<typename Stream>
 template<typename... Args>
-std::string Controller::createCommand(const std::string& command, Args... params)
+std::string BaseController<Stream>::createCommand(const std::string& command, Args... params) const
 {
 	std::size_t size = std::snprintf(nullptr, 0, command.c_str(), params...) + 1;
 	char* buffer = new char[size];
@@ -217,20 +307,12 @@ std::string Controller::createCommand(const std::string& command, Args... params
 	return result;
 }
 
+template<typename Stream>
 template<typename... Args>
-std::string Controller::createAndSendCommand(const std::string& command, Args... params)
+std::string BaseController<Stream>::createCommandAndSend(const std::string& command, Args... params)
 {
 	return sendCommand(createCommand(command, params...));
 }
-
-/**
- * @brief The NetworkException class is used for communication errors of the controller.
- */
-class NetworkException : public std::runtime_error
-{
-public:
-	NetworkException(const std::string& message);
-};
 
 }
 

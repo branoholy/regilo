@@ -1,20 +1,23 @@
 # NeatoC
 [![Build Status](https://travis-ci.org/branoholy/neatoc.svg?branch=master)](https://travis-ci.org/branoholy/neatoc)
 
-*A simple C++ library for communication with the Neato XV robot.*
+*A simple C++ library for communication with the Neato XV robot and the Hokuyo scanner.*
 
-`neatoc` allows you to communicate with the Neato robot through sockets. You
-can use some implemented methods like `setMotor()`, `getLdsScan()`, or run any
-other command with the `sendCommand()` method.
+`neatoc` allows you to communicate with the Neato robot through sockets or the
+Hokuyo scanner through the serial port. You can use some implemented methods
+like `setTestMode()`, `setMotor()` (for Neato XV), `getVersion()` (for Hokuyo),
+`getScan()` for both, or run any other command with the `sendCommand()` method.
 
 ## Download
 You can download the source code and build `neatoc` according to
 the [build instructions](#build) below.
 
 ## Usage
+
+### Neato XV
 ```cpp
 // Create the controller
-neatoc::Controller controller;
+neatoc::NeatoController controller;
 
 // Connect it
 controller.connect("10.0.0.1:12345");
@@ -24,11 +27,23 @@ controller.setTestMode(true);
 controller.setLdsRotation(true);
 
 // Grab a scan from the robot
-neatoc::ScanData data = controller.getLdsScan();
+neatoc::ScanData data = controller.getScan();
 
 // Unset test mode and LDS rotation
 controller.setLdsRotation(false);
 controller.setTestMode(false);
+```
+
+### Hokuyo
+```cpp
+// Create the controller
+neatoc::HokuyoController controller;
+
+// Connect it
+controller.connect("/dev/ttyACM0");
+
+// Grab a scan from the scanner
+neatoc::ScanData data = controller.getScan();
 ```
 
 ## Dependencies

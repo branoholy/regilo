@@ -23,7 +23,9 @@
 
 #include <chrono>
 
-NeatocScanApp::NeatocScanApp(neatoc::Controller &controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
+#include <neatoc/neatocontroller.hpp>
+
+NeatocScanApp::NeatocScanApp(neatoc::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning)
 {
 }
@@ -37,8 +39,8 @@ bool NeatocScanApp::OnInit()
 	wxStatusBar *statusBar = frame->CreateStatusBar(2);
 
 	std::string endpoint;
-	if(useScanner) endpoint = controller.getEndpoint().address().to_string() + ':' + std::to_string(controller.getEndpoint().port());
-	else endpoint = controller.getLogPath();
+	if(useScanner) endpoint = controller->getEndpoint();
+	else endpoint = controller->getLogPath();
 
 	frame->SetStatusText("", 0);
 	frame->SetStatusText("Connected to " + endpoint, 1);
@@ -93,39 +95,52 @@ void NeatocScanApp::setMotorByKey(wxKeyEvent& keyEvent)
 		}
 	}
 
+	neatoc::NeatoController *neatoController = dynamic_cast<neatoc::NeatoController*>(controller);
 	switch(keyEvent.GetKeyCode())
 	{
 		case WXK_UP:
-			controllerMutex.lock();
-			frame->SetStatusText("Going up...", 0);
+			if(neatoController != nullptr)
+			{
+				controllerMutex.lock();
+				frame->SetStatusText("Going up...", 0);
 
-			if(keyEvent.ControlDown()) controller.setMotor(500, 500, 100);
-			else controller.setMotor(100, 100, 50);
+				if(keyEvent.ControlDown()) neatoController->setMotor(500, 500, 100);
+				else neatoController->setMotor(100, 100, 50);
 
-			controllerMutex.unlock();
+				controllerMutex.unlock();
+			}
 			break;
 
 		case WXK_DOWN:
-			controllerMutex.lock();
-			frame->SetStatusText("Going down...", 0);
-			controller.setMotor(-100, -100, 50);
-			controllerMutex.unlock();
+			if(neatoController != nullptr)
+			{
+				controllerMutex.lock();
+				frame->SetStatusText("Going down...", 0);
+				neatoController->setMotor(-100, -100, 50);
+				controllerMutex.unlock();
+			}
 			break;
 
 		case WXK_LEFT:
-			controllerMutex.lock();
-			frame->SetStatusText("Turning left...", 0);
-			if(keyEvent.ControlDown()) controller.setMotor(-30, 30, 50);
-			else controller.setMotor(20, 100, 50);
-			controllerMutex.unlock();
+			if(neatoController != nullptr)
+			{
+				controllerMutex.lock();
+				frame->SetStatusText("Turning left...", 0);
+				if(keyEvent.ControlDown()) neatoController->setMotor(-30, 30, 50);
+				else neatoController->setMotor(20, 100, 50);
+				controllerMutex.unlock();
+			}
 			break;
 
 		case WXK_RIGHT:
-			controllerMutex.lock();
-			frame->SetStatusText("Turning right...", 0);
-			if(keyEvent.ControlDown()) controller.setMotor(30, -30, 50);
-			else controller.setMotor(100, 20, 50);
-			controllerMutex.unlock();
+			if(neatoController != nullptr)
+			{
+				controllerMutex.lock();
+				frame->SetStatusText("Turning right...", 0);
+				if(keyEvent.ControlDown()) neatoController->setMotor(30, -30, 50);
+				else neatoController->setMotor(100, 20, 50);
+				controllerMutex.unlock();
+			}
 			break;
 
 		case 'S':
@@ -155,8 +170,11 @@ void NeatocScanApp::repaint(wxPaintEvent&)
 
 	controllerMutex.lock();
 
+	dc.SetPen(*wxBLACK_PEN);
 	for(const neatoc::ScanRecord& record : data)
 	{
+		if(record.error) continue;
+
 		double distance = record.distance / 10;
 		double x = width2 + distance * std::cos(record.angle);
 		double y = height2 - distance * std::sin(record.angle);
@@ -180,7 +198,7 @@ void NeatocScanApp::scanAndShow()
 {
 	controllerMutex.lock();
 
-	data = controller.getLdsScan(useScanner);
+	data = controller->getScan(useScanner);
 	bool emptyData = data.empty();
 	if(emptyData) stopScanThread();
 

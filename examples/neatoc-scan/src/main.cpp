@@ -23,26 +23,39 @@
 #include <iostream>
 #include <thread>
 
-#include <neatoc/controller.hpp>
+#include <neatoc/neatocontroller.hpp>
+#include <neatoc/hokuyocontroller.hpp>
 
 void printHelp()
 {
 	std::cout << "Usage: neatoc-scan [options]" << std::endl
 			  << "Options:" << std::endl
-			  << "  -e <endpoint>             The IP address and port that is used to connect to" << std::endl
-			  << "                            the Neato robot (default: 10.0.0.1:12345)." << std::endl
-			  << "  -h                        Show this help." << std::endl;
+			  << "  -c <controller>    The controller name (\"neato\" or \"hokuyo\", default: \"neato\")." << std::endl
+			  << "  -e <endpoint>      The endpoint that is used to connect to the device" << std::endl
+			  << "                     (path or ip and port, default: \"10.0.0.1:12345\")." << std::endl
+			  << "  -h                 Show this help." << std::endl;
 }
 
 int main(int argc, char** argv)
 {
 	std::cout.setf(std::ios_base::boolalpha);
 
+	std::string controllerName = "neato";
 	std::string endpoint = "10.0.0.1:12345";
 	for(int i = 1; i < argc; i++)
 	{
 		std::string arg(argv[i]);
-		if(arg == "-e") endpoint = std::string(argv[++i]);
+		if(arg == "-c")
+		{
+			controllerName = std::string(argv[++i]);
+
+			if(controllerName != "neato" && controllerName != "hokuyo")
+			{
+				std::cout << "Error: Unknown controller (use \"neato\" or \"hokuyo\")." << std::endl;
+				return 1;
+			}
+		}
+		else if(arg == "-e") endpoint = std::string(argv[++i]);
 		else
 		{
 			printHelp();
@@ -50,28 +63,56 @@ int main(int argc, char** argv)
 		}
 	}
 
-	neatoc::Controller controller;
 	std::cout << "Hello NeatoC!" << std::endl;
 
+	neatoc::Controller *controller;
+	if(controllerName == "neato") controller = new neatoc::NeatoController();
+	else controller = new neatoc::HokuyoController();
+
+	std::cout << "Using " << controllerName << " controller." << std::endl;
+
 	std::cout << "Connecting to " << endpoint << std::endl;
-	controller.connect(endpoint);
+	controller->connect(endpoint);
 
-	controller.setTestMode(true);
-	std::cout << "Test mode: " << controller.getTestMode() << std::endl;
+	if(controllerName == "neato")
+	{
+		neatoc::NeatoController *neatoController = static_cast<neatoc::NeatoController*>(controller);
 
-	controller.setLdsRotation(true);
-	std::cout << "LDS rotation: " << controller.getLdsRotation() << std::endl;
+		neatoController->setTestMode(true);
+		std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
 
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+		neatoController->setLdsRotation(true);
+		std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
+	}
 
-	neatoc::ScanData data = controller.getLdsScan();
-	std::cout << "LDS data:" << std::endl << data << std::endl;
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	controller.setLdsRotation(false);
-	std::cout << "LDS rotation: " << controller.getLdsRotation() << std::endl;
+	neatoc::ScanData data = controller->getScan();
+	std::cout << "Scan data:" << std::endl << data << std::endl;
 
-	controller.setTestMode(false);
-	std::cout << "Test mode: " << controller.getTestMode() << std::endl;
+	if(controllerName == "neato")
+	{
+		neatoc::NeatoController *neatoController = static_cast<neatoc::NeatoController*>(controller);
+
+		neatoController->setLdsRotation(false);
+		std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
+
+		neatoController->setTestMode(false);
+		std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
+	}
+	else if(controllerName == "hokuyo")
+	{
+		neatoc::HokuyoController *hokuyoController = static_cast<neatoc::HokuyoController*>(controller);
+		std::map<std::string, std::string> info = hokuyoController->getVersionInfo();
+		std::cout << "Version info: " << std::endl;
+		for(const auto& kw : info)
+		{
+			std::cout << kw.first << " = " << kw.second << std::endl;
+		}
+		std::cout << std::endl;
+	}
+
+	delete controller;
 
 	return 0;
 }

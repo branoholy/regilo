@@ -23,7 +23,7 @@
 
 #include <chrono>
 
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace neatoc {
 
