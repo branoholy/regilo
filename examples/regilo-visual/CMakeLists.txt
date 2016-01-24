@@ -1,5 +1,5 @@
 # Set project name
-project("neatoc-scan-gui")
+project("regilo-visual")
 
 # Find libraries
 find_package(wxWidgets REQUIRED core base)
@@ -23,5 +23,5 @@ install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
 # Link libraries
 target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} neatoc)
+target_link_libraries(${PROJECT_NAME} regilo)
 

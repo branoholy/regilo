@@ -1,34 +1,34 @@
 /*
- * NeatoC
+ * Regilo
  * Copyright (C) 2015-2016  Branislav Holý <branoholy@gmail.com>
  *
- * This file is part of NeatoC.
+ * This file is part of Regilo.
  *
- * NeatoC is free software: you can redistribute it and/or modify
+ * Regilo is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * NeatoC is distributed in the hope that it will be useful,
+ * Regilo is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with NeatoC.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Regilo.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 #include <iostream>
 
-#include <neatoc/neatocontroller.hpp>
-#include <neatoc/hokuyocontroller.hpp>
+#include <regilo/neatocontroller.hpp>
+#include <regilo/hokuyocontroller.hpp>
 
-#include "neatocscanapp.hpp"
+#include "regilovisual.hpp"
 
 void printHelp()
 {
-	std::cout << "Usage: neatoc-scan-gui [options]" << std::endl
+	std::cout << "Usage: regilo-visual [options]" << std::endl
 			  << "Options:" << std::endl
 			  << "  -c <controller>    The controller name (\"neato\" or \"hokuyo\", default: \"neato\")." << std::endl
 			  << "  -e <endpoint>      The endpoint that is used to connect to the device" << std::endl
@@ -74,11 +74,11 @@ int main(int argc, char** argv)
 	}
 	bool useScanner = (endpoint != "log");
 
-	std::cout << "Hello NeatoC!" << std::endl;
+	std::cout << "Hello Regilo!" << std::endl;
 
-	neatoc::Controller *controller;
-	if(controllerName == "neato") controller = new neatoc::NeatoController(logPath);
-	else controller = new neatoc::HokuyoController(logPath);
+	regilo::Controller *controller;
+	if(controllerName == "neato") controller = new regilo::NeatoController(logPath);
+	else controller = new regilo::HokuyoController(logPath);
 
 	std::cout << "Using " << controllerName << " controller." << std::endl;
 
@@ -89,7 +89,7 @@ int main(int argc, char** argv)
 
 		if(controllerName == "neato")
 		{
-			neatoc::NeatoController *neatoController = static_cast<neatoc::NeatoController*>(controller);
+			regilo::NeatoController *neatoController = static_cast<regilo::NeatoController*>(controller);
 
 			neatoController->setTestMode(true);
 			std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
@@ -99,12 +99,12 @@ int main(int argc, char** argv)
 		}
 	}
 
-	NeatocScanApp *app = new NeatocScanApp(controller, useScanner, manualScanning, moveScanning);
-	NeatocScanApp::Display(app, argc, argv);
+	RegiloVisual *app = new RegiloVisual(controller, useScanner, manualScanning, moveScanning);
+	RegiloVisual::Display(app, argc, argv);
 
 	if(useScanner && controllerName == "neato")
 	{
-		neatoc::NeatoController *neatoController = static_cast<neatoc::NeatoController*>(controller);
+		regilo::NeatoController *neatoController = static_cast<regilo::NeatoController*>(controller);
 
 		neatoController->setLdsRotation(false);
 		std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;

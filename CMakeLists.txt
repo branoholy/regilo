@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 # Set project name
-project("neatoc")
+project("regilo")
 
 # Set options
 option(example "Build the console example")
@@ -28,8 +28,8 @@ find_package(Boost 1.54 COMPONENTS system REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 # Find source code
-file(GLOB_RECURSE CPPS "src/neatoc/*.cpp")
-file(GLOB_RECURSE HPPS "include/neatoc/*.hpp")
+file(GLOB_RECURSE CPPS "src/regilo/*.cpp")
+file(GLOB_RECURSE HPPS "include/regilo/*.hpp")
 
 # Include headers
 include_directories("include")
@@ -51,10 +51,10 @@ target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 
 # Add examples
 if((${example}) OR (${examples}))
-    add_subdirectory("examples/neatoc-scan")
+    add_subdirectory("examples/regilo-scan")
 endif()
 
 if((${example-gui}) OR (${examples}))
-    add_subdirectory("examples/neatoc-scan-gui")
+    add_subdirectory("examples/regilo-visual")
 endif()
 

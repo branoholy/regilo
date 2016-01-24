@@ -1,30 +1,30 @@
 /*
- * NeatoC
+ * Regilo
  * Copyright (C) 2015-2016  Branislav Holý <branoholy@gmail.com>
  *
- * This file is part of NeatoC.
+ * This file is part of Regilo.
  *
- * NeatoC is free software: you can redistribute it and/or modify
+ * Regilo is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * NeatoC is distributed in the hope that it will be useful,
+ * Regilo is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with NeatoC.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Regilo.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
-#ifndef NEATOC_SCANRECORD_HPP
-#define NEATOC_SCANRECORD_HPP
+#ifndef REGILO_SCANRECORD_HPP
+#define REGILO_SCANRECORD_HPP
 
 #include <iosfwd>
 
-namespace neatoc {
+namespace regilo {
 
 /**
  * @brief The ScanRecord class represents one record from laser data.
@@ -63,4 +63,4 @@ public:
 
 }
 
-#endif // NEATOC_SCANRECORD_HPP
+#endif // REGILO_SCANRECORD_HPP

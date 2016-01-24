@@ -1,39 +1,39 @@
 /*
- * NeatoC
+ * Regilo
  * Copyright (C) 2015-2016  Branislav Holý <branoholy@gmail.com>
  *
- * This file is part of NeatoC.
+ * This file is part of Regilo.
  *
- * NeatoC is free software: you can redistribute it and/or modify
+ * Regilo is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * NeatoC is distributed in the hope that it will be useful,
+ * Regilo is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with NeatoC.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Regilo.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
-#include "neatocscanapp.hpp"
+#include "regilovisual.hpp"
 
 #include <chrono>
 
-#include <neatoc/neatocontroller.hpp>
+#include <regilo/controller.hpp>
 
-NeatocScanApp::NeatocScanApp(neatoc::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
+RegiloVisual::RegiloVisual(regilo::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning)
 {
 }
 
-bool NeatocScanApp::OnInit()
+bool RegiloVisual::OnInit()
 {
 	// Frame
-	frame = new wxFrame(NULL, wxID_ANY, "NeatoC Scan", wxDefaultPosition, wxSize(600, 400));
+	frame = new wxFrame(NULL, wxID_ANY, "Regilo Scan", wxDefaultPosition, wxSize(600, 400));
 
 	// Frame StatusBar
 	wxStatusBar *statusBar = frame->CreateStatusBar(2);
@@ -50,8 +50,8 @@ bool NeatocScanApp::OnInit()
 
 	// Panel
 	panel = new wxPanel(frame);
-	panel->GetEventHandler()->Bind(wxEVT_KEY_DOWN, &NeatocScanApp::setMotorByKey, this);
-	panel->GetEventHandler()->Bind(wxEVT_PAINT, &NeatocScanApp::repaint, this);
+	panel->GetEventHandler()->Bind(wxEVT_KEY_DOWN, &RegiloVisual::setMotorByKey, this);
+	panel->GetEventHandler()->Bind(wxEVT_PAINT, &RegiloVisual::repaint, this);
 
 	if(!manualScanning && !moveScanning)
 	{
@@ -76,7 +76,7 @@ bool NeatocScanApp::OnInit()
 	return true;
 }
 
-int NeatocScanApp::OnExit()
+int RegiloVisual::OnExit()
 {
 	stopScanThread();
 	if(scanThread.joinable()) scanThread.join();
@@ -84,7 +84,7 @@ int NeatocScanApp::OnExit()
 	return wxApp::OnExit();
 }
 
-void NeatocScanApp::setMotorByKey(wxKeyEvent& keyEvent)
+void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 {
 	if(keyEvent.GetKeyCode() == WXK_UP || keyEvent.GetKeyCode() == WXK_DOWN || keyEvent.GetKeyCode() == WXK_LEFT || keyEvent.GetKeyCode() == WXK_RIGHT)
 	{
@@ -95,7 +95,7 @@ void NeatocScanApp::setMotorByKey(wxKeyEvent& keyEvent)
 		}
 	}
 
-	neatoc::NeatoController *neatoController = dynamic_cast<neatoc::NeatoController*>(controller);
+	regilo::NeatoController *neatoController = dynamic_cast<regilo::NeatoController*>(controller);
 	switch(keyEvent.GetKeyCode())
 	{
 		case WXK_UP:
@@ -155,7 +155,7 @@ void NeatocScanApp::setMotorByKey(wxKeyEvent& keyEvent)
 	}
 }
 
-void NeatocScanApp::repaint(wxPaintEvent&)
+void RegiloVisual::repaint(wxPaintEvent&)
 {
 	wxPaintDC dc(panel);
 
@@ -171,7 +171,7 @@ void NeatocScanApp::repaint(wxPaintEvent&)
 	controllerMutex.lock();
 
 	dc.SetPen(*wxBLACK_PEN);
-	for(const neatoc::ScanRecord& record : data)
+	for(const regilo::ScanRecord& record : data)
 	{
 		if(record.error) continue;
 
@@ -185,7 +185,7 @@ void NeatocScanApp::repaint(wxPaintEvent&)
 	controllerMutex.unlock();
 }
 
-void NeatocScanApp::stopScanThread()
+void RegiloVisual::stopScanThread()
 {
 	if(scanThreadRunning)
 	{
@@ -194,7 +194,7 @@ void NeatocScanApp::stopScanThread()
 	}
 }
 
-void NeatocScanApp::scanAndShow()
+void RegiloVisual::scanAndShow()
 {
 	controllerMutex.lock();
 
@@ -211,7 +211,7 @@ void NeatocScanApp::scanAndShow()
 	});
 }
 
-void NeatocScanApp::Display(wxApp *app, int& argc, char **argv)
+void RegiloVisual::Display(wxApp *app, int& argc, char **argv)
 {
 	wxApp::SetInstance(app);
 	wxEntryStart(argc, argv);

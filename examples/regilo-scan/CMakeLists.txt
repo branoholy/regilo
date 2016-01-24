@@ -1,5 +1,5 @@
 # Set project name
-project("neatoc-scan")
+project("regilo-scan")
 
 # Create executable
 add_executable(${PROJECT_NAME} "src/main.cpp")
@@ -8,5 +8,5 @@ add_executable(${PROJECT_NAME} "src/main.cpp")
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
 # Link libraries
-target_link_libraries(${PROJECT_NAME} neatoc)
+target_link_libraries(${PROJECT_NAME} regilo)
 
