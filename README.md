@@ -11,8 +11,9 @@ like `setTestMode()`, `setMotor()` (for Neato XV), `getVersion()` (for Hokuyo),
 ## Download
 In the supported operating systems (currently Arch Linux and Ubuntu), you can
 install the created [package](#packages). Otherwise, you can download
-[the source code](releases), build `regilo` according to the
-[build instructions](#build) below, and [install](#installation) it.
+[the source code](https://github.com/branoholy/regilo/releases), build `regilo`
+according to the [build instructions](#build) below, and
+[install](#installation) it.
 
 ## Usage
 
