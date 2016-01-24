@@ -9,8 +9,10 @@ like `setTestMode()`, `setMotor()` (for Neato XV), `getVersion()` (for Hokuyo),
 `getScan()` for both, or run any other command with the `sendCommand()` method.
 
 ## Download
-You can download the source code and build `regilo` according to
-the [build instructions](#build) below.
+In the supported operating systems (currently Arch Linux and Ubuntu), you can
+install the created [package](#packages). Otherwise, you can download
+[the source code](releases), build `regilo` according to the
+[build instructions](#build) below, and [install](#installation) it.
 
 ## Usage
 
