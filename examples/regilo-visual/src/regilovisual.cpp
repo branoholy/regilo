@@ -29,10 +29,10 @@
 #include <regilo/serialcontroller.hpp>
 #include <regilo/socketcontroller.hpp>
 
-RegiloVisual::RegiloVisual(regilo::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
+RegiloVisual::RegiloVisual(regilo::ScanController *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning),
 	fullscreen(false), zoom(0.08),
-	radarColor(1, 204, 0), pointColor(200, 200, 200), radarAngle(0), radarLength(4000)
+	radarColor(1, 204, 0), pointColor(200, 200, 200), radarAngle(0), radarRayLength(4000)
 {
 }
 
@@ -40,9 +40,7 @@ bool RegiloVisual::OnInit()
 {
 	wxInitAllImageHandlers();
 	radarGradient.LoadFile("images/radar-gradient.png");
-
-	double imageZoom = zoom * 10;
-	radarGradient.Rescale(radarGradient.GetWidth() * imageZoom, radarGradient.GetHeight() * imageZoom);
+	radarGradientZoom = zoomImage(radarGradient, zoom * 10);
 
 	// Frame
 	frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
@@ -64,6 +62,40 @@ bool RegiloVisual::OnInit()
 	panel = new wxPanel(frame);
 	panel->GetEventHandler()->Bind(wxEVT_KEY_DOWN, &RegiloVisual::setMotorByKey, this);
 	panel->GetEventHandler()->Bind(wxEVT_PAINT, &RegiloVisual::repaint, this);
+	panel->GetEventHandler()->Bind(wxEVT_LEFT_DCLICK, [this](wxMouseEvent&)
+	{
+		if((zoom * 2) > 2) return;
+
+		zoom *= 2;
+		radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+
+		int width, height;
+		panel->GetSize(&width, &height);
+		double maxWidth = std::sqrt(std::pow(width / 2, 2) + std::pow(height / 2, 2));
+
+		if(radarGradientZoom.GetWidth() > maxWidth)
+		{
+			double scale = maxWidth / radarGradientZoom.GetWidth();
+			radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
+		}
+	});
+	panel->GetEventHandler()->Bind(wxEVT_RIGHT_DCLICK, [this](wxMouseEvent&)
+	{
+		if((zoom * 0.5) < 0.002) return;
+
+		zoom *= 0.5;
+		radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+
+		int width, height;
+		panel->GetSize(&width, &height);
+		double maxWidth = std::sqrt(std::pow(width / 2, 2) + std::pow(height / 2, 2));
+
+		if(radarGradientZoom.GetWidth() > maxWidth)
+		{
+			double scale = maxWidth / radarGradientZoom.GetWidth();
+			radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
+		}
+	});
 
 	if(!manualScanning && !moveScanning)
 	{
@@ -118,7 +150,9 @@ int RegiloVisual::OnExit()
 
 void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 {
-	if(keyEvent.GetKeyCode() == WXK_UP || keyEvent.GetKeyCode() == WXK_DOWN || keyEvent.GetKeyCode() == WXK_LEFT || keyEvent.GetKeyCode() == WXK_RIGHT)
+	int keyCode = keyEvent.GetKeyCode();
+
+	if(keyCode == WXK_UP || keyCode == WXK_DOWN || keyCode == WXK_LEFT || keyCode == WXK_RIGHT)
 	{
 		if(moveScanning)
 		{
@@ -130,7 +164,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 	regilo::BaseNeatoController *neatoController = dynamic_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
 	if(neatoController == nullptr) neatoController = dynamic_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
 
-	switch(keyEvent.GetKeyCode())
+	switch(keyCode)
 	{
 		case WXK_UP:
 			if(neatoController != nullptr)
@@ -177,12 +211,23 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			}
 			break;
 
+		case WXK_SPACE:
+			if(neatoController != nullptr)
+			{
+				controllerMutex.lock();
+				frame->SetStatusText("Stopping...", 0);
+				neatoController->setMotor(0, 0, 0);
+				controllerMutex.unlock();
+			}
+			break;
+
 		case 'S':
 			if(manualScanning)
 			{
 				frame->SetStatusText("Manual scanning...", 0);
 				scanAndShow();
 			}
+			break;
 
 		case WXK_F11:
 			fullscreen = !fullscreen;
@@ -197,6 +242,14 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 		default:
 			keyEvent.Skip();
 	}
+}
+
+wxImage RegiloVisual::zoomImage(const wxImage& image, double zoom)
+{
+	wxImage zoomedImage = image;
+	zoomedImage.Rescale(image.GetWidth() * zoom, image.GetHeight() * zoom);
+
+	return zoomedImage;
 }
 
 wxRect RegiloVisual::getRotatedBoundingBox(const wxRect& rect, double angle)
@@ -231,9 +284,9 @@ wxRect RegiloVisual::getRotatedBoundingBox(const wxRect& rect, double angle)
 
 void RegiloVisual::drawRadarGradient(wxDC& dc, int width2, int height2)
 {
-	wxImage rotatedImage = radarGradient.Rotate(radarAngle, wxPoint());
+	wxImage rotatedImage = radarGradientZoom.Rotate(radarAngle, wxPoint());
 
-	wxRect box(radarGradient.GetSize());
+	wxRect box(radarGradientZoom.GetSize());
 	box.width++;
 	box.height++;
 	wxRect rotatedBox = getRotatedBoundingBox(box, -radarAngle);
@@ -274,9 +327,14 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	}
 
 	// Draw radar ray
-	double radarLineX = width2 + zoom * radarLength * std::cos(radarAngle);
-	double radarLineY = height2 - zoom * radarLength * std::sin(radarAngle);
+	double rayLength = zoom * radarRayLength;
+	double maxRayLength = std::sqrt(width2 * width2 + height2 * height2);
+	if(rayLength > maxRayLength) rayLength = maxRayLength;
+
+	double radarLineX = width2 + rayLength * std::cos(radarAngle);
+	double radarLineY = height2 - rayLength * std::sin(radarAngle);
 	gcdc.DrawLine(width2, height2, radarLineX, radarLineY);
+
 	drawRadarGradient(dc, width2, height2);
 
 	controllerMutex.lock();

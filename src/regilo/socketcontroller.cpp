@@ -70,6 +70,8 @@ void SocketController::connect(const bai::tcp::endpoint& endpoint)
 
 std::string SocketController::getEndpoint() const
 {
+	if(!isConnected()) return "";
+
 	StreamType::endpoint_type endpoint = stream.remote_endpoint();
 
 	std::string ip = endpoint.address().to_string();

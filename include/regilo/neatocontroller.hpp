@@ -26,7 +26,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "scandata.hpp"
+#include "scancontroller.hpp"
 
 namespace regilo {
 
@@ -81,7 +81,7 @@ public:
  * @brief The NeatoController class is used to communicate with the Neato robot.
  */
 template<typename ProtocolController>
-class NeatoController : public BaseNeatoController, public ProtocolController
+class NeatoController : public BaseNeatoController, public BaseScanController<ProtocolController>
 {
 private:
 	bool testMode;
@@ -90,8 +90,8 @@ private:
 protected:
 	void init();
 
-	inline std::string getScanCommand() const override { return CMD_GET_LDS_SCAN; }
-	bool parseScanData(std::istream& in, ScanData& data);
+	virtual inline std::string getScanCommand() const override { return CMD_GET_LDS_SCAN; }
+	virtual bool parseScanData(std::istream& in, ScanData& data) override;
 
 public:
 	static std::string ON;
@@ -163,19 +163,19 @@ template<typename ProtocolController>
 std::string NeatoController<ProtocolController>::CMD_GET_LDS_SCAN = "getldsscan";
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController() : ProtocolController()
+NeatoController<ProtocolController>::NeatoController() : BaseScanController<ProtocolController>()
 {
 	init();
 }
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController(const std::string& logPath) : ProtocolController(logPath)
+NeatoController<ProtocolController>::NeatoController(const std::string& logPath) : BaseScanController<ProtocolController>(logPath)
 {
 	init();
 }
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) : ProtocolController(logStream)
+NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) : BaseScanController<ProtocolController>(logStream)
 {
 	init();
 }

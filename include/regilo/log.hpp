@@ -44,6 +44,12 @@ public:
 	Log(std::iostream& stream);
 
 	/**
+	 * @brief Get the current underlying stream.
+	 * @return The underlying stream
+	 */
+	inline std::iostream& getStream() { return stream; }
+
+	/**
 	 * @brief Test if the stream is EOF.
 	 * @return true/false
 	 */

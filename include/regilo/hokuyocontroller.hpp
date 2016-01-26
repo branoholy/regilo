@@ -27,7 +27,7 @@
 
 #include <boost/algorithm/string/trim.hpp>
 
-#include "scandata.hpp"
+#include "scancontroller.hpp"
 
 namespace regilo {
 
@@ -50,7 +50,7 @@ public:
  * @brief The HokuyoController class is used to communicate with the Hokuyo scanner.
  */
 template<typename ProtocolController>
-class HokuyoController : public BaseHokuyoController, public ProtocolController
+class HokuyoController : public BaseHokuyoController, public BaseScanController<ProtocolController>
 {
 private:
 	std::size_t validFromStep, validToStep;
@@ -61,8 +61,8 @@ private:
 protected:
 	void init();
 
-	inline std::string getScanCommand() const override { return this->createCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount); }
-	bool parseScanData(std::istream& in, ScanData& data);
+	virtual inline std::string getScanCommand() const override { return this->createCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount); }
+	virtual bool parseScanData(std::istream& in, ScanData& data) override;
 
 public:
 	static std::string CMD_GET_VERSION;
@@ -103,19 +103,19 @@ template<typename ProtocolController>
 std::string HokuyoController<ProtocolController>::CMD_GET_SCAN = "G%03d%03d%02d";
 
 template<typename ProtocolController>
-HokuyoController<ProtocolController>::HokuyoController() : ProtocolController()
+HokuyoController<ProtocolController>::HokuyoController() : BaseScanController<ProtocolController>()
 {
 	init();
 }
 
 template<typename ProtocolController>
-HokuyoController<ProtocolController>::HokuyoController(const std::string& logPath) : ProtocolController(logPath)
+HokuyoController<ProtocolController>::HokuyoController(const std::string& logPath) : BaseScanController<ProtocolController>(logPath)
 {
 	init();
 }
 
 template<typename ProtocolController>
-HokuyoController<ProtocolController>::HokuyoController(std::iostream& logStream) : ProtocolController(logStream)
+HokuyoController<ProtocolController>::HokuyoController(std::iostream& logStream) : BaseScanController<ProtocolController>(logStream)
 {
 	init();
 }

@@ -31,15 +31,17 @@
 	#include <wx/wx.h>
 #endif
 
-#include <regilo/controller.hpp>
+#include <regilo/scancontroller.hpp>
+#include <regilo/scandata.hpp>
 
 class wxGCDC;
 
 class RegiloVisual : public wxApp
 {
 private:
+	regilo::ScanController *controller;
 	std::mutex controllerMutex;
-	regilo::Controller *controller;
+
 	bool useScanner;
 	bool manualScanning;
 	bool moveScanning;
@@ -59,21 +61,24 @@ private:
 	wxColour radarColor, pointColor;
 
 	double radarAngle;
-	double radarLength;
+	double radarRayLength;
 	std::thread radarThread;
 	std::condition_variable radarThreadCV;
 	std::mutex radarThreadCVMutex;
 
 	wxImage radarGradient;
+	wxImage radarGradientZoom;
 
 	void stopScanThread();
 	void scanAndShow();
+
+	wxImage zoomImage(const wxImage& image, double zoom);
 
 	wxRect getRotatedBoundingBox(const wxRect& rect, double angle);
 	void drawRadarGradient(wxDC& dc, int width2, int height2);
 
 public:
-	RegiloVisual(regilo::Controller *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
+	RegiloVisual(regilo::ScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
 
 	virtual bool OnInit();
 	virtual int OnExit();
