@@ -30,12 +30,16 @@
 #include <regilo/socketcontroller.hpp>
 
 RegiloVisual::RegiloVisual(regilo::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
-	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning)
+	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning),
+	radarColor(1, 204, 0), pointColor(200, 200, 200), radarAngle(0), radarLength(400)
 {
 }
 
 bool RegiloVisual::OnInit()
 {
+	wxInitAllImageHandlers();
+	radarGradient.LoadFile("/home/brano/prog/regilo/examples/regilo-visual/images/radar-gradient.png");
+
 	// Frame
 	frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
 
@@ -75,6 +79,25 @@ bool RegiloVisual::OnInit()
 		});
 	}
 
+	std::size_t fps = 24;
+	radarThread = std::thread([this, fps]()
+	{
+		while(scanThreadRunning)
+		{
+			radarAngle += M_PI / fps / 2;
+			this->GetTopWindow()->GetEventHandler()->CallAfter([this]()
+			{
+				frame->Refresh();
+			});
+
+			if(scanThreadRunning)
+			{
+				std::unique_lock<std::mutex> lock(radarThreadCVMutex);
+				radarThreadCV.wait_for(lock, std::chrono::milliseconds(1000 / fps));
+			}
+		}
+	});
+
 	frame->Show(true);
 
 	return true;
@@ -84,6 +107,7 @@ int RegiloVisual::OnExit()
 {
 	stopScanThread();
 	if(scanThread.joinable()) scanThread.join();
+	if(radarThread.joinable()) radarThread.join();
 
 	return wxApp::OnExit();
 }
@@ -161,10 +185,61 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 	}
 }
 
+wxRect RegiloVisual::getRotatedBoundingBox(const wxRect& rect, double angle)
+{
+	double c = std::cos(angle);
+	double s = std::sin(angle);
+
+	wxPoint minBound(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+	wxPoint maxBound(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
+
+	wxPoint points[] = {rect.GetLeftTop(), rect.GetLeftBottom(), rect.GetRightTop(), rect.GetRightBottom()};
+	for(wxPoint& point : points)
+	{
+		int x = std::ceil(c * point.x - s * point.y);
+		int y = std::ceil(s * point.x + c * point.y);
+
+		if(x < minBound.x) minBound.x = x;
+		if(y < minBound.y) minBound.y = y;
+		if(x > maxBound.x) maxBound.x = x;
+		if(y > maxBound.y) maxBound.y = y;
+
+		point.x = x;
+		point.y = y;
+	}
+
+	wxRect box;
+	box.SetLeftTop(minBound);
+	box.SetRightBottom(maxBound);
+
+	return box;
+}
+
+void RegiloVisual::drawRadarGradient(wxGCDC& gcdc, int width2, int height2)
+{
+	double radarLineX = width2 + radarLength * std::cos(radarAngle);
+	double radarLineY = height2 - radarLength * std::sin(radarAngle);
+	gcdc.DrawLine(width2, height2, radarLineX, radarLineY);
+
+	wxImage rotatedImage = radarGradient.Rotate(radarAngle, wxPoint());
+
+	wxRect boundingBox = getRotatedBoundingBox(wxRect(radarGradient.GetSize()), -radarAngle);
+
+	wxPoint offset = boundingBox.GetLeftTop();
+	offset.x += width2 - 1;
+	offset.y += height2 - 1;
+
+	gcdc.DrawBitmap(wxBitmap(rotatedImage), offset);
+}
+
 void RegiloVisual::repaint(wxPaintEvent&)
 {
 	wxPaintDC dc(panel);
 	wxGCDC gcdc(dc);
+
+	// Draw backgroud
+	gcdc.SetBrush(*wxBLACK_BRUSH);
+	gcdc.DrawRectangle(panel->GetSize());
 
 	int width, height;
 	panel->GetSize(&width, &height);
@@ -172,19 +247,23 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	int width2 = width / 2;
 	int height2 = height / 2;
 
-	gcdc.SetPen(*wxBLACK_PEN);
-	gcdc.SetBrush(*wxTRANSPARENT_BRUSH);
-
+	// Draw axis
+	gcdc.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
 	gcdc.DrawLine(0, height2, width, height2);
 	gcdc.DrawLine(width2, 0, width2, height);
 
+	// Draw circles
+	gcdc.SetBrush(*wxTRANSPARENT_BRUSH);
 	for(std::size_t radius = 100; radius <= 400; radius += 100)
 	{
 		gcdc.DrawCircle(width2, height2, radius);
 	}
 
+	drawRadarGradient(gcdc, width2, height2);
+
 	controllerMutex.lock();
 
+	gcdc.SetPen(*wxThePenList->FindOrCreatePen(pointColor));
 	for(const regilo::ScanRecord& record : data)
 	{
 		if(record.error) continue;
@@ -205,6 +284,7 @@ void RegiloVisual::stopScanThread()
 	{
 		scanThreadRunning = false;
 		scanThreadCV.notify_one();
+		radarThreadCV.notify_one();
 	}
 }
 
