@@ -26,11 +26,16 @@
 #include <regilo/neatocontroller.hpp>
 #include <regilo/hokuyocontroller.hpp>
 
+#include <regilo/serialcontroller.hpp>
+#include <regilo/socketcontroller.hpp>
+
 void printHelp()
 {
 	std::cout << "Usage: regilo-scan [options]" << std::endl
 			  << "Options:" << std::endl
-			  << "  -c <controller>    The controller name (\"neato\" or \"hokuyo\", default: \"neato\")." << std::endl
+			  << "  -c <controller>    The controller name in format \"device:protocol\"." << std::endl
+			  << "                     Device can be \"neato\" or \"hokuyo\" (default: \"neato\")." << std::endl
+			  << "                     Protocol can be \"socket\" or \"serial\" (default: \"socket\")." << std::endl
 			  << "  -e <endpoint>      The endpoint that is used to connect to the device" << std::endl
 			  << "                     (path or ip and port, default: \"10.0.0.1:12345\")." << std::endl
 			  << "  -h                 Show this help." << std::endl;
@@ -40,7 +45,10 @@ int main(int argc, char** argv)
 {
 	std::cout.setf(std::ios_base::boolalpha);
 
-	std::string controllerName = "neato";
+	std::string controllerDevice = "neato";
+	std::string controllerProtocol = "socket";
+	std::string controllerName = controllerDevice + ':' + controllerProtocol;
+
 	std::string endpoint = "10.0.0.1:12345";
 	for(int i = 1; i < argc; i++)
 	{
@@ -49,9 +57,24 @@ int main(int argc, char** argv)
 		{
 			controllerName = std::string(argv[++i]);
 
-			if(controllerName != "neato" && controllerName != "hokuyo")
+			std::size_t colonPos = controllerName.find(':');
+			if(colonPos == std::string::npos)
 			{
-				std::cout << "Error: Unknown controller (use \"neato\" or \"hokuyo\")." << std::endl;
+				std::cout << "Error: Missing controller protocol (use \"socket\" or \"serial\")." << std::endl;
+				return 1;
+			}
+
+			controllerDevice = controllerName.substr(0, colonPos);
+			if(controllerDevice != "neato" && controllerDevice != "hokuyo")
+			{
+				std::cout << "Error: Unknown controller device (use \"neato\" or \"hokuyo\")." << std::endl;
+				return 1;
+			}
+
+			controllerProtocol = controllerName.substr(colonPos + 1);
+			if(controllerProtocol != "socket" && controllerProtocol != "serial")
+			{
+				std::cout << "Error: Unknown controller protocol (use \"socket\" or \"serial\")." << std::endl;
 				return 1;
 			}
 		}
@@ -65,18 +88,22 @@ int main(int argc, char** argv)
 
 	std::cout << "Hello Regilo!" << std::endl;
 
-	regilo::Controller *controller;
-	if(controllerName == "neato") controller = new regilo::NeatoController();
-	else controller = new regilo::HokuyoController();
+	regilo::Controller *controller = nullptr;
+	if(controllerName == "neato:socket") controller = new regilo::NeatoController<regilo::SocketController>();
+	else if(controllerName == "neato:serial") controller = new regilo::NeatoController<regilo::SerialController>();
+	else if(controllerName == "hokuyo:socket") controller = new regilo::HokuyoController<regilo::SocketController>();
+	else if(controllerName == "hokuyo:serial") controller = new regilo::HokuyoController<regilo::SerialController>();
 
 	std::cout << "Using " << controllerName << " controller." << std::endl;
 
 	std::cout << "Connecting to " << endpoint << std::endl;
 	controller->connect(endpoint);
 
-	if(controllerName == "neato")
+	if(controllerDevice == "neato")
 	{
-		regilo::NeatoController *neatoController = static_cast<regilo::NeatoController*>(controller);
+		regilo::BaseNeatoController *neatoController;
+		if(controllerProtocol == "socket") neatoController = static_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
+		else neatoController = static_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
 
 		neatoController->setTestMode(true);
 		std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
@@ -90,9 +117,11 @@ int main(int argc, char** argv)
 	regilo::ScanData data = controller->getScan();
 	std::cout << "Scan data:" << std::endl << data << std::endl;
 
-	if(controllerName == "neato")
+	if(controllerDevice == "neato")
 	{
-		regilo::NeatoController *neatoController = static_cast<regilo::NeatoController*>(controller);
+		regilo::BaseNeatoController *neatoController;
+		if(controllerProtocol == "socket") neatoController = static_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
+		else neatoController = static_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
 
 		neatoController->setLdsRotation(false);
 		std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
@@ -100,9 +129,12 @@ int main(int argc, char** argv)
 		neatoController->setTestMode(false);
 		std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
 	}
-	else if(controllerName == "hokuyo")
+	else if(controllerDevice == "hokuyo")
 	{
-		regilo::HokuyoController *hokuyoController = static_cast<regilo::HokuyoController*>(controller);
+		regilo::BaseHokuyoController *hokuyoController;
+		if(controllerProtocol == "socket") hokuyoController = static_cast<regilo::HokuyoController<regilo::SocketController>*>(controller);
+		else hokuyoController = static_cast<regilo::HokuyoController<regilo::SerialController>*>(controller);
+
 		std::map<std::string, std::string> info = hokuyoController->getVersionInfo();
 		std::cout << "Version info: " << std::endl;
 		for(const auto& kw : info)

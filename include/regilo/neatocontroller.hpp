@@ -22,18 +22,66 @@
 #ifndef REGILO_NEATOCONTROLLER_HPP
 #define REGILO_NEATOCONTROLLER_HPP
 
-#include <boost/asio/ip/tcp.hpp>
+#include <cmath>
 
-#include "controller.hpp"
+#include <boost/algorithm/string.hpp>
+
+#include "scandata.hpp"
 
 namespace regilo {
 
-namespace bai = boost::asio::ip;
+/**
+ * @brief The BaseNeatoController class is the interface for the NeatoController class.
+ */
+class BaseNeatoController
+{
+public:
+	virtual ~BaseNeatoController() = default;
+
+	/**
+	 * @brief Get whether the Neato is in the test mode.
+	 * @return true/false
+	 */
+	virtual bool getTestMode() const = 0;
+
+	/**
+	 * @brief Set or unset the test mode.
+	 * @param testMode true/false
+	 */
+	virtual void setTestMode(bool testMode) = 0;
+
+	/**
+	 * @brief Get whether the Neato has LDS rotation on or off.
+	 * @return true/false
+	 */
+	virtual bool getLdsRotation() const = 0;
+
+	/**
+	 * @brief Set LDS rotation on or off.
+	 * @param ldsRotation true/false
+	 */
+	virtual void setLdsRotation(bool ldsRotation) = 0;
+
+	/**
+	 * @brief Set the specified motor to run in a direction at a requested speed.
+	 * @param left Distance in millimeters to drive the left wheel (pos = forward, neg = backward).
+	 * @param right Distance in millimeters to drive the right wheel (pos = forward, neg = backward).
+	 * @param speed Speed in millimeters/second.
+	 */
+	virtual void setMotor(int left, int right, int speed) = 0;
+
+	/**
+	 * @brief Get the current scheduler time.
+	 * @return "DayOfWeek HourOf24:Min:Sec" (example: "Sunday 13:57:09")
+	 */
+	virtual std::string getTime() = 0;
+};
 
 /**
  * @brief The NeatoController class is used to communicate with the Neato robot.
  */
-class NeatoController : public BaseController<bai::tcp::socket>
+template<typename ProtocolController>
+class NeatoController : public BaseNeatoController, public ProtocolController
 {
 private:
 	bool testMode;
@@ -63,85 +111,159 @@ public:
 	NeatoController();
 
 	/**
-	 * @brief Controller with a log file specified by a path.
+	 * @brief Constructor with a log file specified by a path.
 	 * @param logPath Path to the log file.
 	 */
 	NeatoController(const std::string& logPath);
 
 	/**
-	 * @brief Controller with a log specified by a stream.
+	 * @brief Constructor with a log specified by a stream.
 	 * @param logStream The log stream.
 	 */
 	NeatoController(std::iostream& logStream);
 
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~NeatoController();
+	virtual inline bool getTestMode() const override { return testMode; }
 
-	/**
-	 * @brief Connect the controller to the Neato robot.
-	 * @param endpoint The endpoint with the IP address and port of the Neato robot (e.g. "10.0.0.1:12345").
-	 */
-	void connect(const std::string& endpoint);
+	virtual void setTestMode(bool testMode) override;
 
-	/**
-	 * @brief Connect the controller to the Neato robot.
-	 * @param ip The IP address of the Neato robot (e.g. "10.0.0.1")
-	 * @param port The port number of the Neato robot (e.g. 12345)
-	 */
-	void connect(const std::string& ip, unsigned short port);
+	virtual inline bool getLdsRotation() const override { return ldsRotation; }
 
-	/**
-	 * @brief Connect the controller to the Neato robot.
-	 * @param endpoint The endpoint of the Neato robot.
-	 */
-	void connect(const bai::tcp::endpoint& endpoint);
+	virtual void setLdsRotation(bool ldsRotation) override;
 
-	/**
-	 * @brief Get the endpoint of the connected Neato robot.
-	 * @return The endpoint.
-	 */
-	std::string getEndpoint() const;
+	virtual void setMotor(int left, int right, int speed) override;
 
-	/**
-	 * @brief Get whether the Neato is in the test mode.
-	 * @return true/false
-	 */
-	inline bool getTestMode() const { return testMode; }
-
-	/**
-	 * @brief Set or unset the test mode.
-	 * @param testMode true/false
-	 */
-	void setTestMode(bool testMode);
-
-	/**
-	 * @brief Get whether the Neato has LDS rotation on or off.
-	 * @return true/false
-	 */
-	inline bool getLdsRotation() const { return ldsRotation; }
-
-	/**
-	 * @brief Set LDS rotation on or off.
-	 * @param ldsRotation true/false
-	 */
-	void setLdsRotation(bool ldsRotation);
-
-	/**
-	 * @brief Set the specified motor to run in a direction at a requested speed.
-	 * @param left Distance in millimeters to drive the left wheel (pos = forward, neg = backward).
-	 * @param right Distance in millimeters to drive the right wheel (pos = forward, neg = backward).
-	 * @param speed Speed in millimeters/second.
-	 */
-	void setMotor(int left, int right, int speed);
-
-	/**
-	 * @brief Get the current scheduler time.
-	 * @return "DayOfWeek HourOf24:Min:Sec" (example: "Sunday 13:57:09")
-	 */
-	std::string getTime();
+	virtual std::string getTime() override;
 };
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::ON = "on";
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::OFF = "off";
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::LDS_SCAN_HEADER = "AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX";
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::LDS_SCAN_FOOTER = "ROTATION_SPEED,";
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::CMD_TEST_MODE = "testmode %s";
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::CMD_SET_LDS_ROTATION = "setldsrotation %s";
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::CMD_SET_MOTOR = "setmotor %d %d %d";
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::CMD_GET_TIME = "gettime";
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::CMD_GET_LDS_SCAN = "getldsscan";
+
+template<typename ProtocolController>
+NeatoController<ProtocolController>::NeatoController() : ProtocolController()
+{
+	init();
+}
+
+template<typename ProtocolController>
+NeatoController<ProtocolController>::NeatoController(const std::string& logPath) : ProtocolController(logPath)
+{
+	init();
+}
+
+template<typename ProtocolController>
+NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) : ProtocolController(logStream)
+{
+	init();
+}
+
+template<typename ProtocolController>
+void NeatoController<ProtocolController>::init()
+{
+	testMode = false;
+	ldsRotation = false;
+
+	this->RESPONSE_END.clear();
+	this->RESPONSE_END.push_back(0x1a);
+}
+
+template<typename ProtocolController>
+void NeatoController<ProtocolController>::setTestMode(bool testMode)
+{
+	this->createCommandAndSend(CMD_TEST_MODE, (testMode ? ON : OFF).c_str());
+	this->testMode = testMode;
+}
+
+template<typename ProtocolController>
+void NeatoController<ProtocolController>::setLdsRotation(bool ldsRotation)
+{
+	this->createCommandAndSend(CMD_SET_LDS_ROTATION, (ldsRotation ? ON : OFF).c_str());
+	this->ldsRotation = ldsRotation;
+}
+
+template<typename ProtocolController>
+void NeatoController<ProtocolController>::setMotor(int left, int right, int speed)
+{
+	this->createCommandAndSend(CMD_SET_MOTOR, left, right, speed);
+}
+
+template<typename ProtocolController>
+bool NeatoController<ProtocolController>::parseScanData(std::istream& in, ScanData& data)
+{
+	int lastId = 0;
+	double M_PI_180 = M_PI / 180.0;
+
+	std::string line;
+	std::getline(in, line);
+	boost::algorithm::trim(line);
+
+	if(line == NeatoController<ProtocolController>::LDS_SCAN_HEADER)
+	{
+		while(true)
+		{
+			std::getline(in, line);
+			boost::algorithm::trim(line);
+
+			if(boost::algorithm::starts_with(line, NeatoController<ProtocolController>::LDS_SCAN_FOOTER))
+			{
+				std::vector<std::string> values;
+				boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
+				data.rotationSpeed = std::stod(values.at(1));
+
+				break;
+			}
+			else
+			{
+				std::vector<std::string> values;
+				boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
+
+				int id = lastId++;
+				double angle = std::stod(values.at(0)) * M_PI_180;
+				double distance = std::stod(values.at(1));
+				int intensity = std::stoi(values.at(2));
+				int errorCode = std::stoi(values.at(3));
+				bool error = (errorCode != 0);
+
+				if(error) distance = -1;
+
+				data.emplace_back(id, angle, distance, intensity, errorCode, error);
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+template<typename ProtocolController>
+std::string NeatoController<ProtocolController>::getTime()
+{
+	return this->sendCommand(CMD_GET_TIME);
+}
 
 }
 

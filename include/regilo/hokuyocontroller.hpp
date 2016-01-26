@@ -22,22 +22,37 @@
 #ifndef REGILO_HOKUYOCONTROLLER_HPP
 #define REGILO_HOKUYOCONTROLLER_HPP
 
+#include <cmath>
 #include <map>
 
-#include <boost/asio/serial_port.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
-#include "controller.hpp"
+#include "scandata.hpp"
 
 namespace regilo {
 
 /**
+ * @brief The BaseHokuyoController class is the interface for the HokuyoController class.
+ */
+class BaseHokuyoController
+{
+public:
+	virtual ~BaseHokuyoController() = default;
+
+	/**
+	 * @brief Return information about version.
+	 * @return Key-value pairs with the information
+	 */
+	virtual std::map<std::string, std::string> getVersionInfo() = 0;
+};
+
+/**
  * @brief The HokuyoController class is used to communicate with the Hokuyo scanner.
  */
-class HokuyoController : public BaseController<ba::serial_port>
+template<typename ProtocolController>
+class HokuyoController : public BaseHokuyoController, public ProtocolController
 {
 private:
-	std::string endpoint;
-
 	std::size_t validFromStep, validToStep;
 	std::size_t maxStep;
 	std::size_t fromStep, toStep, clusterCount;
@@ -46,7 +61,7 @@ private:
 protected:
 	void init();
 
-	inline std::string getScanCommand() const override { return createCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount); }
+	inline std::string getScanCommand() const override { return this->createCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount); }
 	bool parseScanData(std::istream& in, ScanData& data);
 
 public:
@@ -59,34 +74,18 @@ public:
 	HokuyoController();
 
 	/**
-	 * @brief Controller with a log file specified by a path.
+	 * @brief Constructor with a log file specified by a path.
 	 * @param logPath Path to the log file.
 	 */
 	HokuyoController(const std::string& logPath);
 
 	/**
-	 * @brief Controller with a log specified by a stream.
+	 * @brief Constructor with a log specified by a stream.
 	 * @param logStream The log stream.
 	 */
 	HokuyoController(std::iostream& logStream);
 
-	/**
-	 * @brief Connect the controller to the Hokuyo scanner.
-	 * @param endpoint The endpoint with the path to the device (e.g. "/dev/ttyACM0").
-	 */
-	void connect(const std::string& endpoint);
-
-	/**
-	 * @brief Get the endpoint of the Hokuyo scanner.
-	 * @return The endpoint.
-	 */
-	inline std::string getEndpoint() const { return endpoint; }
-
-	/**
-	 * @brief Return information about version.
-	 * @return Key-value pairs with the information
-	 */
-	std::map<std::string, std::string> getVersionInfo();
+	virtual std::map<std::string, std::string> getVersionInfo() override;
 
 	/**
 	 * @brief Set parameters for the scan command.
@@ -96,6 +95,124 @@ public:
 	 */
 	void setScanParameters(std::size_t fromStep, std::size_t toStep, std::size_t clusterCount);
 };
+
+template<typename ProtocolController>
+std::string HokuyoController<ProtocolController>::CMD_GET_VERSION = "V";
+
+template<typename ProtocolController>
+std::string HokuyoController<ProtocolController>::CMD_GET_SCAN = "G%03d%03d%02d";
+
+template<typename ProtocolController>
+HokuyoController<ProtocolController>::HokuyoController() : ProtocolController()
+{
+	init();
+}
+
+template<typename ProtocolController>
+HokuyoController<ProtocolController>::HokuyoController(const std::string& logPath) : ProtocolController(logPath)
+{
+	init();
+}
+
+template<typename ProtocolController>
+HokuyoController<ProtocolController>::HokuyoController(std::iostream& logStream) : ProtocolController(logStream)
+{
+	init();
+}
+
+template<typename ProtocolController>
+void HokuyoController<ProtocolController>::init()
+{
+	this->RESPONSE_END = "\n\n";
+	validFromStep = 44;
+	validToStep = 725;
+	maxStep = 768;
+	startAngle = -135 * M_PI / 180;
+
+	setScanParameters(0, maxStep, 1);
+}
+
+template<typename ProtocolController>
+std::map<std::string, std::string> HokuyoController<ProtocolController>::getVersionInfo()
+{
+	std::map<std::string, std::string> versionInfo;
+
+	char status;
+	this->sendCommand(CMD_GET_VERSION);
+	this->deviceOutput >> status;
+
+	if(status == '0')
+	{
+		std::string line;
+		while(std::getline(this->deviceOutput, line))
+		{
+			if(line.empty()) continue;
+
+			std::size_t colonPos = line.find(':');
+			std::string name = line.substr(0, colonPos);
+			std::string value = line.substr(colonPos + 1);
+
+			boost::algorithm::trim(name);
+			boost::algorithm::trim(value);
+
+			versionInfo[name] = value;
+		}
+	}
+
+	return versionInfo;
+}
+
+template<typename ProtocolController>
+void HokuyoController<ProtocolController>::setScanParameters(std::size_t fromStep, std::size_t toStep, std::size_t clusterCount)
+{
+	if(fromStep > maxStep) throw new std::invalid_argument("Invalid fromStep argument.");
+	if(toStep > maxStep) throw new std::invalid_argument("Invalid fromStep argument.");
+	if(clusterCount > 99) throw new std::invalid_argument("Invalid clusterCount argument.");
+	if(fromStep > toStep) throw new std::invalid_argument("fromStep has to be lower than toStep.");
+
+	this->fromStep = fromStep;
+	this->toStep = toStep;
+	this->clusterCount = clusterCount;
+}
+
+template<typename ProtocolController>
+bool HokuyoController<ProtocolController>::parseScanData(std::istream& in, ScanData& data)
+{
+	char status;
+	in >> status;
+	if(status != '0') return false;
+
+	double resolution = M_PI / 512;
+
+	int lastId = 0;
+	std::size_t step = fromStep - 1;
+	while(in)
+	{
+		step++;
+
+		char high, low;
+		in >> high >> low;
+
+		if(step < validFromStep || step > validToStep) continue;
+
+		int id = lastId++;
+		double angle = step * resolution + startAngle;
+		int distance = ((high - '0') << 6) | (low - '0');
+		int errorCode = 0;
+		bool error = false;
+
+		if(distance < 20)
+		{
+			errorCode = distance;
+			distance = -1;
+			error = true;
+		}
+
+		data.emplace_back(id, angle, distance, -1, errorCode, error);
+	}
+
+	return true;
+}
 
 }
 

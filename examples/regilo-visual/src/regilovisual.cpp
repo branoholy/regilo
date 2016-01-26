@@ -23,7 +23,11 @@
 
 #include <chrono>
 
+#include <wx/dcgraph.h>
+
 #include <regilo/neatocontroller.hpp>
+#include <regilo/serialcontroller.hpp>
+#include <regilo/socketcontroller.hpp>
 
 RegiloVisual::RegiloVisual(regilo::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning)
@@ -95,7 +99,9 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 		}
 	}
 
-	regilo::NeatoController *neatoController = dynamic_cast<regilo::NeatoController*>(controller);
+	regilo::BaseNeatoController *neatoController = dynamic_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
+	if(neatoController == nullptr) neatoController = dynamic_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
+
 	switch(keyEvent.GetKeyCode())
 	{
 		case WXK_UP:
@@ -158,6 +164,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 void RegiloVisual::repaint(wxPaintEvent&)
 {
 	wxPaintDC dc(panel);
+	wxGCDC gcdc(dc);
 
 	int width, height;
 	panel->GetSize(&width, &height);
@@ -165,12 +172,19 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	int width2 = width / 2;
 	int height2 = height / 2;
 
-	dc.DrawLine(0, height2, width, height2);
-	dc.DrawLine(width2, 0, width2, height);
+	gcdc.SetPen(*wxBLACK_PEN);
+	gcdc.SetBrush(*wxTRANSPARENT_BRUSH);
+
+	gcdc.DrawLine(0, height2, width, height2);
+	gcdc.DrawLine(width2, 0, width2, height);
+
+	for(std::size_t radius = 100; radius <= 400; radius += 100)
+	{
+		gcdc.DrawCircle(width2, height2, radius);
+	}
 
 	controllerMutex.lock();
 
-	dc.SetPen(*wxBLACK_PEN);
 	for(const regilo::ScanRecord& record : data)
 	{
 		if(record.error) continue;
@@ -179,7 +193,7 @@ void RegiloVisual::repaint(wxPaintEvent&)
 		double x = width2 + distance * std::cos(record.angle);
 		double y = height2 - distance * std::sin(record.angle);
 
-		dc.DrawRectangle(x, y, 2, 2);
+		gcdc.DrawRectangle(x, y, 2, 2);
 	}
 
 	controllerMutex.unlock();

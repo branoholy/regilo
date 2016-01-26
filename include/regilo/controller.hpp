@@ -49,7 +49,7 @@ public:
 	virtual ~Controller() = default;
 
 	/**
-	 * @brief Connect the controller to the device.
+	 * @brief Connect the controller to a device.
 	 * @param endpoint The endpoint of device.
 	 */
 	virtual void connect(const std::string& endpoint) = 0;
@@ -133,18 +133,9 @@ public:
 	 */
 	virtual ~BaseController();
 
-	/**
-	 * @brief Get the path of log file if the controller was created with a log path otherwise the empty string.
-	 * @return The path or empty string.
-	 */
-	virtual inline std::string getLogPath() const { return logPath; }
+	virtual inline std::string getLogPath() const override { return logPath; }
 
-	/**
-	 * @brief Get a scan from the device.
-	 * @param fromDevice Specify if you want to get a scan from the device (true) or log (false). Default: true
-	 * @return ScanData
-	 */
-	virtual ScanData getScan(bool fromDevice = true) final;
+	virtual ScanData getScan(bool fromDevice = true) override final;
 
 	/**
 	 * @brief Send a command to the device.
