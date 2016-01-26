@@ -46,6 +46,9 @@ private:
 
 	wxFrame *frame;
 	wxPanel *panel;
+	bool fullscreen;
+	double zoom;
+
 	regilo::ScanData data;
 
 	std::thread scanThread;
@@ -67,7 +70,7 @@ private:
 	void scanAndShow();
 
 	wxRect getRotatedBoundingBox(const wxRect& rect, double angle);
-	void drawRadarGradient(wxGCDC& gcdc, int width2, int height2);
+	void drawRadarGradient(wxDC& dc, int width2, int height2);
 
 public:
 	RegiloVisual(regilo::Controller *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);

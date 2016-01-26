@@ -31,14 +31,18 @@
 
 RegiloVisual::RegiloVisual(regilo::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning),
-	radarColor(1, 204, 0), pointColor(200, 200, 200), radarAngle(0), radarLength(400)
+	fullscreen(false), zoom(0.08),
+	radarColor(1, 204, 0), pointColor(200, 200, 200), radarAngle(0), radarLength(4000)
 {
 }
 
 bool RegiloVisual::OnInit()
 {
 	wxInitAllImageHandlers();
-	radarGradient.LoadFile("/home/brano/prog/regilo/examples/regilo-visual/images/radar-gradient.png");
+	radarGradient.LoadFile("images/radar-gradient.png");
+
+	double imageZoom = zoom * 10;
+	radarGradient.Rescale(radarGradient.GetWidth() * imageZoom, radarGradient.GetHeight() * imageZoom);
 
 	// Frame
 	frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
@@ -180,6 +184,16 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				scanAndShow();
 			}
 
+		case WXK_F11:
+			fullscreen = !fullscreen;
+			frame->ShowFullScreen(fullscreen);
+			break;
+
+		case WXK_ESCAPE:
+			fullscreen = false;
+			frame->ShowFullScreen(fullscreen);
+			break;
+
 		default:
 			keyEvent.Skip();
 	}
@@ -215,21 +229,20 @@ wxRect RegiloVisual::getRotatedBoundingBox(const wxRect& rect, double angle)
 	return box;
 }
 
-void RegiloVisual::drawRadarGradient(wxGCDC& gcdc, int width2, int height2)
+void RegiloVisual::drawRadarGradient(wxDC& dc, int width2, int height2)
 {
-	double radarLineX = width2 + radarLength * std::cos(radarAngle);
-	double radarLineY = height2 - radarLength * std::sin(radarAngle);
-	gcdc.DrawLine(width2, height2, radarLineX, radarLineY);
-
 	wxImage rotatedImage = radarGradient.Rotate(radarAngle, wxPoint());
 
-	wxRect boundingBox = getRotatedBoundingBox(wxRect(radarGradient.GetSize()), -radarAngle);
+	wxRect box(radarGradient.GetSize());
+	box.width++;
+	box.height++;
+	wxRect rotatedBox = getRotatedBoundingBox(box, -radarAngle);
 
-	wxPoint offset = boundingBox.GetLeftTop();
+	wxPoint offset = rotatedBox.GetLeftTop();
 	offset.x += width2 - 1;
 	offset.y += height2 - 1;
 
-	gcdc.DrawBitmap(wxBitmap(rotatedImage), offset);
+	dc.DrawBitmap(wxBitmap(rotatedImage), offset);
 }
 
 void RegiloVisual::repaint(wxPaintEvent&)
@@ -238,8 +251,8 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	wxGCDC gcdc(dc);
 
 	// Draw backgroud
-	gcdc.SetBrush(*wxBLACK_BRUSH);
-	gcdc.DrawRectangle(panel->GetSize());
+	dc.SetBrush(*wxBLACK_BRUSH);
+	dc.DrawRectangle(panel->GetSize());
 
 	int width, height;
 	panel->GetSize(&width, &height);
@@ -248,31 +261,36 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	int height2 = height / 2;
 
 	// Draw axis
-	gcdc.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
-	gcdc.DrawLine(0, height2, width, height2);
-	gcdc.DrawLine(width2, 0, width2, height);
+	dc.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
+	dc.DrawLine(0, height2, width, height2);
+	dc.DrawLine(width2, 0, width2, height);
 
 	// Draw circles
+	gcdc.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
 	gcdc.SetBrush(*wxTRANSPARENT_BRUSH);
-	for(std::size_t radius = 100; radius <= 400; radius += 100)
+	for(std::size_t radius = 1000; radius <= 4000; radius += 1000)
 	{
-		gcdc.DrawCircle(width2, height2, radius);
+		gcdc.DrawCircle(width2, height2, radius * zoom);
 	}
 
-	drawRadarGradient(gcdc, width2, height2);
+	// Draw radar ray
+	double radarLineX = width2 + zoom * radarLength * std::cos(radarAngle);
+	double radarLineY = height2 - zoom * radarLength * std::sin(radarAngle);
+	gcdc.DrawLine(width2, height2, radarLineX, radarLineY);
+	drawRadarGradient(dc, width2, height2);
 
 	controllerMutex.lock();
 
-	gcdc.SetPen(*wxThePenList->FindOrCreatePen(pointColor));
+	dc.SetPen(*wxThePenList->FindOrCreatePen(pointColor));
 	for(const regilo::ScanRecord& record : data)
 	{
 		if(record.error) continue;
 
-		double distance = record.distance / 10;
+		double distance = record.distance * zoom;
 		double x = width2 + distance * std::cos(record.angle);
 		double y = height2 - distance * std::sin(record.angle);
 
-		gcdc.DrawRectangle(x, y, 2, 2);
+		dc.DrawRectangle(x, y, 2, 2);
 	}
 
 	controllerMutex.unlock();
