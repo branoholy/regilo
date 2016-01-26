@@ -20,7 +20,7 @@ according to the [build instructions](#build) below, and
 ### Neato XV
 ```cpp
 // Create the controller
-regilo::NeatoController controller;
+regilo::NeatoController<regilo::SocketController> controller;
 
 // Connect it
 controller.connect("10.0.0.1:12345");
@@ -40,7 +40,7 @@ controller.setTestMode(false);
 ### Hokuyo
 ```cpp
 // Create the controller
-regilo::HokuyoController controller;
+regilo::HokuyoController<regilo::SerialController> controller;
 
 // Connect it
 controller.connect("/dev/ttyACM0");
