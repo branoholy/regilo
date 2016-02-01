@@ -7,6 +7,7 @@ project("regilo")
 option(example "Build the console example")
 option(example-gui "Build the GUI example")
 option(examples "Build all examples")
+option(INSTALL_LIB_DIR "Installation directory for libraries")
 
 # Set build type and definitions
 if($ENV{DEBUG})
@@ -38,7 +39,11 @@ include_directories("include")
 add_library(${PROJECT_NAME} SHARED ${CPPS} ${HPPS})
 
 # Install library
-install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
+if(${INSTALL_LIB_DIR} STREQUAL "OFF")
+	set(INSTALL_LIB_DIR "lib")
+endif()
+
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${INSTALL_LIB_DIR})
 install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION include/${PROJECT_NAME})
 
 # Add uninstall
