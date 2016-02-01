@@ -113,9 +113,40 @@ In Ubuntu, you can use my [ppa:branoholy/regilo](https://launchpad.net/~branohol
 and install the `libregilo-dev` package.
 
 ```text
-sudo add-apt-repository ppa:branoholy/regilo
-sudo apt-get update
-sudo apt-get install libregilo-dev
+$ sudo add-apt-repository ppa:branoholy/regilo
+$ sudo apt-get update
+$ sudo apt-get install libregilo-dev
+```
+
+#### Debian
+[openSUSE Build Service](https://build.opensuse.org/package/show/home:branoholy/regilo)
+can be used in Debian 8. You need to add my key and repository, and then install
+the `libregilo-dev` package.
+
+```text
+$ wget http://download.opensuse.org/repositories/home:/branoholy/Debian_8.0/Release.key -O - | sudo apt-key add -
+$ sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/branoholy/ Debian_8.0/' >> /etc/apt/sources.list"
+$ sudo apt-get update
+$ sudo apt-get install libregilo-dev
+```
+
+#### Fedora
+[openSUSE Build Service](https://build.opensuse.org/package/show/home:branoholy/regilo)
+can be used in Fedora 22 and 23 as well. You need to add my repository and then
+install the `regilo-devel` package.
+
+##### Fedora 22
+
+```text
+$ sudo dnf config-manager --add-repo http://download.opensuse.org/repositories/home:/branoholy/Fedora_22/home:branoholy.repo
+$ sudo dnf install regilo-devel
+```
+
+##### Fedora 23
+
+```text
+$ sudo dnf config-manager --add-repo http://download.opensuse.org/repositories/home:/branoholy/Fedora_23/home:branoholy.repo
+$ sudo dnf install regilo-devel
 ```
 
 ## Examples
