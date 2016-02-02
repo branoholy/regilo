@@ -32,7 +32,7 @@
 RegiloVisual::RegiloVisual(regilo::ScanController *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning),
 	fullscreen(false), zoom(0.08),
-	radarColor(1, 204, 0), pointColor(200, 200, 200), radarAngle(0), radarRayLength(4000)
+	radarColor(0, 200, 0), pointColor(200, 200, 200), radarAngle(0), radarRayLength(4000)
 {
 }
 
@@ -60,7 +60,7 @@ bool RegiloVisual::OnInit()
 
 	// Panel
 	panel = new wxPanel(frame);
-	panel->GetEventHandler()->Bind(wxEVT_KEY_DOWN, &RegiloVisual::setMotorByKey, this);
+	panel->GetEventHandler()->Bind(wxEVT_KEY_UP, &RegiloVisual::setMotorByKey, this);
 	panel->GetEventHandler()->Bind(wxEVT_PAINT, &RegiloVisual::repaint, this);
 	panel->GetEventHandler()->Bind(wxEVT_LEFT_DCLICK, [this](wxMouseEvent&)
 	{
@@ -120,7 +120,10 @@ bool RegiloVisual::OnInit()
 	{
 		while(scanThreadRunning)
 		{
+			radarMutex.lock();
 			radarAngle += M_PI / fps / 2;
+			radarMutex.unlock();
+
 			this->GetTopWindow()->GetEventHandler()->CallAfter([this]()
 			{
 				frame->Refresh();
@@ -175,6 +178,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				if(keyEvent.ControlDown()) neatoController->setMotor(500, 500, 100);
 				else neatoController->setMotor(100, 100, 50);
 
+				frame->SetStatusText("Going up... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -184,7 +188,10 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			{
 				controllerMutex.lock();
 				frame->SetStatusText("Going down...", 0);
+
 				neatoController->setMotor(-100, -100, 50);
+
+				frame->SetStatusText("Going down... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -194,8 +201,11 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			{
 				controllerMutex.lock();
 				frame->SetStatusText("Turning left...", 0);
+
 				if(keyEvent.ControlDown()) neatoController->setMotor(-30, 30, 50);
 				else neatoController->setMotor(20, 100, 50);
+
+				frame->SetStatusText("Turning left... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -205,8 +215,11 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			{
 				controllerMutex.lock();
 				frame->SetStatusText("Turning right...", 0);
+
 				if(keyEvent.ControlDown()) neatoController->setMotor(30, -30, 50);
 				else neatoController->setMotor(100, 20, 50);
+
+				frame->SetStatusText("Turning right... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -216,7 +229,10 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			{
 				controllerMutex.lock();
 				frame->SetStatusText("Stopping...", 0);
+
 				neatoController->setMotor(0, 0, 0);
+
+				frame->SetStatusText("Stopping... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -327,6 +343,8 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	}
 
 	// Draw radar ray
+	radarMutex.lock();
+
 	double rayLength = zoom * radarRayLength;
 	double maxRayLength = std::sqrt(width2 * width2 + height2 * height2);
 	if(rayLength > maxRayLength) rayLength = maxRayLength;
@@ -336,6 +354,8 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	gcdc.DrawLine(width2, height2, radarLineX, radarLineY);
 
 	drawRadarGradient(dc, width2, height2);
+
+	radarMutex.unlock();
 
 	controllerMutex.lock();
 

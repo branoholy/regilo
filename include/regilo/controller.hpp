@@ -115,6 +115,8 @@ public:
 	std::string REQUEST_END;
 	std::string RESPONSE_END;
 
+	bool readResponse;
+
 	/**
 	 * @brief Default constructor.
 	 */
@@ -177,7 +179,8 @@ BaseController<Stream>::BaseController() :
 	stream(ioService),
 	log(nullptr),
 	REQUEST_END("\n"),
-	RESPONSE_END("\n")
+	RESPONSE_END("\n"),
+	readResponse(true)
 {
 }
 
@@ -216,20 +219,26 @@ std::string BaseController<Stream>::sendCommand()
 
 	std::string input = deviceInput.str();
 	ostream << input;
+
 	ba::write(stream, ostreamBuffer);
+	ostream.flush();
+
 	deviceInput.clear();
 	deviceInput.str("");
 
-	ba::read_until(stream, istreamBuffer, RESPONSE_END);
-
-	std::string cmdInput;
-	getLine(istream, cmdInput, REQUEST_END);
-	cmdInput.pop_back();
-
 	std::string output;
-	getLine(istream, output, RESPONSE_END);
-	deviceOutput.clear();
-	deviceOutput.str(output);
+	if(readResponse)
+	{
+		ba::read_until(stream, istreamBuffer, RESPONSE_END);
+
+		std::string cmdInput;
+		getLine(istream, cmdInput, REQUEST_END);
+		cmdInput = cmdInput.substr(0, cmdInput.length() - REQUEST_END.length());
+
+		getLine(istream, output, RESPONSE_END);
+		deviceOutput.clear();
+		deviceOutput.str(output);
+	}
 
 	if(log != nullptr) log->write(input, output);
 

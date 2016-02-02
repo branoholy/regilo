@@ -62,6 +62,7 @@ private:
 
 	double radarAngle;
 	double radarRayLength;
+	std::mutex radarMutex;
 	std::thread radarThread;
 	std::condition_variable radarThreadCV;
 	std::mutex radarThreadCVMutex;
