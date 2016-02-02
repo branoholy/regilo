@@ -22,6 +22,7 @@
 #include "regilo/log.hpp"
 
 #include <chrono>
+#include <fstream>
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -29,9 +30,22 @@ namespace regilo {
 
 char Log::MESSAGE_END = '$';
 
+Log::Log(const std::string& filePath) :
+	filePath(filePath),
+	fileStream(new std::fstream(filePath, std::fstream::in | std::fstream::out | std::fstream::app)),
+	stream(*fileStream)
+{
+}
+
 Log::Log(std::iostream& stream) :
+	fileStream(nullptr),
 	stream(stream)
 {
+}
+
+Log::~Log()
+{
+	delete fileStream;
 }
 
 std::string Log::read()

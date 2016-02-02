@@ -24,18 +24,29 @@
 #include <chrono>
 
 #include <wx/dcgraph.h>
+#include <wx/stdpaths.h>
 
 #include <regilo/neatocontroller.hpp>
 #include <regilo/serialcontroller.hpp>
 #include <regilo/socketcontroller.hpp>
 
-RegiloVisual::RegiloVisual(regilo::Controller *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
-	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning)
+RegiloVisual::RegiloVisual(regilo::ScanController *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
+	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning),
+	fullscreen(false), zoom(0.08),
+	radarColor(0, 200, 0), pointColor(200, 200, 200), radarAngle(0), radarRayLength(4000)
 {
 }
 
 bool RegiloVisual::OnInit()
 {
+	wxPathList pathList;
+	pathList.Add(".");
+	pathList.Add(wxStandardPaths::Get().GetResourcesDir());
+
+	wxInitAllImageHandlers();
+	radarGradient.LoadFile(pathList.FindValidPath("images/radar-gradient.png"));
+	radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+
 	// Frame
 	frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
 
@@ -44,7 +55,7 @@ bool RegiloVisual::OnInit()
 
 	std::string endpoint;
 	if(useScanner) endpoint = controller->getEndpoint();
-	else endpoint = controller->getLogPath();
+	else endpoint = controller->getLog()->getFilePath();
 
 	frame->SetStatusText("", 0);
 	frame->SetStatusText("Connected to " + endpoint, 1);
@@ -54,8 +65,42 @@ bool RegiloVisual::OnInit()
 
 	// Panel
 	panel = new wxPanel(frame);
-	panel->GetEventHandler()->Bind(wxEVT_KEY_DOWN, &RegiloVisual::setMotorByKey, this);
+	panel->GetEventHandler()->Bind(wxEVT_KEY_UP, &RegiloVisual::setMotorByKey, this);
 	panel->GetEventHandler()->Bind(wxEVT_PAINT, &RegiloVisual::repaint, this);
+	panel->GetEventHandler()->Bind(wxEVT_LEFT_DCLICK, [this](wxMouseEvent&)
+	{
+		if((zoom * 2) > 2) return;
+
+		zoom *= 2;
+		radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+
+		int width, height;
+		panel->GetSize(&width, &height);
+		double maxWidth = std::sqrt(std::pow(width / 2, 2) + std::pow(height / 2, 2));
+
+		if(radarGradientZoom.GetWidth() > maxWidth)
+		{
+			double scale = maxWidth / radarGradientZoom.GetWidth();
+			radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
+		}
+	});
+	panel->GetEventHandler()->Bind(wxEVT_RIGHT_DCLICK, [this](wxMouseEvent&)
+	{
+		if((zoom * 0.5) < 0.002) return;
+
+		zoom *= 0.5;
+		radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+
+		int width, height;
+		panel->GetSize(&width, &height);
+		double maxWidth = std::sqrt(std::pow(width / 2, 2) + std::pow(height / 2, 2));
+
+		if(radarGradientZoom.GetWidth() > maxWidth)
+		{
+			double scale = maxWidth / radarGradientZoom.GetWidth();
+			radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
+		}
+	});
 
 	if(!manualScanning && !moveScanning)
 	{
@@ -75,6 +120,28 @@ bool RegiloVisual::OnInit()
 		});
 	}
 
+	std::size_t fps = 24;
+	radarThread = std::thread([this, fps]()
+	{
+		while(scanThreadRunning)
+		{
+			radarMutex.lock();
+			radarAngle += M_PI / fps / 2;
+			radarMutex.unlock();
+
+			this->GetTopWindow()->GetEventHandler()->CallAfter([this]()
+			{
+				frame->Refresh();
+			});
+
+			if(scanThreadRunning)
+			{
+				std::unique_lock<std::mutex> lock(radarThreadCVMutex);
+				radarThreadCV.wait_for(lock, std::chrono::milliseconds(1000 / fps));
+			}
+		}
+	});
+
 	frame->Show(true);
 
 	return true;
@@ -84,13 +151,16 @@ int RegiloVisual::OnExit()
 {
 	stopScanThread();
 	if(scanThread.joinable()) scanThread.join();
+	if(radarThread.joinable()) radarThread.join();
 
 	return wxApp::OnExit();
 }
 
 void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 {
-	if(keyEvent.GetKeyCode() == WXK_UP || keyEvent.GetKeyCode() == WXK_DOWN || keyEvent.GetKeyCode() == WXK_LEFT || keyEvent.GetKeyCode() == WXK_RIGHT)
+	int keyCode = keyEvent.GetKeyCode();
+
+	if(keyCode == WXK_UP || keyCode == WXK_DOWN || keyCode == WXK_LEFT || keyCode == WXK_RIGHT)
 	{
 		if(moveScanning)
 		{
@@ -102,7 +172,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 	regilo::BaseNeatoController *neatoController = dynamic_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
 	if(neatoController == nullptr) neatoController = dynamic_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
 
-	switch(keyEvent.GetKeyCode())
+	switch(keyCode)
 	{
 		case WXK_UP:
 			if(neatoController != nullptr)
@@ -113,6 +183,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				if(keyEvent.ControlDown()) neatoController->setMotor(500, 500, 100);
 				else neatoController->setMotor(100, 100, 50);
 
+				frame->SetStatusText("Going up... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -122,7 +193,10 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			{
 				controllerMutex.lock();
 				frame->SetStatusText("Going down...", 0);
+
 				neatoController->setMotor(-100, -100, 50);
+
+				frame->SetStatusText("Going down... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -132,8 +206,11 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			{
 				controllerMutex.lock();
 				frame->SetStatusText("Turning left...", 0);
+
 				if(keyEvent.ControlDown()) neatoController->setMotor(-30, 30, 50);
 				else neatoController->setMotor(20, 100, 50);
+
+				frame->SetStatusText("Turning left... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -143,8 +220,24 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			{
 				controllerMutex.lock();
 				frame->SetStatusText("Turning right...", 0);
+
 				if(keyEvent.ControlDown()) neatoController->setMotor(30, -30, 50);
 				else neatoController->setMotor(100, 20, 50);
+
+				frame->SetStatusText("Turning right... Done!", 0);
+				controllerMutex.unlock();
+			}
+			break;
+
+		case WXK_SPACE:
+			if(neatoController != nullptr)
+			{
+				controllerMutex.lock();
+				frame->SetStatusText("Stopping...", 0);
+
+				neatoController->setMotor(0, 0, 0);
+
+				frame->SetStatusText("Stopping... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -155,10 +248,75 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				frame->SetStatusText("Manual scanning...", 0);
 				scanAndShow();
 			}
+			break;
+
+		case WXK_F11:
+			fullscreen = !fullscreen;
+			frame->ShowFullScreen(fullscreen);
+			break;
+
+		case WXK_ESCAPE:
+			fullscreen = false;
+			frame->ShowFullScreen(fullscreen);
+			break;
 
 		default:
 			keyEvent.Skip();
 	}
+}
+
+wxImage RegiloVisual::zoomImage(const wxImage& image, double zoom)
+{
+	wxImage zoomedImage = image;
+	zoomedImage.Rescale(image.GetWidth() * zoom, image.GetHeight() * zoom);
+
+	return zoomedImage;
+}
+
+wxRect RegiloVisual::getRotatedBoundingBox(const wxRect& rect, double angle)
+{
+	double c = std::cos(angle);
+	double s = std::sin(angle);
+
+	wxPoint minBound(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+	wxPoint maxBound(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
+
+	wxPoint points[] = {rect.GetLeftTop(), rect.GetLeftBottom(), rect.GetRightTop(), rect.GetRightBottom()};
+	for(wxPoint& point : points)
+	{
+		int x = std::ceil(c * point.x - s * point.y);
+		int y = std::ceil(s * point.x + c * point.y);
+
+		if(x < minBound.x) minBound.x = x;
+		if(y < minBound.y) minBound.y = y;
+		if(x > maxBound.x) maxBound.x = x;
+		if(y > maxBound.y) maxBound.y = y;
+
+		point.x = x;
+		point.y = y;
+	}
+
+	wxRect box;
+	box.SetLeftTop(minBound);
+	box.SetRightBottom(maxBound);
+
+	return box;
+}
+
+void RegiloVisual::drawRadarGradient(wxDC& dc, int width2, int height2)
+{
+	wxImage rotatedImage = radarGradientZoom.Rotate(radarAngle, wxPoint());
+
+	wxRect box(radarGradientZoom.GetSize());
+	box.width++;
+	box.height++;
+	wxRect rotatedBox = getRotatedBoundingBox(box, -radarAngle);
+
+	wxPoint offset = rotatedBox.GetLeftTop();
+	offset.x += width2 - 1;
+	offset.y += height2 - 1;
+
+	dc.DrawBitmap(wxBitmap(rotatedImage), offset);
 }
 
 void RegiloVisual::repaint(wxPaintEvent&)
@@ -166,34 +324,56 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	wxPaintDC dc(panel);
 	wxGCDC gcdc(dc);
 
+	// Draw backgroud
+	dc.SetBrush(*wxBLACK_BRUSH);
+	dc.DrawRectangle(panel->GetSize());
+
 	int width, height;
 	panel->GetSize(&width, &height);
 
 	int width2 = width / 2;
 	int height2 = height / 2;
 
-	gcdc.SetPen(*wxBLACK_PEN);
+	// Draw axis
+	dc.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
+	dc.DrawLine(0, height2, width, height2);
+	dc.DrawLine(width2, 0, width2, height);
+
+	// Draw circles
+	gcdc.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
 	gcdc.SetBrush(*wxTRANSPARENT_BRUSH);
-
-	gcdc.DrawLine(0, height2, width, height2);
-	gcdc.DrawLine(width2, 0, width2, height);
-
-	for(std::size_t radius = 100; radius <= 400; radius += 100)
+	for(std::size_t radius = 1000; radius <= 4000; radius += 1000)
 	{
-		gcdc.DrawCircle(width2, height2, radius);
+		gcdc.DrawCircle(width2, height2, radius * zoom);
 	}
+
+	// Draw radar ray
+	radarMutex.lock();
+
+	double rayLength = zoom * radarRayLength;
+	double maxRayLength = std::sqrt(width2 * width2 + height2 * height2);
+	if(rayLength > maxRayLength) rayLength = maxRayLength;
+
+	double radarLineX = width2 + rayLength * std::cos(radarAngle);
+	double radarLineY = height2 - rayLength * std::sin(radarAngle);
+	gcdc.DrawLine(width2, height2, radarLineX, radarLineY);
+
+	drawRadarGradient(dc, width2, height2);
+
+	radarMutex.unlock();
 
 	controllerMutex.lock();
 
+	dc.SetPen(*wxThePenList->FindOrCreatePen(pointColor));
 	for(const regilo::ScanRecord& record : data)
 	{
 		if(record.error) continue;
 
-		double distance = record.distance / 10;
+		double distance = record.distance * zoom;
 		double x = width2 + distance * std::cos(record.angle);
 		double y = height2 - distance * std::sin(record.angle);
 
-		gcdc.DrawRectangle(x, y, 2, 2);
+		dc.DrawRectangle(x, y, 2, 2);
 	}
 
 	controllerMutex.unlock();
@@ -205,6 +385,7 @@ void RegiloVisual::stopScanThread()
 	{
 		scanThreadRunning = false;
 		scanThreadCV.notify_one();
+		radarThreadCV.notify_one();
 	}
 }
 

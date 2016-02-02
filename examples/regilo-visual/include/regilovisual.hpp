@@ -31,19 +31,26 @@
 	#include <wx/wx.h>
 #endif
 
-#include <regilo/controller.hpp>
+#include <regilo/scancontroller.hpp>
+#include <regilo/scandata.hpp>
+
+class wxGCDC;
 
 class RegiloVisual : public wxApp
 {
 private:
+	regilo::ScanController *controller;
 	std::mutex controllerMutex;
-	regilo::Controller *controller;
+
 	bool useScanner;
 	bool manualScanning;
 	bool moveScanning;
 
 	wxFrame *frame;
 	wxPanel *panel;
+	bool fullscreen;
+	double zoom;
+
 	regilo::ScanData data;
 
 	std::thread scanThread;
@@ -51,11 +58,28 @@ private:
 	std::condition_variable scanThreadCV;
 	std::mutex scanThreadCVMutex;
 
+	wxColour radarColor, pointColor;
+
+	double radarAngle;
+	double radarRayLength;
+	std::mutex radarMutex;
+	std::thread radarThread;
+	std::condition_variable radarThreadCV;
+	std::mutex radarThreadCVMutex;
+
+	wxImage radarGradient;
+	wxImage radarGradientZoom;
+
 	void stopScanThread();
 	void scanAndShow();
 
+	wxImage zoomImage(const wxImage& image, double zoom);
+
+	wxRect getRotatedBoundingBox(const wxRect& rect, double angle);
+	void drawRadarGradient(wxDC& dc, int width2, int height2);
+
 public:
-	RegiloVisual(regilo::Controller *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
+	RegiloVisual(regilo::ScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
 
 	virtual bool OnInit();
 	virtual int OnExit();

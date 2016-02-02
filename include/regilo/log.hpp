@@ -32,16 +32,42 @@ namespace regilo {
 class Log
 {
 private:
+	std::string filePath;
+	std::fstream *fileStream;
+
 	std::iostream& stream;
 
 public:
 	static char MESSAGE_END;
 
 	/**
-	 * @brief Log constructor
+	 * @brief Log constructor with logging to a file.
+	 * @param filePath The path of file
+	 */
+	Log(const std::string& filePath);
+
+	/**
+	 * @brief Log constructor with logging to a stream.
 	 * @param stream Input/output stream
 	 */
 	Log(std::iostream& stream);
+
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~Log();
+
+	/**
+	 * @brief Get the path of file if the log was created with a path otherwise the empty string.
+	 * @return The path or empty string.
+	 */
+	inline const std::string& getFilePath() const { return filePath; }
+
+	/**
+	 * @brief Get the current underlying stream.
+	 * @return The underlying stream
+	 */
+	inline std::iostream& getStream() { return stream; }
 
 	/**
 	 * @brief Test if the stream is EOF.

@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 
 	std::cout << "Hello Regilo!" << std::endl;
 
-	regilo::Controller *controller = nullptr;
+	regilo::ScanController *controller = nullptr;
 	if(controllerName == "neato:socket") controller = new regilo::NeatoController<regilo::SocketController>(logPath);
 	else if(controllerName == "neato:serial") controller = new regilo::NeatoController<regilo::SerialController>(logPath);
 	else if(controllerName == "hokuyo:socket") controller = new regilo::HokuyoController<regilo::SocketController>(logPath);

@@ -22,7 +22,6 @@
 #ifndef REGILO_CONTROLLER_HPP
 #define REGILO_CONTROLLER_HPP
 
-#include <fstream>
 #include <sstream>
 
 #include <boost/asio/io_service.hpp>
@@ -31,7 +30,6 @@
 #include <boost/asio/write.hpp>
 
 #include "log.hpp"
-#include "scandata.hpp"
 
 namespace regilo {
 
@@ -55,23 +53,34 @@ public:
 	virtual void connect(const std::string& endpoint) = 0;
 
 	/**
-	 * @brief Get the path of log file if the controller was created with a log path otherwise the empty string.
-	 * @return The path or empty string.
+	 * @brief Test if the controller is connected.
+	 * @return True if connected
 	 */
-	virtual std::string getLogPath() const = 0;
+	virtual bool isConnected() const = 0;
 
 	/**
 	 * @brief Get the endpoint of device.
-	 * @return The endpoint.
+	 * @return The endpoint or empty string
 	 */
 	virtual std::string getEndpoint() const = 0;
 
 	/**
-	 * @brief Get a scan from the device.
-	 * @param fromDevice Specify if you want to get a scan from the device (true) or log (false). Default: true
-	 * @return ScanData
+	 * @brief Get the current Log.
+	 * @return The Log or nullptr
 	 */
-	virtual ScanData getScan(bool fromDevice = true) = 0;
+	virtual std::shared_ptr<Log> getLog() = 0;
+
+	/**
+	 * @brief Get the current Log (a const variant).
+	 * @return The Log or nullptr
+	 */
+	virtual const std::shared_ptr<Log>& getLog() const = 0;
+
+	/**
+	 * @brief Set a Log (it can be shared between more controllers).
+	 * @param log Smart pointer to a Log
+	 */
+	virtual void setLog(std::shared_ptr<Log> log) = 0;
 };
 
 /**
@@ -93,23 +102,20 @@ protected:
 	std::istringstream deviceOutput;
 	std::ostringstream deviceInput;
 
-	std::size_t lastScanId;
 	ba::io_service ioService;
 	Stream stream;
 
-	Log *log;
-	std::string logPath;
-	std::fstream *logFile;
+	std::shared_ptr<Log> log;
 
 	virtual std::string sendCommand() final;
-	virtual std::string getScanCommand() const = 0;
-	virtual bool parseScanData(std::istream& in, ScanData& data) = 0;
 
 public:
 	typedef Stream StreamType;
 
 	std::string REQUEST_END;
 	std::string RESPONSE_END;
+
+	bool readResponse;
 
 	/**
 	 * @brief Default constructor.
@@ -133,9 +139,12 @@ public:
 	 */
 	virtual ~BaseController();
 
-	virtual inline std::string getLogPath() const override { return logPath; }
+	virtual inline bool isConnected() const override { return stream.is_open(); }
 
-	virtual ScanData getScan(bool fromDevice = true) override final;
+	virtual std::shared_ptr<Log> getLog() override { return log; }
+	virtual const std::shared_ptr<Log>& getLog() const override { return log; }
+
+	virtual void setLog(std::shared_ptr<Log> log) override { this->log.swap(log); }
 
 	/**
 	 * @brief Send a command to the device.
@@ -167,11 +176,11 @@ template<typename Stream>
 BaseController<Stream>::BaseController() :
 	istream(&istreamBuffer),
 	ostream(&ostreamBuffer),
-	lastScanId(0),
 	stream(ioService),
-	log(nullptr), logFile(nullptr),
+	log(nullptr),
 	REQUEST_END("\n"),
-	RESPONSE_END("\n")
+	RESPONSE_END("\n"),
+	readResponse(true)
 {
 }
 
@@ -180,44 +189,20 @@ BaseController<Stream>::BaseController(const std::string& logPath) : BaseControl
 {
 	if(logPath.length() > 0)
 	{
-		logFile = new std::fstream(logPath, std::fstream::in | std::fstream::out | std::fstream::app);
-		log = new Log(*logFile);
-		this->logPath = logPath;
+		log.reset(new Log(logPath));
 	}
 }
 
 template<typename Stream>
 BaseController<Stream>::BaseController(std::iostream& logStream) : BaseController()
 {
-	this->log = new Log(logStream);
+	this->log.reset(new Log(logStream));
 }
 
 template<typename Stream>
 BaseController<Stream>::~BaseController()
 {
-	if(log != nullptr) delete log;
-	if(logFile != nullptr) delete logFile;
 	if(stream.is_open()) stream.close();
-}
-
-template<typename Stream>
-ScanData BaseController<Stream>::getScan(bool fromDevice)
-{
-	ScanData data;
-
-	if(fromDevice)
-	{
-		sendCommand(getScanCommand());
-		parseScanData(deviceOutput, data);
-	}
-	else
-	{
-		std::istringstream response(log->readCommand(getScanCommand()));
-		parseScanData(response, data);
-	}
-	if(!data.empty()) data.scanId = lastScanId++;
-
-	return data;
 }
 
 template<typename Stream>
@@ -234,20 +219,26 @@ std::string BaseController<Stream>::sendCommand()
 
 	std::string input = deviceInput.str();
 	ostream << input;
+
 	ba::write(stream, ostreamBuffer);
+	ostream.flush();
+
 	deviceInput.clear();
 	deviceInput.str("");
 
-	ba::read_until(stream, istreamBuffer, RESPONSE_END);
-
-	std::string cmdInput;
-	getLine(istream, cmdInput, REQUEST_END);
-	cmdInput.pop_back();
-
 	std::string output;
-	getLine(istream, output, RESPONSE_END);
-	deviceOutput.clear();
-	deviceOutput.str(output);
+	if(readResponse)
+	{
+		ba::read_until(stream, istreamBuffer, RESPONSE_END);
+
+		std::string cmdInput;
+		getLine(istream, cmdInput, REQUEST_END);
+		cmdInput = cmdInput.substr(0, cmdInput.length() - REQUEST_END.length());
+
+		getLine(istream, output, RESPONSE_END);
+		deviceOutput.clear();
+		deviceOutput.str(output);
+	}
 
 	if(log != nullptr) log->write(input, output);
 

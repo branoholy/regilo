@@ -3,16 +3,17 @@
 
 *A simple C++ library for controlling the Neato XV robot and the Hokuyo scanner.*
 
-`regilo` allows you to communicate with the Neato robot through sockets or the
-Hokuyo scanner through the serial port. You can use some implemented methods
+`regilo` allows you to communicate with the Neato robot or the Hokuyo scanner
+through a serial port or sockets. You can use some implemented methods
 like `setTestMode()`, `setMotor()` (for Neato XV), `getVersion()` (for Hokuyo),
-`getScan()` for both, or run any other command with the `sendCommand()` method.
+`getScan()` (for both), or run any other command with the `sendCommand()`
+method.
 
 ## Download
-In the supported operating systems (currently Arch Linux and Ubuntu), you can
-install the created [package](#packages). Otherwise, you can download
-[the source code](https://github.com/branoholy/regilo/releases), build `regilo`
-according to the [build instructions](#build) below, and
+In the supported operating systems (currently Arch Linux, Ubuntu, Debian, and
+Fedora), you can install the appropriate [package](#packages). Otherwise, you
+can download [the source code](https://github.com/branoholy/regilo/releases),
+build `regilo` according to the [build instructions](#build) below, and
 [install](#installation) it.
 
 ## Usage
@@ -25,14 +26,14 @@ regilo::NeatoController<regilo::SocketController> controller;
 // Connect it
 controller.connect("10.0.0.1:12345");
 
-// Set test mode and LDS rotation
+// Set the test mode and LDS rotation
 controller.setTestMode(true);
 controller.setLdsRotation(true);
 
 // Grab a scan from the robot
 regilo::ScanData data = controller.getScan();
 
-// Unset test mode and LDS rotation
+// Unset the test mode and LDS rotation
 controller.setLdsRotation(false);
 controller.setTestMode(false);
 ```
@@ -70,11 +71,11 @@ $ cmake ..
 $ make
 ```
 
-Use one of the following options if you want to build the [examples](https://github.com/branoholy/regilo/tree/master/examples)
-as well.
+Use one of the following options if you want to build the
+[examples](https://github.com/branoholy/regilo/tree/master/examples) as well
 
-* `$ cmake -Dexample:bool=on ..` for the console example (`regilo-scan`).
-* `$ cmake -Dexample-gui:bool=on ..` for the GUI example (`regilo-visual`).
+* `$ cmake -Dexample:bool=on ..` for the console example (`regilo-scan`),
+* `$ cmake -Dexample-gui:bool=on ..` for the GUI example (`regilo-visual`),
 * `$ cmake -Dexamples:bool=on ..` for all examples.
 
 For a faster build on a multicore processor, you can use:
@@ -153,12 +154,12 @@ $ sudo dnf install regilo-devel
 See [examples](https://github.com/branoholy/regilo/tree/master/examples) for
 more information about using of this library.
 
-`regilo-scan` is a simple example that connects to the Neato or Hokuyo and
-performs one scan that is printed.
+`regilo-scan` is a simple example that connects to the Neato or Hokuyo, performs
+one scan, and prints it.
 
-`regilo-visual` is more complex and requires wxWidgets library. It can be used
-to drive with the Neato, scan automatically or manually, and log the output.
-Same scanning functionality can be done with the Hokuyo as well.
+`regilo-visual` is more complex and requires the `wxWidgets` library. It can be
+used to drive with the Neato, scan automatically or manually, and log the
+output. Same scanning functionality can be done with the Hokuyo as well.
 
 ## License
 Regilo is licensed under GNU GPL v3 (see
