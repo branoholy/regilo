@@ -34,9 +34,10 @@ public:
 
 	virtual void connect(const std::string& endpoint) override = 0;
 	virtual bool isConnected() const override = 0;
-	virtual std::string getLogPath() const override = 0;
-	virtual Log* getLog() override = 0;
 	virtual std::string getEndpoint() const override = 0;
+	virtual std::shared_ptr<Log> getLog() override = 0;
+	virtual const std::shared_ptr<Log>& getLog() const override = 0;
+	virtual void setLog(std::shared_ptr<Log> log) override = 0;
 
 	/**
 	 * @brief Get a scan from the device.
@@ -63,9 +64,10 @@ public:
 
 	virtual inline void connect(const std::string& endpoint) override { ProtocolController::connect(endpoint); }
 	virtual inline bool isConnected() const override { return ProtocolController::isConnected(); }
-	virtual inline std::string getLogPath() const override { return ProtocolController::getLogPath(); }
-	virtual inline Log* getLog() override { return ProtocolController::getLog(); }
 	virtual inline std::string getEndpoint() const override { return ProtocolController::getEndpoint(); }
+	virtual inline std::shared_ptr<Log> getLog() override { return ProtocolController::getLog(); }
+	virtual inline const std::shared_ptr<Log>& getLog() const override { return ProtocolController::getLog(); }
+	virtual inline void setLog(std::shared_ptr<Log> log) override { return ProtocolController::setLog(log); }
 
 	virtual ScanData getScan(bool fromDevice = true) override final;
 };

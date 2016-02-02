@@ -50,7 +50,7 @@ bool RegiloVisual::OnInit()
 
 	std::string endpoint;
 	if(useScanner) endpoint = controller->getEndpoint();
-	else endpoint = controller->getLogPath();
+	else endpoint = controller->getLog()->getFilePath();
 
 	frame->SetStatusText("", 0);
 	frame->SetStatusText("Connected to " + endpoint, 1);

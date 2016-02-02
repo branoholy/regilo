@@ -22,7 +22,6 @@
 #ifndef REGILO_CONTROLLER_HPP
 #define REGILO_CONTROLLER_HPP
 
-#include <fstream>
 #include <sstream>
 
 #include <boost/asio/io_service.hpp>
@@ -60,22 +59,28 @@ public:
 	virtual bool isConnected() const = 0;
 
 	/**
-	 * @brief Get the path of log file if the controller was created with a log path otherwise the empty string.
-	 * @return The path or empty string.
+	 * @brief Get the endpoint of device.
+	 * @return The endpoint or empty string
 	 */
-	virtual std::string getLogPath() const = 0;
+	virtual std::string getEndpoint() const = 0;
 
 	/**
 	 * @brief Get the current Log.
 	 * @return The Log or nullptr
 	 */
-	virtual Log* getLog() = 0;
+	virtual std::shared_ptr<Log> getLog() = 0;
 
 	/**
-	 * @brief Get the endpoint of device.
-	 * @return The endpoint or empty string
+	 * @brief Get the current Log (a const variant).
+	 * @return The Log or nullptr
 	 */
-	virtual std::string getEndpoint() const = 0;
+	virtual const std::shared_ptr<Log>& getLog() const = 0;
+
+	/**
+	 * @brief Set a Log (it can be shared between more controllers).
+	 * @param log Smart pointer to a Log
+	 */
+	virtual void setLog(std::shared_ptr<Log> log) = 0;
 };
 
 /**
@@ -100,9 +105,7 @@ protected:
 	ba::io_service ioService;
 	Stream stream;
 
-	Log *log;
-	std::string logPath;
-	std::fstream *logFile;
+	std::shared_ptr<Log> log;
 
 	virtual std::string sendCommand() final;
 
@@ -136,9 +139,10 @@ public:
 
 	virtual inline bool isConnected() const override { return stream.is_open(); }
 
-	virtual inline std::string getLogPath() const override { return logPath; }
+	virtual std::shared_ptr<Log> getLog() override { return log; }
+	virtual const std::shared_ptr<Log>& getLog() const override { return log; }
 
-	virtual Log* getLog() override { return log; }
+	virtual void setLog(std::shared_ptr<Log> log) override { this->log.swap(log); }
 
 	/**
 	 * @brief Send a command to the device.
@@ -171,7 +175,7 @@ BaseController<Stream>::BaseController() :
 	istream(&istreamBuffer),
 	ostream(&ostreamBuffer),
 	stream(ioService),
-	log(nullptr), logFile(nullptr),
+	log(nullptr),
 	REQUEST_END("\n"),
 	RESPONSE_END("\n")
 {
@@ -182,23 +186,19 @@ BaseController<Stream>::BaseController(const std::string& logPath) : BaseControl
 {
 	if(logPath.length() > 0)
 	{
-		logFile = new std::fstream(logPath, std::fstream::in | std::fstream::out | std::fstream::app);
-		log = new Log(*logFile);
-		this->logPath = logPath;
+		log.reset(new Log(logPath));
 	}
 }
 
 template<typename Stream>
 BaseController<Stream>::BaseController(std::iostream& logStream) : BaseController()
 {
-	this->log = new Log(logStream);
+	this->log.reset(new Log(logStream));
 }
 
 template<typename Stream>
 BaseController<Stream>::~BaseController()
 {
-	if(log != nullptr) delete log;
-	if(logFile != nullptr) delete logFile;
 	if(stream.is_open()) stream.close();
 }
 
