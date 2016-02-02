@@ -24,6 +24,7 @@
 #include <chrono>
 
 #include <wx/dcgraph.h>
+#include <wx/stdpaths.h>
 
 #include <regilo/neatocontroller.hpp>
 #include <regilo/serialcontroller.hpp>
@@ -38,8 +39,12 @@ RegiloVisual::RegiloVisual(regilo::ScanController *controller, bool useScanner, 
 
 bool RegiloVisual::OnInit()
 {
+	wxPathList pathList;
+	pathList.Add(".");
+	pathList.Add(wxStandardPaths::Get().GetResourcesDir());
+
 	wxInitAllImageHandlers();
-	radarGradient.LoadFile("images/radar-gradient.png");
+	radarGradient.LoadFile(pathList.FindValidPath("images/radar-gradient.png"));
 	radarGradientZoom = zoomImage(radarGradient, zoom * 10);
 
 	// Frame
