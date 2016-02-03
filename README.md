@@ -126,7 +126,7 @@ the `libregilo-dev` package.
 
 ```text
 $ wget http://download.opensuse.org/repositories/home:/branoholy/Debian_8.0/Release.key -O - | sudo apt-key add -
-$ sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/branoholy/ Debian_8.0/' >> /etc/apt/sources.list"
+$ sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/branoholy/Debian_8.0/ ./' >> /etc/apt/sources.list"
 $ sudo apt-get update
 $ sudo apt-get install libregilo-dev
 ```
