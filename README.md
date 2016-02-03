@@ -98,11 +98,22 @@ To uninstall:
 ```
 
 ### Packages
+There are two packages you can install. The first one is the `regilo` library
+with the `regilo-scan` example in packages:
+
+* `regilo` in Arch Linux,
+* `libregilo-dev` in Debian and Ubuntu,
+* `regilo-devel` in Fedora.
+
+The second one is the `regilo-visual` example in the `regilo-visual` package in
+all supported operating systems.
 
 #### Arch Linux
-You can install `regilo` in Arch Linux from the [AUR](https://aur.archlinux.org/packages/regilo).
+You can install `regilo` and `regilo-visual` in Arch Linux from the
+[AUR](https://aur.archlinux.org/packages/?K=regilo).
 
-Do not forget to add [my PGP key](http://pgp.mit.edu/pks/lookup?search=0xD25809BF3563AA56A12B0F4D545EDD46FBAC61E6&fingerprint=on)
+Do not forget to add
+[my PGP key](http://pgp.mit.edu/pks/lookup?search=0xD25809BF3563AA56A12B0F4D545EDD46FBAC61E6&fingerprint=on)
 (fingerprint `D258 09BF 3563 AA56 A12B  0F4D 545E DD46 FBAC 61E6`).
 
 ```text
@@ -111,7 +122,7 @@ $ gpg --recv-key D25809BF3563AA56A12B0F4D545EDD46FBAC61E6
 
 #### Ubuntu
 In Ubuntu, you can use my [ppa:branoholy/regilo](https://launchpad.net/~branoholy/+archive/ubuntu/regilo)
-and install the `libregilo-dev` package.
+and install the `libregilo-dev` and `regilo-visual` packages.
 
 ```text
 $ sudo add-apt-repository ppa:branoholy/regilo
@@ -122,7 +133,7 @@ $ sudo apt-get install libregilo-dev
 #### Debian
 [openSUSE Build Service](https://build.opensuse.org/package/show/home:branoholy/regilo)
 can be used in Debian 8. You need to add my key and repository, and then install
-the `libregilo-dev` package.
+the `libregilo-dev` and `regilo-visual` packages.
 
 ```text
 $ wget http://download.opensuse.org/repositories/home:/branoholy/Debian_8.0/Release.key -O - | sudo apt-key add -
@@ -134,7 +145,7 @@ $ sudo apt-get install libregilo-dev
 #### Fedora
 [openSUSE Build Service](https://build.opensuse.org/package/show/home:branoholy/regilo)
 can be used in Fedora 22 and 23 as well. You need to add my repository and then
-install the `regilo-devel` package.
+install the `regilo-devel` and `regilo-visual` packages.
 
 ##### Fedora 22
 

@@ -27,6 +27,8 @@
 #include <regilo/socketcontroller.hpp>
 #include <regilo/serialcontroller.hpp>
 
+#include <regilo/version.hpp>
+
 #include "regilovisual.hpp"
 
 void printHelp()
@@ -42,7 +44,9 @@ void printHelp()
 			  << "  -l <file>          The path to the log file." << std::endl
 			  << "  -m                 Turn on manual scanning (by pressing key S)." << std::endl
 			  << "  -a                 Turn on automatic scanning before move." << std::endl
-			  << "  -h                 Show this help." << std::endl;
+			  << "  -h                 Show this help." << std::endl
+			  << std::endl
+			  << "Using libregilo " << regilo::Version::VERSION << std::endl;
 }
 
 int main(int argc, char** argv)

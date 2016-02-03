@@ -29,6 +29,8 @@
 #include <regilo/serialcontroller.hpp>
 #include <regilo/socketcontroller.hpp>
 
+#include <regilo/version.hpp>
+
 void printHelp()
 {
 	std::cout << "Usage: regilo-scan [options]" << std::endl
@@ -38,7 +40,9 @@ void printHelp()
 			  << "                     Protocol can be \"socket\" or \"serial\" (default: \"socket\")." << std::endl
 			  << "  -e <endpoint>      The endpoint that is used to connect to the device" << std::endl
 			  << "                     (path or ip and port, default: \"10.0.0.1:12345\")." << std::endl
-			  << "  -h                 Show this help." << std::endl;
+			  << "  -h                 Show this help." << std::endl
+			  << std::endl
+			  << "Using libregilo " << regilo::Version::VERSION << std::endl;
 }
 
 int main(int argc, char** argv)
