@@ -42,7 +42,7 @@ void printHelp()
 			  << "                     (path or ip and port, default: \"10.0.0.1:12345\")." << std::endl
 			  << "  -h                 Show this help." << std::endl
 			  << std::endl
-			  << "Using libregilo " << regilo::Version::VERSION << std::endl;
+			  << "Using regilo-" << regilo::Version::VERSION << std::endl;
 }
 
 int main(int argc, char** argv)

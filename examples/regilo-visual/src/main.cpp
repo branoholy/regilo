@@ -46,7 +46,7 @@ void printHelp()
 			  << "  -a                 Turn on automatic scanning before move." << std::endl
 			  << "  -h                 Show this help." << std::endl
 			  << std::endl
-			  << "Using libregilo " << regilo::Version::VERSION << std::endl;
+			  << "Using regilo-" << regilo::Version::VERSION << std::endl;
 }
 
 int main(int argc, char** argv)
