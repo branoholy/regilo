@@ -10,7 +10,7 @@ like `setTestMode()`, `setMotor()` (for Neato XV), `getVersion()` (for Hokuyo),
 method.
 
 ## Download
-In the supported operating systems (currently Arch Linux, Ubuntu, Debian, and
+In the supported operating systems (currently Arch Linux, Debian, Ubuntu, and
 Fedora), you can install the appropriate [package](#packages). Otherwise, you
 can download [the source code](https://github.com/branoholy/regilo/releases),
 build `regilo` according to the [build instructions](#build) below, and
@@ -112,8 +112,8 @@ conventions of the operating systems.
 | All              | `regilo-visual` | library, `regilo-visual`        |
 
 #### Arch Linux
-You can install `regilo`, `regilo-lib`, and `regilo-visual` in Arch Linux from the
-[AUR](https://aur.archlinux.org/packages/?K=regilo).
+You can install `regilo`, `regilo-lib`, and `regilo-visual` in Arch Linux from
+the [AUR](https://aur.archlinux.org/packages/?K=regilo).
 
 Do not forget to add
 [my PGP key](http://pgp.mit.edu/pks/lookup?search=0xD25809BF3563AA56A12B0F4D545EDD46FBAC61E6&fingerprint=on)
@@ -135,8 +135,8 @@ $ sudo apt-get install libregilo-dev
 
 #### Debian
 [openSUSE Build Service](https://build.opensuse.org/package/show/home:branoholy/regilo)
-can be used in Debian 8. You need to add my key and repository, and then install
-the `libregilo`, `libregilo-dev`, and `regilo-visual` packages.
+can be used in Debian 8. You need to add my key and repository, and then you can
+install the `libregilo`, `libregilo-dev`, and `regilo-visual` packages.
 
 ```text
 $ wget http://download.opensuse.org/repositories/home:/branoholy/Debian_8.0/Release.key -O - | sudo apt-key add -
@@ -147,15 +147,8 @@ $ sudo apt-get install libregilo-dev
 
 #### Fedora
 [openSUSE Build Service](https://build.opensuse.org/package/show/home:branoholy/regilo)
-can be used in Fedora 22 and 23 as well. You need to add my repository and then
+can be used in Fedora 23 as well. You need to add my repository and then you can
 install the `regilo`, `regilo-devel`, and `regilo-visual` packages.
-
-##### Fedora 22
-
-```text
-$ sudo dnf config-manager --add-repo http://download.opensuse.org/repositories/home:/branoholy/Fedora_22/home:branoholy.repo
-$ sudo dnf install regilo-devel
-```
 
 ##### Fedora 23
 
