@@ -150,8 +150,6 @@ $ sudo apt-get install libregilo-dev
 can be used in Fedora 23 as well. You need to add my repository and then you can
 install the `regilo`, `regilo-devel`, and `regilo-visual` packages.
 
-##### Fedora 23
-
 ```text
 $ sudo dnf config-manager --add-repo http://download.opensuse.org/repositories/home:/branoholy/Fedora_23/home:branoholy.repo
 $ sudo dnf install regilo-devel
