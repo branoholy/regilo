@@ -63,7 +63,8 @@ The `regilo-visual` example also needs
 * [wxWidgets](https://www.wxwidgets.org) library (version 3.0 or newer).
 
 ## Build
-Make sure you have installed all [dependencies](#dependencies) before building.
+Make sure you have installed all necessary [dependencies](#dependencies) before
+building.
 
 ```text
 $ mkdir build && cd build
@@ -139,7 +140,7 @@ can be used in Debian 8. You need to add my key and repository, and then you can
 install the `libregilo`, `libregilo-dev`, and `regilo-visual` packages.
 
 ```text
-$ wget http://download.opensuse.org/repositories/home:/branoholy:/regilo/Debian_8.0/Release.key -O - | sudo apt-key add -
+$ sudo sh -c "wget http://download.opensuse.org/repositories/home:/branoholy:/regilo/Debian_8.0/Release.key -O - | apt-key add -"
 $ sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/branoholy:/regilo/Debian_8.0/ ./' >> /etc/apt/sources.list"
 $ sudo apt-get update
 $ sudo apt-get install libregilo-dev
