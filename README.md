@@ -134,24 +134,24 @@ $ sudo apt-get install libregilo-dev
 ```
 
 #### Debian
-[openSUSE Build Service](https://build.opensuse.org/package/show/home:branoholy/regilo)
+[openSUSE Build Service](https://build.opensuse.org/project/show/home:branoholy:regilo)
 can be used in Debian 8. You need to add my key and repository, and then you can
 install the `libregilo`, `libregilo-dev`, and `regilo-visual` packages.
 
 ```text
-$ wget http://download.opensuse.org/repositories/home:/branoholy/Debian_8.0/Release.key -O - | sudo apt-key add -
-$ sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/branoholy/Debian_8.0/ ./' >> /etc/apt/sources.list"
+$ wget http://download.opensuse.org/repositories/home:/branoholy:/regilo/Debian_8.0/Release.key -O - | sudo apt-key add -
+$ sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/branoholy:/regilo/Debian_8.0/ ./' >> /etc/apt/sources.list"
 $ sudo apt-get update
 $ sudo apt-get install libregilo-dev
 ```
 
 #### Fedora
-[openSUSE Build Service](https://build.opensuse.org/package/show/home:branoholy/regilo)
+[openSUSE Build Service](https://build.opensuse.org/project/show/home:branoholy:regilo)
 can be used in Fedora 23 as well. You need to add my repository and then you can
 install the `regilo`, `regilo-devel`, and `regilo-visual` packages.
 
 ```text
-$ sudo dnf config-manager --add-repo http://download.opensuse.org/repositories/home:/branoholy/Fedora_23/home:branoholy.repo
+$ sudo dnf config-manager --add-repo http://download.opensuse.org/repositories/home:/branoholy:/regilo/Fedora_23/home:branoholy:regilo.repo
 $ sudo dnf install regilo-devel
 ```
 
