@@ -12,7 +12,8 @@ before_install:
 before_script:
   - cd $TRAVIS_BUILD_DIR
   - mkdir build && cd build
-  - cmake -Dexamples:bool=on ..
+  - cmake -Dexample:bool=on ..
+#  - cmake -Dexamples:bool=on .. # cannot build GUI example
 
 script:
   - cd $TRAVIS_BUILD_DIR
@@ -26,4 +27,4 @@ addons:
     packages:
       - g++-4.9
       - libboost-system-dev
-      - libwxgtk3.0-dev
+#      - libwxgtk3.0-dev # still not working
