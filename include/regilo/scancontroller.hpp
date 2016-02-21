@@ -24,6 +24,7 @@
 
 #include "controller.hpp"
 #include "scandata.hpp"
+#include "utils.hpp"
 
 namespace regilo {
 
@@ -98,11 +99,15 @@ ScanData BaseScanController<ProtocolController>::getScan(bool fromDevice)
 	if(fromDevice)
 	{
 		this->sendCommand(getScanCommand());
+		data.time = epochSeconds();
+
 		parseScanData(this->deviceOutput, data);
 	}
 	else
 	{
 		std::istringstream response(this->log->readCommand(getScanCommand()));
+		data.time = this->log->getLastCommandTime();
+
 		parseScanData(response, data);
 	}
 	if(!data.empty()) data.scanId = lastScanId++;

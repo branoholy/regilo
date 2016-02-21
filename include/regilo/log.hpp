@@ -37,6 +37,8 @@ private:
 
 	std::iostream& stream;
 
+	long commandTime;
+
 public:
 	static char MESSAGE_END;
 
@@ -74,6 +76,12 @@ public:
 	 * @return true/false
 	 */
 	inline bool isEnd() const { return !stream; }
+
+	/**
+	 * @brief Get the last command time (after reading).
+	 * @return Seconds since epoch
+	 */
+	inline long getLastCommandTime() const { return commandTime; }
 
 	/**
 	 * @brief Read one command from the log.

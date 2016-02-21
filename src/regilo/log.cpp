@@ -26,6 +26,8 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include "regilo/utils.hpp"
+
 namespace regilo {
 
 char Log::MESSAGE_END = '$';
@@ -59,6 +61,8 @@ std::string Log::read(std::string& logCommand)
 	std::string secondsEpoch, response;
 
 	std::getline(stream, secondsEpoch, MESSAGE_END);
+	commandTime = std::stol(secondsEpoch);
+
 	std::getline(stream, logCommand, MESSAGE_END);
 	std::getline(stream, response, MESSAGE_END);
 
@@ -85,10 +89,7 @@ std::string Log::readCommand(const std::string& command, std::string& logCommand
 
 void Log::write(const std::string& command, const std::string& response)
 {
-	auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
-	long secondsEpoch = sinceEpoch.count() * std::chrono::system_clock::period::num / std::chrono::system_clock::period::den;
-
-	stream << secondsEpoch << MESSAGE_END;
+	stream << epochSeconds() << MESSAGE_END;
 	stream << command << MESSAGE_END;
 	stream << response << MESSAGE_END;
 }

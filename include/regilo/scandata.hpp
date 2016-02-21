@@ -36,6 +36,7 @@ class ScanData : public std::vector<ScanRecord>
 public:
 	std::size_t scanId; ///< The scan id (starting from zero).
 	double rotationSpeed; ///< The rotation speed (in Hz).
+	long time; ///< The scan time (seconds since epoch).
 
 	/**
 	 * @brief Default constructor.
