@@ -166,6 +166,7 @@ one scan, and prints it.
 `regilo-visual` is more complex and requires the `wxWidgets` library. It can be
 used to drive with the Neato, scan automatically or manually, and log the
 output. Same scanning functionality can be done with the Hokuyo as well.
+![Regilo Visual Screenshot](https://github.com/branoholy/regilo/tree/master/examples/regilo-visual/etc/screenshot.png)
 
 ## License
 Regilo is licensed under GNU GPL v3 (see

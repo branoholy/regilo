@@ -1,4 +1,4 @@
 build/
-etc/
+others/
 
 CMakeLists.txt.user
