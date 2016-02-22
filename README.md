@@ -73,7 +73,7 @@ $ make
 ```
 
 Use one of the following options if you want to build the
-[examples](https://github.com/branoholy/regilo/tree/master/examples) as well
+[examples](examples) as well
 
 * `$ cmake -Dexample:bool=on ..` for the console example (`regilo-scan`),
 * `$ cmake -Dexample-gui:bool=on ..` for the GUI example (`regilo-visual`),
@@ -157,7 +157,7 @@ $ sudo dnf install regilo-devel
 ```
 
 ## Examples
-See [examples](https://github.com/branoholy/regilo/tree/master/examples) for
+See [examples](examples) for
 more information about using of this library.
 
 `regilo-scan` is a simple example that connects to the Neato or Hokuyo, performs
@@ -166,9 +166,10 @@ one scan, and prints it.
 `regilo-visual` is more complex and requires the `wxWidgets` library. It can be
 used to drive with the Neato, scan automatically or manually, and log the
 output. Same scanning functionality can be done with the Hokuyo as well.
+
 [![Regilo Visual Screenshot](examples/regilo-visual/etc/screenshot.png)](examples/regilo-visual)
 
 ## License
 Regilo is licensed under GNU GPL v3 (see
-[LICENSE](https://github.com/branoholy/regilo/blob/master/LICENSE) file).
+[LICENSE](LICENSE) file).
 
