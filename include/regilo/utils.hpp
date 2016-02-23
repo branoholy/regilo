@@ -22,13 +22,20 @@
 #ifndef REGILO_UTILS_HPP
 #define REGILO_UTILS_HPP
 
+#include <chrono>
+
 namespace regilo {
 
 /**
- * @brief Get seconds since epoch.
- * @return Seconds
+ * @brief Get time since epoch.
+ * @return Time in (s, ms, etc.)
  */
-long epochSeconds();
+template<typename T>
+typename T::rep epoch()
+{
+	auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
+	return std::chrono::duration_cast<T>(sinceEpoch).count();
+}
 
 }
 

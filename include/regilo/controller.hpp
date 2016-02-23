@@ -74,7 +74,7 @@ public:
 	 * @brief Get the current Log (a const variant).
 	 * @return The Log or nullptr
 	 */
-	virtual const std::shared_ptr<Log>& getLog() const = 0;
+	virtual std::shared_ptr<const Log> getLog() const = 0;
 
 	/**
 	 * @brief Set a Log (it can be shared between more controllers).
@@ -105,7 +105,7 @@ protected:
 	ba::io_service ioService;
 	Stream stream;
 
-	std::shared_ptr<Log> log;
+	std::shared_ptr<BasicLog> log;
 
 	virtual std::string sendCommand() final;
 
@@ -141,10 +141,10 @@ public:
 
 	virtual inline bool isConnected() const override { return stream.is_open(); }
 
-	virtual std::shared_ptr<Log> getLog() override { return log; }
-	virtual const std::shared_ptr<Log>& getLog() const override { return log; }
+	virtual inline std::shared_ptr<Log> getLog() override { return log; }
+	virtual inline std::shared_ptr<const Log> getLog() const override { return log; }
 
-	virtual void setLog(std::shared_ptr<Log> log) override { this->log.swap(log); }
+	virtual void setLog(std::shared_ptr<Log> log) override;
 
 	/**
 	 * @brief Send a command to the device.
@@ -189,20 +189,27 @@ BaseController<Stream>::BaseController(const std::string& logPath) : BaseControl
 {
 	if(logPath.length() > 0)
 	{
-		log.reset(new Log(logPath));
+		log.reset(new BasicLog(logPath));
 	}
 }
 
 template<typename Stream>
 BaseController<Stream>::BaseController(std::iostream& logStream) : BaseController()
 {
-	this->log.reset(new Log(logStream));
+	this->log.reset(new BasicLog(logStream));
 }
 
 template<typename Stream>
 BaseController<Stream>::~BaseController()
 {
 	if(stream.is_open()) stream.close();
+}
+
+template<typename Stream>
+void BaseController<Stream>::setLog(std::shared_ptr<Log> log)
+{
+	std::shared_ptr<BasicLog> basicLog = std::dynamic_pointer_cast<BasicLog>(log);
+	this->log.swap(basicLog);
 }
 
 template<typename Stream>

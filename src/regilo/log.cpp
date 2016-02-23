@@ -21,47 +21,35 @@
 
 #include "regilo/log.hpp"
 
-#include <chrono>
-#include <fstream>
-
-#include <boost/algorithm/string/predicate.hpp>
-
-#include "regilo/utils.hpp"
-
 namespace regilo {
 
-char Log::MESSAGE_END = '$';
-
-Log::Log(const std::string& filePath) :
+BasicLog::BasicLog(const std::string& filePath) :
 	filePath(filePath),
 	fileStream(new std::fstream(filePath, std::fstream::in | std::fstream::out | std::fstream::app)),
 	stream(*fileStream)
 {
 }
 
-Log::Log(std::iostream& stream) :
+BasicLog::BasicLog(std::iostream& stream) :
 	fileStream(nullptr),
 	stream(stream)
 {
 }
 
-Log::~Log()
+BasicLog::~BasicLog()
 {
 	delete fileStream;
 }
 
-std::string Log::read()
+std::string BasicLog::read()
 {
 	std::string command;
 	return read(command);
 }
 
-std::string Log::read(std::string& logCommand)
+std::string BasicLog::read(std::string& logCommand)
 {
-	std::string secondsEpoch, response;
-
-	std::getline(stream, secondsEpoch, MESSAGE_END);
-	commandTime = std::stol(secondsEpoch);
+	std::string response;
 
 	std::getline(stream, logCommand, MESSAGE_END);
 	std::getline(stream, response, MESSAGE_END);
@@ -69,13 +57,13 @@ std::string Log::read(std::string& logCommand)
 	return response;
 }
 
-std::string Log::readCommand(const std::string& command)
+std::string BasicLog::readCommand(const std::string& command)
 {
 	std::string logCommand;
 	return readCommand(command, logCommand);
 }
 
-std::string Log::readCommand(const std::string& command, std::string& logCommand)
+std::string BasicLog::readCommand(const std::string& command, std::string& logCommand)
 {
 	std::string response;
 	do
@@ -87,9 +75,8 @@ std::string Log::readCommand(const std::string& command, std::string& logCommand
 	return response;
 }
 
-void Log::write(const std::string& command, const std::string& response)
+void BasicLog::write(const std::string& command, const std::string& response)
 {
-	stream << epochSeconds() << MESSAGE_END;
 	stream << command << MESSAGE_END;
 	stream << response << MESSAGE_END;
 }

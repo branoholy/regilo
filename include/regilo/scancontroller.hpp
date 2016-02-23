@@ -37,7 +37,7 @@ public:
 	virtual bool isConnected() const override = 0;
 	virtual std::string getEndpoint() const override = 0;
 	virtual std::shared_ptr<Log> getLog() override = 0;
-	virtual const std::shared_ptr<Log>& getLog() const override = 0;
+	virtual std::shared_ptr<const Log> getLog() const override = 0;
 	virtual void setLog(std::shared_ptr<Log> log) override = 0;
 
 	/**
@@ -67,7 +67,7 @@ public:
 	virtual inline bool isConnected() const override { return ProtocolController::isConnected(); }
 	virtual inline std::string getEndpoint() const override { return ProtocolController::getEndpoint(); }
 	virtual inline std::shared_ptr<Log> getLog() override { return ProtocolController::getLog(); }
-	virtual inline const std::shared_ptr<Log>& getLog() const override { return ProtocolController::getLog(); }
+	virtual inline std::shared_ptr<const Log> getLog() const override { return ProtocolController::getLog(); }
 	virtual inline void setLog(std::shared_ptr<Log> log) override { return ProtocolController::setLog(log); }
 
 	virtual ScanData getScan(bool fromDevice = true) override final;
@@ -99,14 +99,14 @@ ScanData BaseScanController<ProtocolController>::getScan(bool fromDevice)
 	if(fromDevice)
 	{
 		this->sendCommand(getScanCommand());
-		data.time = epochSeconds();
+		data.time = epoch<std::chrono::seconds>();
 
 		parseScanData(this->deviceOutput, data);
 	}
 	else
 	{
 		std::istringstream response(this->log->readCommand(getScanCommand()));
-		data.time = this->log->getLastCommandTime();
+		// data.time = this->log->getLastCommandTime(); // TODO: Set from log
 
 		parseScanData(response, data);
 	}
