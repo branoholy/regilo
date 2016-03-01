@@ -23,18 +23,6 @@
 
 namespace regilo {
 
-SerialController::SerialController() : BaseController()
-{
-}
-
-SerialController::SerialController(const std::string& logPath) : BaseController(logPath)
-{
-}
-
-SerialController::SerialController(std::iostream& logStream) : BaseController(logStream)
-{
-}
-
 void SerialController::connect(const std::string& endpoint)
 {
 	this->endpoint = endpoint;

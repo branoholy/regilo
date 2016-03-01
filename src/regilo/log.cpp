@@ -23,32 +23,46 @@
 
 namespace regilo {
 
-BasicLog::BasicLog(const std::string& filePath) :
+Log::Log(const std::string& filePath) :
 	filePath(filePath),
 	fileStream(new std::fstream(filePath, std::fstream::in | std::fstream::out | std::fstream::app)),
 	stream(*fileStream)
 {
 }
 
-BasicLog::BasicLog(std::iostream& stream) :
+Log::Log(std::iostream& stream) :
 	fileStream(nullptr),
 	stream(stream)
 {
 }
 
-BasicLog::~BasicLog()
+Log::~Log()
 {
 	delete fileStream;
 }
 
-std::string BasicLog::read()
+void Log::readMetadata()
+{
+}
+
+void Log::writeMetadata()
+{
+}
+
+std::string Log::read()
 {
 	std::string command;
 	return read(command);
 }
 
-std::string BasicLog::read(std::string& logCommand)
+std::string Log::read(std::string& logCommand)
 {
+	if(!metadataRead)
+	{
+		readMetadata();
+		metadataRead = true;
+	}
+
 	std::string response;
 
 	std::getline(stream, logCommand, MESSAGE_END);
@@ -57,13 +71,13 @@ std::string BasicLog::read(std::string& logCommand)
 	return response;
 }
 
-std::string BasicLog::readCommand(const std::string& command)
+std::string Log::readCommand(const std::string& command)
 {
 	std::string logCommand;
 	return readCommand(command, logCommand);
 }
 
-std::string BasicLog::readCommand(const std::string& command, std::string& logCommand)
+std::string Log::readCommand(const std::string& command, std::string& logCommand)
 {
 	std::string response;
 	do
@@ -75,8 +89,14 @@ std::string BasicLog::readCommand(const std::string& command, std::string& logCo
 	return response;
 }
 
-void BasicLog::write(const std::string& command, const std::string& response)
+void Log::write(const std::string& command, const std::string& response)
 {
+	if(!metadataWritten)
+	{
+		writeMetadata();
+		metadataWritten = true;
+	}
+
 	stream << command << MESSAGE_END;
 	stream << response << MESSAGE_END;
 }

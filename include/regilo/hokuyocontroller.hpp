@@ -32,12 +32,15 @@
 namespace regilo {
 
 /**
- * @brief The BaseHokuyoController class is the interface for the HokuyoController class.
+ * @brief The IHokuyoController interface is used for the HokuyoController class.
  */
-class BaseHokuyoController
+class IHokuyoController
 {
 public:
-	virtual ~BaseHokuyoController() = default;
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~IHokuyoController() = default;
 
 	/**
 	 * @brief Return information about version.
@@ -50,17 +53,18 @@ public:
  * @brief The HokuyoController class is used to communicate with the Hokuyo scanner.
  */
 template<typename ProtocolController>
-class HokuyoController : public BaseHokuyoController, public BaseScanController<ProtocolController>
+class HokuyoController : public IHokuyoController, public ScanController<ProtocolController>
 {
 private:
-	std::size_t validFromStep, validToStep;
-	std::size_t maxStep;
-	std::size_t fromStep, toStep, clusterCount;
-	double startAngle;
+	std::size_t validFromStep = 44;
+	std::size_t validToStep = 725;
+	std::size_t maxStep = 768;
+	std::size_t fromStep = 0;
+	std::size_t toStep = maxStep;
+	std::size_t clusterCount = 1;
+	double startAngle = -135 * M_PI / 180;
 
 protected:
-	void init();
-
 	virtual inline std::string getScanCommand() const override { return this->createCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount); }
 	virtual bool parseScanData(std::istream& in, ScanData& data) override;
 
@@ -96,6 +100,12 @@ public:
 	void setScanParameters(std::size_t fromStep, std::size_t toStep, std::size_t clusterCount);
 };
 
+class SerialController;
+class SocketController;
+
+typedef HokuyoController<SerialController> HokuyoSerialController;
+typedef HokuyoController<SocketController> HokuyoSocketController;
+
 template<typename ProtocolController>
 std::string HokuyoController<ProtocolController>::CMD_GET_VERSION = "V";
 
@@ -103,33 +113,21 @@ template<typename ProtocolController>
 std::string HokuyoController<ProtocolController>::CMD_GET_SCAN = "G%03d%03d%02d";
 
 template<typename ProtocolController>
-HokuyoController<ProtocolController>::HokuyoController() : BaseScanController<ProtocolController>()
-{
-	init();
-}
-
-template<typename ProtocolController>
-HokuyoController<ProtocolController>::HokuyoController(const std::string& logPath) : BaseScanController<ProtocolController>(logPath)
-{
-	init();
-}
-
-template<typename ProtocolController>
-HokuyoController<ProtocolController>::HokuyoController(std::iostream& logStream) : BaseScanController<ProtocolController>(logStream)
-{
-	init();
-}
-
-template<typename ProtocolController>
-void HokuyoController<ProtocolController>::init()
+HokuyoController<ProtocolController>::HokuyoController() : ScanController<ProtocolController>()
 {
 	this->RESPONSE_END = "\n\n";
-	validFromStep = 44;
-	validToStep = 725;
-	maxStep = 768;
-	startAngle = -135 * M_PI / 180;
+}
 
-	setScanParameters(0, maxStep, 1);
+template<typename ProtocolController>
+HokuyoController<ProtocolController>::HokuyoController(const std::string& logPath) : ScanController<ProtocolController>(logPath)
+{
+	this->RESPONSE_END = "\n\n";
+}
+
+template<typename ProtocolController>
+HokuyoController<ProtocolController>::HokuyoController(std::iostream& logStream) : ScanController<ProtocolController>(logStream)
+{
+	this->RESPONSE_END = "\n\n";
 }
 
 template<typename ProtocolController>

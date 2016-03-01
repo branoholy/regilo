@@ -28,17 +28,13 @@
 
 namespace regilo {
 
-class ScanController : public Controller
+class IScanController : public virtual IController
 {
 public:
-	virtual ~ScanController() = default;
-
-	virtual void connect(const std::string& endpoint) override = 0;
-	virtual bool isConnected() const override = 0;
-	virtual std::string getEndpoint() const override = 0;
-	virtual std::shared_ptr<Log> getLog() override = 0;
-	virtual std::shared_ptr<const Log> getLog() const override = 0;
-	virtual void setLog(std::shared_ptr<Log> log) override = 0;
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~IScanController() = default;
 
 	/**
 	 * @brief Get a scan from the device.
@@ -49,64 +45,44 @@ public:
 };
 
 template<typename ProtocolController>
-class BaseScanController : public ScanController, public ProtocolController
+class ScanController : public IScanController, public ProtocolController
 {
 protected:
-	std::size_t lastScanId;
+	std::size_t lastScanId = 0;
 
 	virtual std::string getScanCommand() const = 0;
 	virtual bool parseScanData(std::istream& in, ScanData& data) = 0;
 
 public:
-	BaseScanController();
-	BaseScanController(const std::string& logPath);
-	BaseScanController(std::iostream& logStream);
-	~BaseScanController() = default;
+	using ProtocolController::ProtocolController;
 
-	virtual inline void connect(const std::string& endpoint) override { ProtocolController::connect(endpoint); }
-	virtual inline bool isConnected() const override { return ProtocolController::isConnected(); }
-	virtual inline std::string getEndpoint() const override { return ProtocolController::getEndpoint(); }
-	virtual inline std::shared_ptr<Log> getLog() override { return ProtocolController::getLog(); }
-	virtual inline std::shared_ptr<const Log> getLog() const override { return ProtocolController::getLog(); }
-	virtual inline void setLog(std::shared_ptr<Log> log) override { return ProtocolController::setLog(log); }
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~ScanController() = default;
 
 	virtual ScanData getScan(bool fromDevice = true) override final;
 };
 
 template<typename ProtocolController>
-BaseScanController<ProtocolController>::BaseScanController() : ProtocolController(),
-	lastScanId(0)
-{
-}
-
-template<typename ProtocolController>
-BaseScanController<ProtocolController>::BaseScanController(const std::string& logPath) : ProtocolController(logPath),
-	lastScanId(0)
-{
-}
-
-template<typename ProtocolController>
-BaseScanController<ProtocolController>::BaseScanController(std::iostream& logStream) : ProtocolController(logStream),
-	lastScanId(0)
-{
-}
-
-template<typename ProtocolController>
-ScanData BaseScanController<ProtocolController>::getScan(bool fromDevice)
+ScanData ScanController<ProtocolController>::getScan(bool fromDevice)
 {
 	ScanData data;
 
 	if(fromDevice)
 	{
 		this->sendCommand(getScanCommand());
-		data.time = epoch<std::chrono::seconds>();
+		data.time = epoch<std::chrono::milliseconds>().count();
 
 		parseScanData(this->deviceOutput, data);
 	}
 	else
 	{
 		std::istringstream response(this->log->readCommand(getScanCommand()));
-		// data.time = this->log->getLastCommandTime(); // TODO: Set from log
+		if(std::shared_ptr<const ITimedLog> timedLog = std::dynamic_pointer_cast<const ITimedLog>(this->getLog()))
+		{
+			data.time = timedLog->getLastCommandTimeAs<std::chrono::milliseconds>().count();
+		}
 
 		parseScanData(response, data);
 	}

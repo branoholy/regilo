@@ -35,13 +35,16 @@
 
 namespace regilo {
 
-class Log
+/**
+ * @brief The ILog interface has to be implemented in all Log classes.
+ */
+class ILog
 {
 public:
 	/**
 	 * @brief Default destructor.
 	 */
-	virtual ~Log() = default;
+	virtual ~ILog() = default;
 
 	/**
 	 * @brief Get the path of file if the log was created with a path otherwise the empty string.
@@ -97,14 +100,55 @@ public:
 	virtual void write(const std::string& command, const std::string& response) = 0;
 };
 
-class BasicLog : public Log
+/**
+ * @brief The ITimedLog interface is implemented in TimedLog.
+ */
+class ITimedLog : public virtual ILog
+{
+public:
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~ITimedLog() = default;
+
+	/**
+	 * @brief Get the last command time (after reading).
+	 * @return Time since epoch as std::chrono::nanoseconds
+	 */
+	virtual std::chrono::nanoseconds getLastCommandNanoseconds() const = 0;
+
+	/**
+	 * @brief Get the last command time (after reading).
+	 * @return Time since epoch as Duration
+	 */
+	template<typename Duration>
+	inline Duration getLastCommandTimeAs() const { return std::chrono::duration_cast<Duration>(this->getLastCommandNanoseconds()); }
+
+	/**
+	 * @brief Sync command times with real time. It means that all read methods will block
+	 *        their executions until the current time is bigger than the command time.
+	 */
+	virtual void syncTime(bool sync = true) = 0;
+};
+
+/**
+ * @brief The Log class is a basic log with a simple read/write functionality.
+ *		  It is used to log all commands that were send to the device.
+ */
+class Log : public virtual ILog
 {
 private:
 	std::string filePath;
 	std::fstream *fileStream;
 
+	bool metadataRead = false;
+	bool metadataWritten = false;
+
 protected:
 	std::iostream& stream;
+
+	virtual void readMetadata();
+	virtual void writeMetadata();
 
 public:
 	char MESSAGE_END = '$';
@@ -113,15 +157,15 @@ public:
 	 * @brief Log constructor with logging to a file.
 	 * @param filePath The path of file
 	 */
-	BasicLog(const std::string& filePath);
+	Log(const std::string& filePath);
 
 	/**
 	 * @brief Log constructor with logging to a stream.
 	 * @param stream Input/output stream
 	 */
-	BasicLog(std::iostream& stream);
+	Log(std::iostream& stream);
 
-	virtual ~BasicLog();
+	virtual ~Log();
 
 	virtual inline const std::string& getFilePath() const override { return filePath; }
 	virtual inline std::iostream& getStream() override { return stream; }
@@ -136,74 +180,93 @@ public:
 };
 
 /**
- * @brief The Log class is used to log all commands that were send to the device.
+ * @brief The TimedLog class is used to log all commands with their timestamp.
  */
-template<typename Duration = std::chrono::milliseconds>
-class TimedLog : public BasicLog
+template<typename DurationT = std::chrono::milliseconds>
+class TimedLog : public Log, public ITimedLog
 {
 private:
-	typename Duration::rep commandTime;
+	std::intmax_t num, den;
 
-	typename Duration::rep firstReadTime;
-	typename Duration::rep firstCommandTime = std::numeric_limits<typename Duration::rep>::max();
+	DurationT lastCommandTime;
+
+	DurationT firstReadTime = DurationT::min();
+	DurationT firstWriteTime = DurationT::min();
+
+protected:
+	virtual void readMetadata() override;
+	virtual void writeMetadata() override;
 
 public:
-	using BasicLog::BasicLog;
+	typedef DurationT Duration;
+
+	using Log::Log;
 
 	virtual ~TimedLog() = default;
 
-	/**
-	 * @brief Get last command time (after reading).
-	 * @return Time since epoch in Duration units
-	 */
-	inline typename Duration::rep getLastCommandTime() const { return commandTime; }
+	inline virtual std::chrono::nanoseconds getLastCommandNanoseconds() const override
+	{
+		return std::chrono::duration_cast<std::chrono::nanoseconds>(lastCommandTime);
+	}
 
 	/**
-	 * @brief Sync command times with real time. It means that all read methods will block
-	 *        its execution until the current time is bigger than the command time.
+	 * @brief Get the last command time (after reading).
+	 * @return Time since epoch as Duration
 	 */
-	inline void syncTime(bool sync = true) { firstCommandTime = (sync ? -1 : std::numeric_limits<long>::max()); }
+	inline DurationT getLastCommandTime() const { return lastCommandTime; }
+
+	virtual inline void syncTime(bool sync = true) override { firstReadTime = (sync ? DurationT::max() : DurationT::min()); }
 
 	virtual std::string read(std::string& logCommand) override;
 	virtual void write(const std::string& command, const std::string& response) override;
 };
 
-template<typename Duration>
-std::string TimedLog<Duration>::read(std::string& logCommand)
+template<typename DurationT>
+void TimedLog<DurationT>::readMetadata()
 {
+	stream >> num >> den;
+}
+
+template<typename DurationT>
+void TimedLog<DurationT>::writeMetadata()
+{
+	stream << DurationT::period::num << DurationT::period::den;
+}
+
+template<typename DurationT>
+std::string TimedLog<DurationT>::read(std::string& logCommand)
+{
+	std::string response = Log::read(logCommand);
+
 	std::string epochTime;
 	std::getline(stream, epochTime, MESSAGE_END);
 	std::istringstream epochStream(epochTime);
-	epochStream >> commandTime;
 
-	std::string response = BasicLog::read(logCommand); // TODO: Swap with time
+	std::int64_t commandTimeCount;
+	epochStream >> commandTimeCount;
+	lastCommandTime = DurationT((commandTimeCount * num) / den);
 
-	if(firstCommandTime == -1)
-	{
-		firstReadTime = epoch<Duration>();
-		firstCommandTime = commandTime;
-	}
+	if(firstReadTime == DurationT::max()) firstReadTime = epoch<DurationT>();
 	else
 	{
-		typename Duration::rep elapsed = epoch<Duration>() - firstReadTime;
-		typename Duration::rep elapsedLog = commandTime - firstCommandTime;
-
-		while(elapsed < elapsedLog)
+		DurationT elapsed = epoch<DurationT>() - firstReadTime;
+		while(elapsed < lastCommandTime)
 		{
-			std::this_thread::sleep_for(Duration(elapsedLog - elapsed));
-			elapsed = epoch<Duration>() - firstReadTime;
+			std::this_thread::sleep_for(lastCommandTime - elapsed);
+			elapsed = epoch<DurationT>() - firstReadTime;
 		}
 	}
 
 	return response;
 }
 
-template<typename Duration>
-void TimedLog<Duration>::write(const std::string& command, const std::string& response)
+template<typename DurationT>
+void TimedLog<DurationT>::write(const std::string& command, const std::string& response)
 {
-	stream << epoch<Duration>() << MESSAGE_END;
+	Log::write(command, response);
 
-	BasicLog::write(command, response); // TODO: Swap with time
+	if(firstWriteTime == DurationT::min()) firstWriteTime = epoch<DurationT>();
+	stream << (epoch<DurationT>() - firstWriteTime).count() << MESSAGE_END;
 }
 
 }

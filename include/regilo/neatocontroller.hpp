@@ -31,12 +31,15 @@
 namespace regilo {
 
 /**
- * @brief The BaseNeatoController class is the interface for the NeatoController class.
+ * @brief The INeatoController interface is used for the NeatoController class.
  */
-class BaseNeatoController
+class INeatoController
 {
 public:
-	virtual ~BaseNeatoController() = default;
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~INeatoController() = default;
 
 	/**
 	 * @brief Get whether the Neato is in the test mode.
@@ -81,14 +84,14 @@ public:
  * @brief The NeatoController class is used to communicate with the Neato robot.
  */
 template<typename ProtocolController>
-class NeatoController : public BaseNeatoController, public BaseScanController<ProtocolController>
+class NeatoController : public INeatoController, public ScanController<ProtocolController>
 {
 private:
-	bool testMode;
-	bool ldsRotation;
+	bool testMode = false;
+	bool ldsRotation = false;
 
 protected:
-	void init();
+	// void init();
 
 	virtual inline std::string getScanCommand() const override { return CMD_GET_LDS_SCAN; }
 	virtual bool parseScanData(std::istream& in, ScanData& data) override;
@@ -135,6 +138,12 @@ public:
 	virtual std::string getTime() override;
 };
 
+class SerialController;
+class SocketController;
+
+typedef NeatoController<SerialController> NeatoSerialController;
+typedef NeatoController<SocketController> NeatoSocketController;
+
 template<typename ProtocolController>
 std::string NeatoController<ProtocolController>::ON = "on";
 
@@ -163,51 +172,41 @@ template<typename ProtocolController>
 std::string NeatoController<ProtocolController>::CMD_GET_LDS_SCAN = "getldsscan";
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController() : BaseScanController<ProtocolController>()
+NeatoController<ProtocolController>::NeatoController() : ScanController<ProtocolController>()
 {
-	init();
+	this->RESPONSE_END = std::string(1, 0x1a);
 }
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController(const std::string& logPath) : BaseScanController<ProtocolController>(logPath)
+NeatoController<ProtocolController>::NeatoController(const std::string& logPath) : ScanController<ProtocolController>(logPath)
 {
-	init();
+	this->RESPONSE_END = std::string(1, 0x1a);
 }
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) : BaseScanController<ProtocolController>(logStream)
+NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) : ScanController<ProtocolController>(logStream)
 {
-	init();
-}
-
-template<typename ProtocolController>
-void NeatoController<ProtocolController>::init()
-{
-	testMode = false;
-	ldsRotation = false;
-
-	this->RESPONSE_END.clear();
-	this->RESPONSE_END.push_back(0x1a);
+	this->RESPONSE_END = std::string(1, 0x1a);
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setTestMode(bool testMode)
 {
-	this->createCommandAndSend(CMD_TEST_MODE, (testMode ? ON : OFF).c_str());
+	this->sendCommand(CMD_TEST_MODE, (testMode ? ON : OFF).c_str());
 	this->testMode = testMode;
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setLdsRotation(bool ldsRotation)
 {
-	this->createCommandAndSend(CMD_SET_LDS_ROTATION, (ldsRotation ? ON : OFF).c_str());
+	this->sendCommand(CMD_SET_LDS_ROTATION, (ldsRotation ? ON : OFF).c_str());
 	this->ldsRotation = ldsRotation;
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setMotor(int left, int right, int speed)
 {
-	this->createCommandAndSend(CMD_SET_MOTOR, left, right, speed);
+	this->sendCommand(CMD_SET_MOTOR, left, right, speed);
 }
 
 template<typename ProtocolController>

@@ -30,7 +30,7 @@
 #include <regilo/serialcontroller.hpp>
 #include <regilo/socketcontroller.hpp>
 
-RegiloVisual::RegiloVisual(regilo::ScanController *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
+RegiloVisual::RegiloVisual(regilo::IScanController *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning),
 	fullscreen(false), zoom(0.08),
 	radarColor(0, 200, 0), pointColor(200, 200, 200), radarAngle(0), radarRayLength(4000)
@@ -169,7 +169,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 		}
 	}
 
-	regilo::BaseNeatoController *neatoController = dynamic_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
+	regilo::INeatoController *neatoController = dynamic_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
 	if(neatoController == nullptr) neatoController = dynamic_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
 
 	switch(keyCode)

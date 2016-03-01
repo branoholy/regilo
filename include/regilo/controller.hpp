@@ -36,15 +36,15 @@ namespace regilo {
 namespace ba = boost::asio;
 
 /**
- * @brief The Controller class is the interface for all controller classes.
+ * @brief The IController interface is used for all controller classes.
  */
-class Controller
+class IController
 {
 public:
 	/**
 	 * @brief Default destructor.
 	 */
-	virtual ~Controller() = default;
+	virtual ~IController() = default;
 
 	/**
 	 * @brief Connect the controller to a device.
@@ -66,28 +66,35 @@ public:
 
 	/**
 	 * @brief Get the current Log.
-	 * @return The Log or nullptr
+	 * @return The Log or empty std::shared_ptr
 	 */
-	virtual std::shared_ptr<Log> getLog() = 0;
+	virtual std::shared_ptr<ILog> getLog() = 0;
 
 	/**
 	 * @brief Get the current Log (a const variant).
-	 * @return The Log or nullptr
+	 * @return The Log or empty std::shared_ptr
 	 */
-	virtual std::shared_ptr<const Log> getLog() const = 0;
+	virtual std::shared_ptr<const ILog> getLog() const = 0;
 
 	/**
 	 * @brief Set a Log (it can be shared between more controllers).
 	 * @param log Smart pointer to a Log
 	 */
-	virtual void setLog(std::shared_ptr<Log> log) = 0;
+	virtual void setLog(std::shared_ptr<ILog> log) = 0;
+
+	/**
+	 * @brief Send a command to the device.
+	 * @param command A commmand with all parameters.
+	 * @return A response to the command.
+	 */
+	virtual std::string sendCommand(const std::string& command) = 0;
 };
 
 /**
- * @brief The BaseController class is used to communicate with a device.
+ * @brief The StreamController class is used to communicate with a device.
  */
-template<typename Stream>
-class BaseController : public Controller
+template<typename StreamT>
+class StreamController : public virtual IController
 {
 private:
 	ba::streambuf istreamBuffer;
@@ -103,55 +110,59 @@ protected:
 	std::ostringstream deviceInput;
 
 	ba::io_service ioService;
-	Stream stream;
+	StreamT stream;
 
-	std::shared_ptr<BasicLog> log;
+	std::shared_ptr<Log> log;
 
 	virtual std::string sendCommand() final;
 
 public:
-	typedef Stream StreamType;
+	typedef StreamT Stream;
 
-	std::string REQUEST_END;
-	std::string RESPONSE_END;
+	std::string REQUEST_END = "\n";
+	std::string RESPONSE_END = "\n";
 
-	bool readResponse;
+	bool readResponse = true;
 
 	/**
 	 * @brief Default constructor.
 	 */
-	BaseController();
+	StreamController();
 
 	/**
 	 * @brief Controller with a log file specified by a path.
 	 * @param logPath Path to the log file.
 	 */
-	BaseController(const std::string& logPath);
+	StreamController(const std::string& logPath);
 
 	/**
 	 * @brief Controller with a log specified by a stream.
 	 * @param logStream The log stream.
 	 */
-	BaseController(std::iostream& logStream);
+	StreamController(std::iostream& logStream);
 
 	/**
 	 * @brief Default destructor.
 	 */
-	virtual ~BaseController();
+	virtual ~StreamController();
 
 	virtual inline bool isConnected() const override { return stream.is_open(); }
 
-	virtual inline std::shared_ptr<Log> getLog() override { return log; }
-	virtual inline std::shared_ptr<const Log> getLog() const override { return log; }
+	virtual inline std::shared_ptr<ILog> getLog() override { return log; }
+	virtual inline std::shared_ptr<const ILog> getLog() const override { return log; }
 
-	virtual void setLog(std::shared_ptr<Log> log) override;
+	virtual void setLog(std::shared_ptr<ILog> log) override;
+
+	virtual std::string sendCommand(const std::string& command) final override;
 
 	/**
-	 * @brief Send a command to the device.
-	 * @param command A commmand with all parameter.
+	 * @brief Create a command with the specified parameters (printf formatting is used) and send it to the device.
+	 * @param command A command without parameters.
+	 * @param params Parameters that will be inserted into the command.
 	 * @return A response to the command.
 	 */
-	virtual std::string sendCommand(const std::string& command) final;
+	template<typename... Args>
+	std::string sendCommand(const std::string& command, Args... params);
 
 	/**
 	 * @brief Create a command with the specified parameters (printf formatting is used).
@@ -161,66 +172,60 @@ public:
 	 */
 	template<typename... Args>
 	std::string createCommand(const std::string& command, Args... params) const;
-
-	/**
-	 * @brief createAndSendCommand Create a command with the specified parameters (printf formatting is used) and send it to the device.
-	 * @param command A command without parameters.
-	 * @param params Parameters that will be inserted into the command.
-	 * @return A response to the command.
-	 */
-	template<typename... Args>
-	std::string createCommandAndSend(const std::string& command, Args... params);
 };
 
-template<typename Stream>
-BaseController<Stream>::BaseController() :
+template<typename StreamT>
+StreamController<StreamT>::StreamController() :
 	istream(&istreamBuffer),
 	ostream(&ostreamBuffer),
-	stream(ioService),
-	log(nullptr),
-	REQUEST_END("\n"),
-	RESPONSE_END("\n"),
-	readResponse(true)
+	stream(ioService)
 {
 }
 
-template<typename Stream>
-BaseController<Stream>::BaseController(const std::string& logPath) : BaseController()
+template<typename StreamT>
+StreamController<StreamT>::StreamController(const std::string& logPath) : StreamController()
 {
-	if(logPath.length() > 0)
+	if(!logPath.empty())
 	{
-		log.reset(new BasicLog(logPath));
+		log.reset(new Log(logPath));
 	}
 }
 
-template<typename Stream>
-BaseController<Stream>::BaseController(std::iostream& logStream) : BaseController()
+template<typename StreamT>
+StreamController<StreamT>::StreamController(std::iostream& logStream) : StreamController()
 {
-	this->log.reset(new BasicLog(logStream));
+	this->log.reset(new Log(logStream));
 }
 
-template<typename Stream>
-BaseController<Stream>::~BaseController()
+template<typename StreamT>
+StreamController<StreamT>::~StreamController()
 {
 	if(stream.is_open()) stream.close();
 }
 
-template<typename Stream>
-void BaseController<Stream>::setLog(std::shared_ptr<Log> log)
+template<typename StreamT>
+void StreamController<StreamT>::setLog(std::shared_ptr<ILog> log)
 {
-	std::shared_ptr<BasicLog> basicLog = std::dynamic_pointer_cast<BasicLog>(log);
-	this->log.swap(basicLog);
+	std::shared_ptr<Log> logPointer = std::dynamic_pointer_cast<Log>(log);
+	this->log.swap(logPointer);
 }
 
-template<typename Stream>
-std::string BaseController<Stream>::sendCommand(const std::string& command)
+template<typename StreamT>
+std::string StreamController<StreamT>::sendCommand(const std::string& command)
 {
 	deviceInput << command;
 	return sendCommand();
 }
 
-template<typename Stream>
-std::string BaseController<Stream>::sendCommand()
+template<typename StreamT>
+template<typename... Args>
+std::string StreamController<StreamT>::sendCommand(const std::string& command, Args... params)
+{
+	return sendCommand(createCommand(command, params...));
+}
+
+template<typename StreamT>
+std::string StreamController<StreamT>::sendCommand()
 {
 	deviceInput << REQUEST_END;
 
@@ -252,8 +257,8 @@ std::string BaseController<Stream>::sendCommand()
 	return output;
 }
 
-template<typename Stream>
-void BaseController<Stream>::getLine(std::istream& stream, std::string& line, const std::string& delim)
+template<typename StreamT>
+void StreamController<StreamT>::getLine(std::istream& stream, std::string& line, const std::string& delim)
 {
 	if(delim.empty()) std::getline(stream, line);
 	else if(delim.size() == 1) std::getline(stream, line, delim.front());
@@ -282,9 +287,9 @@ void BaseController<Stream>::getLine(std::istream& stream, std::string& line, co
 	}
 }
 
-template<typename Stream>
+template<typename StreamT>
 template<typename... Args>
-std::string BaseController<Stream>::createCommand(const std::string& command, Args... params) const
+std::string StreamController<StreamT>::createCommand(const std::string& command, Args... params) const
 {
 	std::size_t size = std::snprintf(nullptr, 0, command.c_str(), params...) + 1;
 	char* buffer = new char[size];
@@ -294,13 +299,6 @@ std::string BaseController<Stream>::createCommand(const std::string& command, Ar
 	delete[] buffer;
 
 	return result;
-}
-
-template<typename Stream>
-template<typename... Args>
-std::string BaseController<Stream>::createCommandAndSend(const std::string& command, Args... params)
-{
-	return sendCommand(createCommand(command, params...));
 }
 
 }

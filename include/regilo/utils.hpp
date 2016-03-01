@@ -28,13 +28,13 @@ namespace regilo {
 
 /**
  * @brief Get time since epoch.
- * @return Time in (s, ms, etc.)
+ * @return Time as std::duration
  */
 template<typename T>
-typename T::rep epoch()
+T epoch()
 {
 	auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
-	return std::chrono::duration_cast<T>(sinceEpoch).count();
+	return std::chrono::duration_cast<T>(sinceEpoch);
 }
 
 }

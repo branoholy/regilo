@@ -39,7 +39,7 @@ class wxGCDC;
 class RegiloVisual : public wxApp
 {
 private:
-	regilo::ScanController *controller;
+	regilo::IScanController *controller;
 	std::mutex controllerMutex;
 
 	bool useScanner;
@@ -79,7 +79,7 @@ private:
 	void drawRadarGradient(wxDC& dc, int width2, int height2);
 
 public:
-	RegiloVisual(regilo::ScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
+	RegiloVisual(regilo::IScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
 
 	virtual bool OnInit();
 	virtual int OnExit();

@@ -19,35 +19,14 @@
  *
  */
 
-#ifndef REGILO_SERIALCONTROLLER_HPP
-#define REGILO_SERIALCONTROLLER_HPP
+#include "regilo/hokuyocontroller.hpp"
 
-#include <boost/asio/serial_port.hpp>
-
-#include "controller.hpp"
+#include "regilo/serialcontroller.hpp"
+#include "regilo/socketcontroller.hpp"
 
 namespace regilo {
 
-/**
- * @brief The SerialController class is used to communicate with a device using the serial port.
- */
-class SerialController : public StreamController<ba::serial_port>
-{
-private:
-	std::string endpoint;
-
-public:
-	using StreamController::StreamController;
-
-	/**
-	 * @brief Connect the controller to a device.
-	 * @param endpoint The endpoint with the path to the device (e.g. "/dev/ttyACM0").
-	 */
-	virtual void connect(const std::string& endpoint) override;
-
-	virtual inline std::string getEndpoint() const override { return endpoint; }
-};
+template class HokuyoController<SerialController>;
+template class HokuyoController<SocketController>;
 
 }
-
-#endif // REGILO_SERIALCONTROLLER_HPP

@@ -33,26 +33,10 @@ namespace bai = ba::ip;
 /**
  * @brief The SocketController class is used to communicate with a device using a TCP socket.
  */
-class SocketController : public BaseController<bai::tcp::socket>
+class SocketController : public StreamController<bai::tcp::socket>
 {
 public:
-
-	/**
-	 * @brief Default constructor.
-	 */
-	SocketController();
-
-	/**
-	 * @brief Constructor with a log file specified by a path.
-	 * @param logPath Path to the log file.
-	 */
-	SocketController(const std::string& logPath);
-
-	/**
-	 * @brief Constructor with a log specified by a stream.
-	 * @param logStream The log stream.
-	 */
-	SocketController(std::iostream& logStream);
+	using StreamController::StreamController;
 
 	/**
 	 * @brief Default destructor.

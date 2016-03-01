@@ -21,7 +21,7 @@ build `regilo` according to the [build instructions](#build) below, and
 ### Neato XV
 ```cpp
 // Create the controller
-regilo::NeatoController<regilo::SocketController> controller;
+regilo::NeatoSocketController controller;
 
 // Connect it
 controller.connect("10.0.0.1:12345");
@@ -41,7 +41,7 @@ controller.setTestMode(false);
 ### Hokuyo
 ```cpp
 // Create the controller
-regilo::HokuyoController<regilo::SerialController> controller;
+regilo::HokuyoSerialController controller;
 
 // Connect it
 controller.connect("/dev/ttyACM0");

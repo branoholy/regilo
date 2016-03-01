@@ -103,11 +103,14 @@ int main(int argc, char** argv)
 
 	std::cout << "Hello Regilo!" << std::endl;
 
-	regilo::ScanController *controller = nullptr;
-	if(controllerName == "neato:socket") controller = new regilo::NeatoController<regilo::SocketController>(logPath);
-	else if(controllerName == "neato:serial") controller = new regilo::NeatoController<regilo::SerialController>(logPath);
-	else if(controllerName == "hokuyo:socket") controller = new regilo::HokuyoController<regilo::SocketController>(logPath);
-	else if(controllerName == "hokuyo:serial") controller = new regilo::HokuyoController<regilo::SerialController>(logPath);
+	regilo::IScanController *controller = nullptr;
+	regilo::INeatoController *neatoController = nullptr;
+	regilo::IHokuyoController *hokuyoController = nullptr;
+
+	if(controllerName == "neato:socket") controller = dynamic_cast<regilo::IScanController*>(neatoController = new regilo::NeatoSocketController());
+	else if(controllerName == "neato:serial") controller = dynamic_cast<regilo::IScanController*>(neatoController = new regilo::NeatoSerialController());
+	else if(controllerName == "hokuyo:socket") controller = dynamic_cast<regilo::IScanController*>(hokuyoController = new regilo::HokuyoSocketController());
+	else if(controllerName == "hokuyo:serial") controller = dynamic_cast<regilo::IScanController*>(hokuyoController = new regilo::HokuyoSerialController());
 
 	std::cout << "Using " << controllerName << " controller." << std::endl;
 
@@ -118,10 +121,6 @@ int main(int argc, char** argv)
 
 		if(controllerDevice == "neato")
 		{
-			regilo::BaseNeatoController *neatoController;
-			if(controllerProtocol == "socket") neatoController = static_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
-			else neatoController = static_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
-
 			neatoController->setTestMode(true);
 			std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
 
@@ -135,10 +134,6 @@ int main(int argc, char** argv)
 
 	if(useScanner && controllerDevice == "neato")
 	{
-		regilo::BaseNeatoController *neatoController;
-		if(controllerProtocol == "socket") neatoController = static_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
-		else neatoController = static_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
-
 		neatoController->setLdsRotation(false);
 		std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
 

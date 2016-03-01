@@ -23,18 +23,6 @@
 
 namespace regilo {
 
-SocketController::SocketController() : BaseController()
-{
-}
-
-SocketController::SocketController(const std::string& logPath) : BaseController(logPath)
-{
-}
-
-SocketController::SocketController(std::iostream& logStream) : BaseController(logStream)
-{
-}
-
 SocketController::~SocketController()
 {
 	if(stream.is_open())
@@ -72,7 +60,7 @@ std::string SocketController::getEndpoint() const
 {
 	if(!isConnected()) return "";
 
-	StreamType::endpoint_type endpoint = stream.remote_endpoint();
+	Stream::endpoint_type endpoint = stream.remote_endpoint();
 
 	std::string ip = endpoint.address().to_string();
 	std::string port = std::to_string(endpoint.port());
