@@ -41,12 +41,14 @@ Log::~Log()
 	delete fileStream;
 }
 
-void Log::readMetadata()
+void Log::readMetadata(std::istream& metaStream)
 {
+	metaStream >> version;
 }
 
-void Log::writeMetadata()
+void Log::writeMetadata(std::ostream& metaStream)
 {
+	metaStream << version;
 }
 
 std::string Log::read()
@@ -57,9 +59,15 @@ std::string Log::read()
 
 std::string Log::read(std::string& logCommand)
 {
+	streamMutex.lock();
+
 	if(!metadataRead)
 	{
-		readMetadata();
+		std::string metaData;
+		std::getline(stream, metaData, MESSAGE_END);
+		std::istringstream metaStream(metaData);
+
+		readMetadata(metaStream);
 		metadataRead = true;
 	}
 
@@ -67,6 +75,8 @@ std::string Log::read(std::string& logCommand)
 
 	std::getline(stream, logCommand, MESSAGE_END);
 	std::getline(stream, response, MESSAGE_END);
+
+	streamMutex.unlock();
 
 	return response;
 }
@@ -91,14 +101,26 @@ std::string Log::readCommand(const std::string& command, std::string& logCommand
 
 void Log::write(const std::string& command, const std::string& response)
 {
+	streamMutex.lock();
+
 	if(!metadataWritten)
 	{
-		writeMetadata();
+		std::ostringstream metaStream;
+		writeMetadata(metaStream);
+
+		stream << metaStream.str() << MESSAGE_END;
 		metadataWritten = true;
 	}
 
 	stream << command << MESSAGE_END;
 	stream << response << MESSAGE_END;
+
+	streamMutex.unlock();
 }
+
+template class TimedLog<std::chrono::nanoseconds>;
+template class TimedLog<std::chrono::microseconds>;
+template class TimedLog<std::chrono::milliseconds>;
+template class TimedLog<std::chrono::seconds>;
 
 }

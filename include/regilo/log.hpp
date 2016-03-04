@@ -25,6 +25,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <thread>
 
@@ -100,37 +101,6 @@ public:
 };
 
 /**
- * @brief The ITimedLog interface is implemented in TimedLog.
- */
-class ITimedLog : public virtual ILog
-{
-public:
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~ITimedLog() = default;
-
-	/**
-	 * @brief Get the last command time (after reading).
-	 * @return Time since epoch as std::chrono::nanoseconds
-	 */
-	virtual std::chrono::nanoseconds getLastCommandNanoseconds() const = 0;
-
-	/**
-	 * @brief Get the last command time (after reading).
-	 * @return Time since epoch as Duration
-	 */
-	template<typename Duration>
-	inline Duration getLastCommandTimeAs() const { return std::chrono::duration_cast<Duration>(this->getLastCommandNanoseconds()); }
-
-	/**
-	 * @brief Sync command times with real time. It means that all read methods will block
-	 *        their executions until the current time is bigger than the command time.
-	 */
-	virtual void syncTime(bool sync = true) = 0;
-};
-
-/**
  * @brief The Log class is a basic log with a simple read/write functionality.
  *		  It is used to log all commands that were send to the device.
  */
@@ -140,14 +110,17 @@ private:
 	std::string filePath;
 	std::fstream *fileStream;
 
+	std::mutex streamMutex;
+
 	bool metadataRead = false;
 	bool metadataWritten = false;
 
 protected:
 	std::iostream& stream;
+	std::size_t version = 1;
 
-	virtual void readMetadata();
-	virtual void writeMetadata();
+	virtual void readMetadata(std::istream& metaStream);
+	virtual void writeMetadata(std::ostream& metaStream);
 
 public:
 	char MESSAGE_END = '$';
@@ -179,22 +152,55 @@ public:
 };
 
 /**
+ * @brief The ITimedLog interface is implemented in TimedLog.
+ */
+class ITimedLog : public virtual ILog
+{
+public:
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~ITimedLog() = default;
+
+	/**
+	 * @brief Get the last command time (after reading).
+	 * @return Time since epoch as std::chrono::nanoseconds
+	 */
+	virtual std::chrono::nanoseconds getLastCommandNanoseconds() const = 0;
+
+	/**
+	 * @brief Get the last command time (after reading).
+	 * @return Time since epoch as Duration
+	 */
+	template<typename Duration>
+	inline Duration getLastCommandTimeAs() const { return std::chrono::duration_cast<Duration>(this->getLastCommandNanoseconds()); }
+
+	/**
+	 * @brief Sync command times with real time. It means that all read methods will block
+	 *        their executions until the current time is bigger than the command time.
+	 */
+	virtual void syncTime(bool sync = true) = 0;
+};
+
+/**
  * @brief The TimedLog class is used to log all commands with their timestamp.
  */
 template<typename DurationT = std::chrono::milliseconds>
 class TimedLog : public Log, public ITimedLog
 {
 private:
+	std::mutex streamMutex;
+
 	std::intmax_t num, den;
 
 	DurationT lastCommandTime;
 
-	DurationT firstReadTime = DurationT::min();
+	DurationT firstReadTime = DurationT::zero();
 	DurationT firstWriteTime = DurationT::min();
 
 protected:
-	virtual void readMetadata() override;
-	virtual void writeMetadata() override;
+	virtual void readMetadata(std::istream& metaStream) override;
+	virtual void writeMetadata(std::ostream& metaStream) override;
 
 public:
 	typedef DurationT Duration;
@@ -214,27 +220,31 @@ public:
 	 */
 	inline DurationT getLastCommandTime() const { return lastCommandTime; }
 
-	virtual inline void syncTime(bool sync = true) override { firstReadTime = (sync ? DurationT::max() : DurationT::min()); }
+	virtual inline void syncTime(bool sync = true) override { firstReadTime = (sync ? DurationT::max() : DurationT::zero()); }
 
 	virtual std::string read(std::string& logCommand) override;
 	virtual void write(const std::string& command, const std::string& response) override;
 };
 
 template<typename DurationT>
-void TimedLog<DurationT>::readMetadata()
+void TimedLog<DurationT>::readMetadata(std::istream& metaStream)
 {
-	stream >> num >> den;
+	Log::readMetadata(metaStream);
+	metaStream >> num >> den;
 }
 
 template<typename DurationT>
-void TimedLog<DurationT>::writeMetadata()
+void TimedLog<DurationT>::writeMetadata(std::ostream& metaStream)
 {
-	stream << DurationT::period::num << DurationT::period::den;
+	Log::writeMetadata(metaStream);
+	metaStream << ' ' << DurationT::period::num << ' ' << DurationT::period::den;
 }
 
 template<typename DurationT>
 std::string TimedLog<DurationT>::read(std::string& logCommand)
 {
+	streamMutex.lock();
+
 	std::string response = Log::read(logCommand);
 
 	std::string epochTime;
@@ -243,12 +253,16 @@ std::string TimedLog<DurationT>::read(std::string& logCommand)
 
 	std::int64_t commandTimeCount;
 	epochStream >> commandTimeCount;
-	lastCommandTime = DurationT((commandTimeCount * num) / den);
+
+	long double numRatio = num / DurationT::period::num;
+	long double denRation = DurationT::period::den / den;
+	lastCommandTime = DurationT((std::int64_t)std::round(commandTimeCount * numRatio * denRation));
 
 	if(firstReadTime == DurationT::max()) firstReadTime = epoch<DurationT>();
 	else
 	{
 		DurationT elapsed = epoch<DurationT>() - firstReadTime;
+
 		while(elapsed < lastCommandTime)
 		{
 			std::this_thread::sleep_for(lastCommandTime - elapsed);
@@ -256,16 +270,22 @@ std::string TimedLog<DurationT>::read(std::string& logCommand)
 		}
 	}
 
+	streamMutex.unlock();
+
 	return response;
 }
 
 template<typename DurationT>
 void TimedLog<DurationT>::write(const std::string& command, const std::string& response)
 {
+	streamMutex.lock();
+
 	Log::write(command, response);
 
 	if(firstWriteTime == DurationT::min()) firstWriteTime = epoch<DurationT>();
 	stream << (epoch<DurationT>() - firstWriteTime).count() << MESSAGE_END;
+
+	streamMutex.unlock();
 }
 
 }
