@@ -24,12 +24,13 @@ if(${PROJECT_VERSION_TWEAK})
 endif()
 
 # Set options
+option(build-library "Build the library even if only the headers are installed")
+option(install-library "Install the library only (no headers)")
+option(install-headers "Install the headers only (no library)")
 option(example "Build the console example")
 option(example-gui "Build the GUI example")
 option(examples "Build all examples")
 option(examples-only "Build only examples (not the library)")
-option(install-headers "Install the headers only (no library)")
-option(install-library "Install the library only (no headers)")
 
 option(INSTALL_LIB_DIR "Installation directory for libraries")
 if(${INSTALL_LIB_DIR} STREQUAL "OFF")
@@ -59,7 +60,8 @@ if(${examples-only} STREQUAL "OFF")
 	# Include headers
 	include_directories("include")
 
-	if(${install-headers} STREQUAL "OFF")
+	# Build library
+	if((${build-library}) OR (${install-headers} STREQUAL "OFF"))
 		# Find source code
 		file(GLOB_RECURSE CPPS "src/regilo/*.cpp")
 		file(GLOB_RECURSE HPPS "include/regilo/*.hpp")
@@ -72,14 +74,17 @@ if(${examples-only} STREQUAL "OFF")
 		add_library(${PROJECT_NAME} SHARED ${CPPS} ${HPPS})
 		set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 
-		# Install library
-		install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${INSTALL_LIB_DIR})
-
 		# Link libraries
 		target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 		target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 	endif()
 
+	# Install library
+	if(${install-headers} STREQUAL "OFF")
+                install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${INSTALL_LIB_DIR})
+	endif()
+
+	# Install headers
 	if(${install-library} STREQUAL "OFF")
 		install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION include/${PROJECT_NAME})
 	endif()
