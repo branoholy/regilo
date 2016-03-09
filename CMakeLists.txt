@@ -37,13 +37,14 @@ if(${INSTALL_LIB_DIR} STREQUAL "OFF")
 	set(INSTALL_LIB_DIR "lib")
 endif()
 
-# Set build type and definitions
-if($ENV{DEBUG})
-	# Debug
-	set(CMAKE_BUILD_TYPE "Debug")
-else()
-	# Release
+# Set build type
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 	set(CMAKE_BUILD_TYPE "Release")
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+# Set definitions
+if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
 	add_definitions("-O3")
 endif()
 
@@ -81,7 +82,7 @@ if(${examples-only} STREQUAL "OFF")
 
 	# Install library
 	if(${install-headers} STREQUAL "OFF")
-                install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${INSTALL_LIB_DIR})
+		install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${INSTALL_LIB_DIR})
 	endif()
 
 	# Install headers
@@ -102,4 +103,3 @@ endif()
 # Add uninstall
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake)
-
