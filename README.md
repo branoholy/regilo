@@ -1,7 +1,7 @@
 # Regilo
 [![Build Status](https://travis-ci.org/branoholy/regilo.svg?branch=master)](https://travis-ci.org/branoholy/regilo)
-[![Latest Version](https://img.shields.io/github/release/branoholy/regilo.svg)](https://github.com/branoholy/regilo/releases)
-[![Downloads](https://img.shields.io/github/downloads/branoholy/regilo/total.svg)](https://github.com/branoholy/regilo#download)
+[![Latest Version](https://badges.branoholy.com/github/regilo/release)](https://github.com/branoholy/regilo/releases)
+[![Downloads](https://badges.branoholy.com/github/regilo/downloads)](https://github.com/branoholy/regilo#download)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 
 *A simple C++ library for controlling the Neato XV robot and the Hokuyo scanner.*
