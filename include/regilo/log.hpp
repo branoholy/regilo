@@ -123,7 +123,7 @@ protected:
 	virtual void writeMetadata(std::ostream& metaStream);
 
 public:
-	char MESSAGE_END = '$';
+	char MESSAGE_END = '$'; ///< A char that the log message ends with.
 
 	/**
 	 * @brief Log constructor with logging to a file.

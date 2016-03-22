@@ -91,22 +91,20 @@ private:
 	bool ldsRotation = false;
 
 protected:
-	// void init();
-
 	virtual inline std::string getScanCommand() const override { return CMD_GET_LDS_SCAN; }
 	virtual bool parseScanData(std::istream& in, ScanData& data) override;
 
 public:
-	static std::string ON;
-	static std::string OFF;
-	static std::string LDS_SCAN_HEADER;
-	static std::string LDS_SCAN_FOOTER;
+	static std::string ON; ///< A string that represents the ON value.
+	static std::string OFF; ///< A string that represents the OFF value.
+	static std::string LDS_SCAN_HEADER; ///< A header of the LDS scan output.
+	static std::string LDS_SCAN_FOOTER; ///< A footer of the LDS scan output.
 
-	static std::string CMD_TEST_MODE;
-	static std::string CMD_SET_LDS_ROTATION;
-	static std::string CMD_SET_MOTOR;
-	static std::string CMD_GET_TIME;
-	static std::string CMD_GET_LDS_SCAN;
+	static std::string CMD_TEST_MODE; ///< A template for the `testmode` command.
+	static std::string CMD_SET_LDS_ROTATION; ///< A template for the `setldsrotation` command.
+	static std::string CMD_SET_MOTOR; ///< A template for the `setmotor` command.
+	static std::string CMD_GET_TIME; ///< A template for the `gettime` command.
+	static std::string CMD_GET_LDS_SCAN; ///< A template for the `getldsscan` command.
 
 	/**
 	 * @brief Default constructor.

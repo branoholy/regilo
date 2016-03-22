@@ -119,10 +119,11 @@ protected:
 public:
 	typedef StreamT Stream;
 
-	std::string REQUEST_END = "\n";
-	std::string RESPONSE_END = "\n";
+	std::string REQUEST_END = "\n"; ///< A string that the request ends with.
+	std::string RESPONSE_END = "\n"; ///< A string that the response ends with.
 
-	bool readResponse = true;
+	bool readResponse = true; ///< If true the sendCommand method reads a response.
+	bool readCommand = true; ///< If true the input command is read from the response at first.
 
 	/**
 	 * @brief Default constructor.
@@ -243,9 +244,12 @@ std::string StreamController<StreamT>::sendCommand()
 	{
 		ba::read_until(stream, istreamBuffer, RESPONSE_END);
 
-		std::string cmdInput;
-		getLine(istream, cmdInput, REQUEST_END);
-		cmdInput = cmdInput.substr(0, cmdInput.length() - REQUEST_END.length());
+		if(readCommand)
+		{
+			std::string cmdInput;
+			getLine(istream, cmdInput, REQUEST_END);
+			cmdInput = cmdInput.substr(0, cmdInput.length() - REQUEST_END.length());
+		}
 
 		getLine(istream, output, RESPONSE_END);
 		deviceOutput.clear();
