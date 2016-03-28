@@ -23,8 +23,8 @@
 #include <iostream>
 #include <thread>
 
-#include <regilo/neatocontroller.hpp>
 #include <regilo/hokuyocontroller.hpp>
+#include <regilo/neatocontroller.hpp>
 
 #include <regilo/serialcontroller.hpp>
 #include <regilo/socketcontroller.hpp>
@@ -45,7 +45,7 @@ void printHelp()
 			  << "Using regilo-" << regilo::Version::VERSION << std::endl;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	std::cout.setf(std::ios_base::boolalpha);
 

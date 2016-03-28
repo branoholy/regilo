@@ -296,7 +296,7 @@ template<typename... Args>
 std::string StreamController<StreamT>::createCommand(const std::string& command, Args... params) const
 {
 	std::size_t size = std::snprintf(nullptr, 0, command.c_str(), params...) + 1;
-	char* buffer = new char[size];
+	char *buffer = new char[size];
 	std::snprintf(buffer, size, command.c_str(), params...);
 
 	std::string result(buffer, buffer + size - 1);

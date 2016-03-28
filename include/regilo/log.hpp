@@ -256,7 +256,7 @@ std::string TimedLog<DurationT>::read(std::string& logCommand)
 
 	long double numRatio = num / DurationT::period::num;
 	long double denRation = DurationT::period::den / den;
-	lastCommandTime = DurationT((std::int64_t)std::round(commandTimeCount * numRatio * denRation));
+	lastCommandTime = DurationT((std::int64_t) std::round(commandTimeCount * numRatio * denRation));
 
 	if(firstReadTime == DurationT::max()) firstReadTime = epoch<DurationT>();
 	else

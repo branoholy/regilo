@@ -67,7 +67,7 @@ bool RegiloVisual::OnInit()
 	panel = new wxPanel(frame);
 	panel->GetEventHandler()->Bind(wxEVT_KEY_UP, &RegiloVisual::setMotorByKey, this);
 	panel->GetEventHandler()->Bind(wxEVT_PAINT, &RegiloVisual::repaint, this);
-	panel->GetEventHandler()->Bind(wxEVT_LEFT_DCLICK, [this](wxMouseEvent&)
+	panel->GetEventHandler()->Bind(wxEVT_LEFT_DCLICK, [this] (wxMouseEvent&)
 	{
 		if((zoom * 2) > 2) return;
 
@@ -84,7 +84,7 @@ bool RegiloVisual::OnInit()
 			radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
 		}
 	});
-	panel->GetEventHandler()->Bind(wxEVT_RIGHT_DCLICK, [this](wxMouseEvent&)
+	panel->GetEventHandler()->Bind(wxEVT_RIGHT_DCLICK, [this] (wxMouseEvent&)
 	{
 		if((zoom * 0.5) < 0.002) return;
 
@@ -105,7 +105,7 @@ bool RegiloVisual::OnInit()
 	if(!manualScanning && !moveScanning)
 	{
 		scanThreadRunning = true;
-		scanThread = std::thread([this]()
+		scanThread = std::thread([this] ()
 		{
 			while(scanThreadRunning)
 			{
@@ -121,7 +121,7 @@ bool RegiloVisual::OnInit()
 	}
 
 	std::size_t fps = 24;
-	radarThread = std::thread([this, fps]()
+	radarThread = std::thread([this, fps] ()
 	{
 		while(scanThreadRunning)
 		{
@@ -129,7 +129,7 @@ bool RegiloVisual::OnInit()
 			radarAngle += M_PI / fps / 2;
 			radarMutex.unlock();
 
-			this->GetTopWindow()->GetEventHandler()->CallAfter([this]()
+			this->GetTopWindow()->GetEventHandler()->CallAfter([this] ()
 			{
 				frame->Refresh();
 			});
@@ -281,7 +281,7 @@ wxRect RegiloVisual::getRotatedBoundingBox(const wxRect& rect, double angle)
 	wxPoint minBound(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
 	wxPoint maxBound(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
 
-	wxPoint points[] = {rect.GetLeftTop(), rect.GetLeftBottom(), rect.GetRightTop(), rect.GetRightBottom()};
+	wxPoint points[] = { rect.GetLeftTop(), rect.GetLeftBottom(), rect.GetRightTop(), rect.GetRightBottom() };
 	for(wxPoint& point : points)
 	{
 		int x = std::ceil(c * point.x - s * point.y);
@@ -399,7 +399,7 @@ void RegiloVisual::scanAndShow()
 
 	controllerMutex.unlock();
 
-	this->GetTopWindow()->GetEventHandler()->CallAfter([this, emptyData]()
+	this->GetTopWindow()->GetEventHandler()->CallAfter([this, emptyData] ()
 	{
 		if(emptyData) frame->SetStatusText("No more scans to show (EOF).", 0);
 		else frame->Refresh();
