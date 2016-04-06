@@ -173,6 +173,4 @@ output. Same scanning functionality can be done with the Hokuyo as well.
 [![Regilo Visual Screenshot](examples/regilo-visual/etc/screenshot.png)](examples/regilo-visual)
 
 ## License
-Regilo is licensed under GNU GPL v3 (see
-[LICENSE](LICENSE) file).
-
+Regilo is licensed under GNU GPL v3 (see the [LICENSE](LICENSE) file).
