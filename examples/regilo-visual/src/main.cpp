@@ -107,10 +107,10 @@ int main(int argc, char **argv)
 	regilo::INeatoController *neatoController = nullptr;
 	regilo::IHokuyoController *hokuyoController = nullptr;
 
-	if(controllerName == "neato:socket") controller = dynamic_cast<regilo::IScanController*>(neatoController = new regilo::NeatoSocketController());
-	else if(controllerName == "neato:serial") controller = dynamic_cast<regilo::IScanController*>(neatoController = new regilo::NeatoSerialController());
-	else if(controllerName == "hokuyo:socket") controller = dynamic_cast<regilo::IScanController*>(hokuyoController = new regilo::HokuyoSocketController());
-	else if(controllerName == "hokuyo:serial") controller = dynamic_cast<regilo::IScanController*>(hokuyoController = new regilo::HokuyoSerialController());
+	if(controllerName == "neato:socket") controller = dynamic_cast<regilo::IScanController*>(neatoController = new regilo::NeatoSocketController(logPath));
+	else if(controllerName == "neato:serial") controller = dynamic_cast<regilo::IScanController*>(neatoController = new regilo::NeatoSerialController(logPath));
+	else if(controllerName == "hokuyo:socket") controller = dynamic_cast<regilo::IScanController*>(hokuyoController = new regilo::HokuyoSocketController(logPath));
+	else if(controllerName == "hokuyo:serial") controller = dynamic_cast<regilo::IScanController*>(hokuyoController = new regilo::HokuyoSerialController(logPath));
 
 	std::cout << "Using " << controllerName << " controller." << std::endl;
 
