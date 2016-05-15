@@ -34,14 +34,14 @@ namespace regilo {
 class ScanData : public std::vector<ScanRecord>
 {
 public:
-	std::size_t scanId; ///< The scan id (starting from zero).
-	double rotationSpeed; ///< The rotation speed (in Hz).
+	std::size_t scanId = -1u; ///< The scan id (starting from zero).
+	double rotationSpeed = -1; ///< The rotation speed (in Hz).
 	long time; ///< The scan time (milliseconds since epoch).
 
 	/**
 	 * @brief Default constructor.
 	 */
-	ScanData();
+	ScanData() = default;
 
 	/**
 	 * @brief Construct ScanData.

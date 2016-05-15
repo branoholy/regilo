@@ -28,6 +28,8 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include "scancontroller.hpp"
+#include "serialcontroller.hpp"
+#include "socketcontroller.hpp"
 
 namespace regilo {
 
@@ -89,6 +91,11 @@ public:
 	 */
 	HokuyoController(std::iostream& logStream);
 
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~HokuyoController() = default;
+
 	virtual std::map<std::string, std::string> getVersionInfo() override;
 
 	/**
@@ -100,8 +107,8 @@ public:
 	void setScanParameters(std::size_t fromStep, std::size_t toStep, std::size_t clusterCount);
 };
 
-class SerialController;
-class SocketController;
+extern template class HokuyoController<SerialController>;
+extern template class HokuyoController<SocketController>;
 
 typedef HokuyoController<SerialController> HokuyoSerialController;
 typedef HokuyoController<SocketController> HokuyoSocketController;

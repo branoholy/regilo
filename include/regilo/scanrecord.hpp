@@ -42,7 +42,7 @@ public:
 	/**
 	 * @brief Default constructor.
 	 */
-	ScanRecord();
+	ScanRecord() = default;
 
 	/**
 	 * @brief Construct a ScanRecord from all attributes.

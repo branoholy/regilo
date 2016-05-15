@@ -271,7 +271,9 @@ void StreamController<StreamT>::getLine(std::istream& stream, std::string& line,
 		std::string delimPart;
 		while(stream)
 		{
-			char ch = stream.get();
+			char ch;
+			stream.get(ch);
+
 			if(ch == delim.at(delimPart.size()))
 			{
 				delimPart += ch;

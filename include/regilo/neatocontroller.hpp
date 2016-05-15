@@ -27,6 +27,8 @@
 #include <boost/algorithm/string.hpp>
 
 #include "scancontroller.hpp"
+#include "serialcontroller.hpp"
+#include "socketcontroller.hpp"
 
 namespace regilo {
 
@@ -123,6 +125,11 @@ public:
 	 */
 	NeatoController(std::iostream& logStream);
 
+	/**
+	 * @brief Default destructor.
+	 */
+	virtual ~NeatoController() = default;
+
 	virtual inline bool getTestMode() const override { return testMode; }
 
 	virtual void setTestMode(bool testMode) override;
@@ -136,8 +143,8 @@ public:
 	virtual std::string getTime() override;
 };
 
-class SerialController;
-class SocketController;
+extern template class NeatoController<SerialController>;
+extern template class NeatoController<SocketController>;
 
 typedef NeatoController<SerialController> NeatoSerialController;
 typedef NeatoController<SocketController> NeatoSocketController;

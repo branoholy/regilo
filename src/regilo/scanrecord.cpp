@@ -26,10 +26,6 @@
 
 namespace regilo {
 
-ScanRecord::ScanRecord()
-{
-}
-
 ScanRecord::ScanRecord(int id, double angle, double distance, int intensity, int errorCode, bool error) :
 	id(id),
 	angle(angle),

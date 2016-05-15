@@ -40,7 +40,7 @@ void SocketController::connect(const std::string& endpoint)
 	if(colonPos != std::string::npos)
 	{
 		ip = endpoint.substr(0, colonPos);
-		port = std::stoul(endpoint.substr(colonPos + 1));
+		port = static_cast<unsigned short>(std::stoul(endpoint.substr(colonPos + 1)));
 	}
 
 	connect(ip, port);

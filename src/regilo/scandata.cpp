@@ -25,11 +25,6 @@
 
 namespace regilo {
 
-ScanData::ScanData() :
-	scanId(-1), rotationSpeed(-1)
-{
-}
-
 ScanData::ScanData(std::size_t scanId, double rotationSpeed) :
 	scanId(scanId), rotationSpeed(rotationSpeed)
 {

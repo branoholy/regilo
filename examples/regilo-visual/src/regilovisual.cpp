@@ -268,7 +268,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 wxImage RegiloVisual::zoomImage(const wxImage& image, double zoom)
 {
 	wxImage zoomedImage = image;
-	zoomedImage.Rescale(image.GetWidth() * zoom, image.GetHeight() * zoom);
+	zoomedImage.Rescale(int(image.GetWidth() * zoom), int(image.GetHeight() * zoom));
 
 	return zoomedImage;
 }
@@ -284,8 +284,8 @@ wxRect RegiloVisual::getRotatedBoundingBox(const wxRect& rect, double angle)
 	wxPoint points[] = { rect.GetLeftTop(), rect.GetLeftBottom(), rect.GetRightTop(), rect.GetRightBottom() };
 	for(wxPoint& point : points)
 	{
-		int x = std::ceil(c * point.x - s * point.y);
-		int y = std::ceil(s * point.x + c * point.y);
+		int x = int(std::ceil(c * point.x - s * point.y));
+		int y = int(std::ceil(s * point.x + c * point.y));
 
 		if(x < minBound.x) minBound.x = x;
 		if(y < minBound.y) minBound.y = y;
@@ -344,7 +344,7 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	gcdc.SetBrush(*wxTRANSPARENT_BRUSH);
 	for(std::size_t radius = 1000; radius <= 4000; radius += 1000)
 	{
-		gcdc.DrawCircle(width2, height2, radius * zoom);
+		gcdc.DrawCircle(width2, height2, int(radius * zoom));
 	}
 
 	// Draw radar ray
@@ -354,8 +354,8 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	double maxRayLength = std::sqrt(width2 * width2 + height2 * height2);
 	if(rayLength > maxRayLength) rayLength = maxRayLength;
 
-	double radarLineX = width2 + rayLength * std::cos(radarAngle);
-	double radarLineY = height2 - rayLength * std::sin(radarAngle);
+	int radarLineX = int(width2 + rayLength * std::cos(radarAngle));
+	int radarLineY = int(height2 - rayLength * std::sin(radarAngle));
 	gcdc.DrawLine(width2, height2, radarLineX, radarLineY);
 
 	drawRadarGradient(dc, width2, height2);
@@ -370,8 +370,8 @@ void RegiloVisual::repaint(wxPaintEvent&)
 		if(record.error) continue;
 
 		double distance = record.distance * zoom;
-		double x = width2 + distance * std::cos(record.angle);
-		double y = height2 - distance * std::sin(record.angle);
+		int x = int(width2 + distance * std::cos(record.angle));
+		int y = int(height2 - distance * std::sin(record.angle));
 
 		dc.DrawRectangle(x, y, 2, 2);
 	}
