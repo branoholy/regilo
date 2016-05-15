@@ -103,7 +103,7 @@ private:
 	ba::streambuf ostreamBuffer;
 	std::ostream ostream;
 
-	static void getLine(std::istream& stream, std::string& line, const std::string& delim);
+	static std::istream& getLine(std::istream& stream, std::string& line, const std::string& delim);
 
 protected:
 	std::istringstream deviceOutput;
@@ -262,34 +262,40 @@ std::string StreamController<StreamT>::sendCommand()
 }
 
 template<typename StreamT>
-void StreamController<StreamT>::getLine(std::istream& stream, std::string& line, const std::string& delim)
+std::istream& StreamController<StreamT>::getLine(std::istream& stream, std::string& line, const std::string& delim)
 {
-	if(delim.empty()) std::getline(stream, line);
-	else if(delim.size() == 1) std::getline(stream, line, delim.front());
+	if(delim.empty()) return std::getline(stream, line);
+	else if(delim.size() == 1) return std::getline(stream, line, delim.front());
 	else
 	{
-		std::string delimPart;
-		while(stream)
-		{
-			char ch;
-			stream.get(ch);
+		char c;
+		int nextC;
+		std::string delimPart, result;
 
-			if(ch == delim.at(delimPart.size()))
+		while((nextC = stream.peek()) != -1)
+		{
+			stream.get(c);
+			if(c == delim.at(delimPart.size()))
 			{
-				delimPart += ch;
+				delimPart += c;
 				if(delimPart.size() == delim.size()) break;
 			}
 			else
 			{
 				if(!delimPart.empty())
 				{
-					line += delimPart;
+					result += delimPart;
 					delimPart.clear();
 				}
 
-				line += ch;
+				result += c;
 			}
 		}
+
+		if(result.empty()) stream.get();
+		else line = result;
+
+		return stream;
 	}
 }
 
