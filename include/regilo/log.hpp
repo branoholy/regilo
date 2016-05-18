@@ -23,6 +23,7 @@
 #define REGILO_LOG_HPP
 
 #include <chrono>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <mutex>
