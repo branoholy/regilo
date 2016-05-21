@@ -78,6 +78,9 @@ private:
 	wxRect getRotatedBoundingBox(const wxRect& rect, double angle);
 	void drawRadarGradient(wxDC& dc, int width2, int height2);
 
+	void setStatusText(const std::string& text, int i = 0);
+	void refreshStatusBar();
+
 public:
 	RegiloVisual(regilo::IScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
 

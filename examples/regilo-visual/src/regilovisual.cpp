@@ -51,17 +51,14 @@ bool RegiloVisual::OnInit()
 	frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
 
 	// Frame StatusBar
-	wxStatusBar *statusBar = frame->CreateStatusBar(2);
+	frame->CreateStatusBar(2, wxSTB_ELLIPSIZE_MIDDLE | wxSTB_SHOW_TIPS | wxFULL_REPAINT_ON_RESIZE);
 
 	std::string endpoint;
 	if(useScanner) endpoint = controller->getEndpoint();
 	else endpoint = controller->getLog()->getFilePath();
 
-	frame->SetStatusText("", 0);
-	frame->SetStatusText("Connected to " + endpoint, 1);
-
-	int sbWidths[] = { -1, 300 };
-	statusBar->SetStatusWidths(2, sbWidths);
+	setStatusText("", 0);
+	setStatusText("Connected to " + endpoint, 1);
 
 	// Panel
 	panel = new wxPanel(frame);
@@ -164,7 +161,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 	{
 		if(moveScanning)
 		{
-			frame->SetStatusText("Move scanning...", 0);
+			setStatusText("Move scanning...", 0);
 			scanAndShow();
 		}
 	}
@@ -178,12 +175,12 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			if(neatoController != nullptr)
 			{
 				controllerMutex.lock();
-				frame->SetStatusText("Going up...", 0);
+				setStatusText("Going up...", 0);
 
 				if(keyEvent.ControlDown()) neatoController->setMotor(500, 500, 100);
 				else neatoController->setMotor(100, 100, 50);
 
-				frame->SetStatusText("Going up... Done!", 0);
+				setStatusText("Going up... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -192,11 +189,11 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			if(neatoController != nullptr)
 			{
 				controllerMutex.lock();
-				frame->SetStatusText("Going down...", 0);
+				setStatusText("Going down...", 0);
 
 				neatoController->setMotor(-100, -100, 50);
 
-				frame->SetStatusText("Going down... Done!", 0);
+				setStatusText("Going down... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -205,12 +202,12 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			if(neatoController != nullptr)
 			{
 				controllerMutex.lock();
-				frame->SetStatusText("Turning left...", 0);
+				setStatusText("Turning left...", 0);
 
 				if(keyEvent.ControlDown()) neatoController->setMotor(-30, 30, 50);
 				else neatoController->setMotor(20, 100, 50);
 
-				frame->SetStatusText("Turning left... Done!", 0);
+				setStatusText("Turning left... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -219,12 +216,12 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			if(neatoController != nullptr)
 			{
 				controllerMutex.lock();
-				frame->SetStatusText("Turning right...", 0);
+				setStatusText("Turning right...", 0);
 
 				if(keyEvent.ControlDown()) neatoController->setMotor(30, -30, 50);
 				else neatoController->setMotor(100, 20, 50);
 
-				frame->SetStatusText("Turning right... Done!", 0);
+				setStatusText("Turning right... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -233,11 +230,11 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 			if(neatoController != nullptr)
 			{
 				controllerMutex.lock();
-				frame->SetStatusText("Stopping...", 0);
+				setStatusText("Stopping...", 0);
 
 				neatoController->setMotor(0, 0, 0);
 
-				frame->SetStatusText("Stopping... Done!", 0);
+				setStatusText("Stopping... Done!", 0);
 				controllerMutex.unlock();
 			}
 			break;
@@ -245,7 +242,7 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 		case 'S':
 			if(manualScanning)
 			{
-				frame->SetStatusText("Manual scanning...", 0);
+				setStatusText("Manual scanning...", 0);
 				scanAndShow();
 			}
 			break;
@@ -401,9 +398,26 @@ void RegiloVisual::scanAndShow()
 
 	this->GetTopWindow()->GetEventHandler()->CallAfter([this, emptyData] ()
 	{
-		if(emptyData) frame->SetStatusText("No more scans to show (EOF).", 0);
+		if(emptyData) setStatusText("No more scans to show (EOF).", 0);
 		else frame->Refresh();
 	});
+}
+
+void RegiloVisual::setStatusText(const std::string& text, int i)
+{
+	frame->SetStatusText(text, i);
+	if(i == 1) refreshStatusBar();
+}
+
+void RegiloVisual::refreshStatusBar()
+{
+	wxStatusBar *statusBar = frame->GetStatusBar();
+
+	int lastWidth = statusBar->GetTextExtent(statusBar->GetStatusText(1)).GetWidth() + 10;
+	if(lastWidth > 400) lastWidth = 400;
+
+	const int statusBarWidths[] = {-1, lastWidth};
+	statusBar->SetStatusWidths(2, statusBarWidths);
 }
 
 void RegiloVisual::Display(wxApp *app, int& argc, char **argv)
