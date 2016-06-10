@@ -161,26 +161,11 @@ public:
 	virtual std::string sendCommand(const std::string& command) final override;
 
 	/**
-	 * @brief Send a command to the device and keep the response in the buffer.
-	 * @param command A commmand with all parameters.
-	 */
-	template<typename Response = void, typename Command, typename std::enable_if<std::is_void<Response>::value, Response>::type* = nullptr>
-	void sendCommand(const Command& command);
-
-	/**
-	 * @brief Send a command to the device and keep the response in the buffer.
-	 * @param command A commmand without parameters.
-	 * @param params Parameters that will be inserted into the command (separated by space).
-	 */
-	template<typename Response = void, typename Command, typename... Args, typename std::enable_if<std::is_void<Response>::value, Response>::type* = nullptr>
-	void sendCommand(const Command& command, const Args& ... params);
-
-	/**
 	 * @brief Send a command to the device.
 	 * @param command A commmand with all parameters.
 	 * @return A response to the command.
 	 */
-	template<typename Response, typename Command, typename std::enable_if<!std::is_void<Response>::value, Response>::type* = nullptr>
+	template<typename Response = void, typename Command>
 	Response sendCommand(const Command& command);
 
 	/**
@@ -188,7 +173,7 @@ public:
 	 * @param command A commmand without parameters.
 	 * @return Parameters that will be inserted into the command (separated by space).
 	 */
-	template<typename Response, typename Command, typename... Args, typename std::enable_if<!std::is_void<Response>::value, Response>::type* = nullptr>
+	template<typename Response = void, typename Command, typename... Args>
 	Response sendCommand(const Command& command, const Args& ... params);
 
 	/**
@@ -197,8 +182,8 @@ public:
 	 * @param params Parameters that will be inserted into the command.
 	 * @return A response to the command.
 	 */
-	template<typename... Args>
-	std::string sendFormattedCommand(const std::string& commandFormat, Args... params);
+	template<typename Response = void, typename... Args>
+	Response sendFormattedCommand(const std::string& commandFormat, Args... params);
 
 	/**
 	 * @brief Create a command with the specified parameters (printf formatting is used).
@@ -253,23 +238,7 @@ std::string StreamController<StreamT>::sendCommand(const std::string& command)
 }
 
 template<typename StreamT>
-template<typename Response, typename Command, typename std::enable_if<std::is_void<Response>::value, Response>::type*>
-void StreamController<StreamT>::sendCommand(const Command& command)
-{
-	deviceInput << command;
-	sendCommand();
-}
-
-template<typename StreamT>
-template<typename Response, typename Command, typename... Args, typename std::enable_if<std::is_void<Response>::value, Response>::type*>
-void StreamController<StreamT>::sendCommand(const Command& command, const Args& ... params)
-{
-	deviceInput << command << ' ';
-	sendCommand(params...);
-}
-
-template<typename StreamT>
-template<typename Response, typename Command, typename std::enable_if<!std::is_void<Response>::value, Response>::type*>
+template<typename Response, typename Command>
 Response StreamController<StreamT>::sendCommand(const Command& command)
 {
 	deviceInput << command;
@@ -277,7 +246,7 @@ Response StreamController<StreamT>::sendCommand(const Command& command)
 }
 
 template<typename StreamT>
-template<typename Response, typename Command, typename... Args, typename std::enable_if<!std::is_void<Response>::value, Response>::type*>
+template<typename Response, typename Command, typename... Args>
 Response StreamController<StreamT>::sendCommand(const Command& command, const Args& ... params)
 {
 	deviceInput << command << ' ';
@@ -285,10 +254,10 @@ Response StreamController<StreamT>::sendCommand(const Command& command, const Ar
 }
 
 template<typename StreamT>
-template<typename... Args>
-std::string StreamController<StreamT>::sendFormattedCommand(const std::string& commandFormat, Args... params)
+template<typename Response, typename... Args>
+Response StreamController<StreamT>::sendFormattedCommand(const std::string& commandFormat, Args... params)
 {
-	return sendCommand(createFormattedCommand(commandFormat, params...));
+	return sendCommand<Response>(createFormattedCommand(commandFormat, params...));
 }
 
 template<typename StreamT>
