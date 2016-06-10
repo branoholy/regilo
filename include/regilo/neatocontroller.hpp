@@ -197,21 +197,21 @@ NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) :
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setTestMode(bool testMode)
 {
-	this->sendCommand(CMD_TEST_MODE, (testMode ? ON : OFF).c_str());
+	this->sendFormattedCommand(CMD_TEST_MODE, (testMode ? ON : OFF).c_str());
 	this->testMode = testMode;
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setLdsRotation(bool ldsRotation)
 {
-	this->sendCommand(CMD_SET_LDS_ROTATION, (ldsRotation ? ON : OFF).c_str());
+	this->sendFormattedCommand(CMD_SET_LDS_ROTATION, (ldsRotation ? ON : OFF).c_str());
 	this->ldsRotation = ldsRotation;
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setMotor(int left, int right, int speed)
 {
-	this->sendCommand(CMD_SET_MOTOR, left, right, speed);
+	this->sendFormattedCommand(CMD_SET_MOTOR, left, right, speed);
 }
 
 template<typename ProtocolController>

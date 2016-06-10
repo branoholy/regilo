@@ -114,7 +114,11 @@ protected:
 
 	std::shared_ptr<Log> log;
 
-	virtual std::string sendCommand() final;
+	template<typename Response = void, typename std::enable_if<std::is_void<Response>::value>::type* = nullptr>
+	void sendCommand();
+
+	template<typename Response, typename std::enable_if<!std::is_void<Response>::value>::type* = nullptr>
+	Response sendCommand();
 
 public:
 	typedef StreamT Stream;
@@ -157,22 +161,53 @@ public:
 	virtual std::string sendCommand(const std::string& command) final override;
 
 	/**
+	 * @brief Send a command to the device and keep the response in the buffer.
+	 * @param command A commmand with all parameters.
+	 */
+	template<typename Response = void, typename Command, typename std::enable_if<std::is_void<Response>::value, Response>::type* = nullptr>
+	void sendCommand(const Command& command);
+
+	/**
+	 * @brief Send a command to the device and keep the response in the buffer.
+	 * @param command A commmand without parameters.
+	 * @param params Parameters that will be inserted into the command (separated by space).
+	 */
+	template<typename Response = void, typename Command, typename... Args, typename std::enable_if<std::is_void<Response>::value, Response>::type* = nullptr>
+	void sendCommand(const Command& command, const Args& ... params);
+
+	/**
+	 * @brief Send a command to the device.
+	 * @param command A commmand with all parameters.
+	 * @return A response to the command.
+	 */
+	template<typename Response, typename Command, typename std::enable_if<!std::is_void<Response>::value, Response>::type* = nullptr>
+	Response sendCommand(const Command& command);
+
+	/**
+	 * @brief Send a command to the device.
+	 * @param command A commmand without parameters.
+	 * @return Parameters that will be inserted into the command (separated by space).
+	 */
+	template<typename Response, typename Command, typename... Args, typename std::enable_if<!std::is_void<Response>::value, Response>::type* = nullptr>
+	Response sendCommand(const Command& command, const Args& ... params);
+
+	/**
 	 * @brief Create a command with the specified parameters (printf formatting is used) and send it to the device.
-	 * @param command A command without parameters.
+	 * @param commandFormat A command format without parameters.
 	 * @param params Parameters that will be inserted into the command.
 	 * @return A response to the command.
 	 */
 	template<typename... Args>
-	std::string sendCommand(const std::string& command, Args... params);
+	std::string sendFormattedCommand(const std::string& commandFormat, Args... params);
 
 	/**
 	 * @brief Create a command with the specified parameters (printf formatting is used).
-	 * @param command A command without parameters.
+	 * @param commandFormat A command format without parameters.
 	 * @param params Parameters that will be inserted into the command.
 	 * @return The command with the parameters.
 	 */
 	template<typename... Args>
-	std::string createCommand(const std::string& command, Args... params) const;
+	std::string createFormattedCommand(const std::string& commandFormat, Args... params) const;
 };
 
 template<typename StreamT>
@@ -214,19 +249,51 @@ void StreamController<StreamT>::setLog(std::shared_ptr<ILog> log)
 template<typename StreamT>
 std::string StreamController<StreamT>::sendCommand(const std::string& command)
 {
+	return sendCommand<std::string>(command);
+}
+
+template<typename StreamT>
+template<typename Response, typename Command, typename std::enable_if<std::is_void<Response>::value, Response>::type*>
+void StreamController<StreamT>::sendCommand(const Command& command)
+{
 	deviceInput << command;
-	return sendCommand();
+	sendCommand();
+}
+
+template<typename StreamT>
+template<typename Response, typename Command, typename... Args, typename std::enable_if<std::is_void<Response>::value, Response>::type*>
+void StreamController<StreamT>::sendCommand(const Command& command, const Args& ... params)
+{
+	deviceInput << command << ' ';
+	sendCommand(params...);
+}
+
+template<typename StreamT>
+template<typename Response, typename Command, typename std::enable_if<!std::is_void<Response>::value, Response>::type*>
+Response StreamController<StreamT>::sendCommand(const Command& command)
+{
+	deviceInput << command;
+	return sendCommand<Response>();
+}
+
+template<typename StreamT>
+template<typename Response, typename Command, typename... Args, typename std::enable_if<!std::is_void<Response>::value, Response>::type*>
+Response StreamController<StreamT>::sendCommand(const Command& command, const Args& ... params)
+{
+	deviceInput << command << ' ';
+	return sendCommand<Response>(params...);
 }
 
 template<typename StreamT>
 template<typename... Args>
-std::string StreamController<StreamT>::sendCommand(const std::string& command, Args... params)
+std::string StreamController<StreamT>::sendFormattedCommand(const std::string& commandFormat, Args... params)
 {
-	return sendCommand(createCommand(command, params...));
+	return sendCommand(createFormattedCommand(commandFormat, params...));
 }
 
 template<typename StreamT>
-std::string StreamController<StreamT>::sendCommand()
+template<typename Response, typename std::enable_if<std::is_void<Response>::value>::type*>
+void StreamController<StreamT>::sendCommand()
 {
 	deviceInput << REQUEST_END;
 
@@ -257,6 +324,16 @@ std::string StreamController<StreamT>::sendCommand()
 	}
 
 	if(log != nullptr) log->write(input, output);
+}
+
+template<typename StreamT>
+template<typename Response, typename std::enable_if<!std::is_void<Response>::value>::type*>
+Response StreamController<StreamT>::sendCommand()
+{
+	sendCommand();
+
+	Response output;
+	deviceOutput >> output;
 
 	return output;
 }
@@ -269,16 +346,19 @@ std::istream& StreamController<StreamT>::getLine(std::istream& stream, std::stri
 	else
 	{
 		char c;
-		int nextC;
-		std::string delimPart, result;
+		stream.get(c);
 
-		while((nextC = stream.peek()) != -1)
+		std::string delimPart, result;
+		while(stream)
 		{
-			stream.get(c);
 			if(c == delim.at(delimPart.size()))
 			{
 				delimPart += c;
-				if(delimPart.size() == delim.size()) break;
+				if(delimPart.size() == delim.size())
+				{
+					delimPart.clear();
+					break;
+				}
 			}
 			else
 			{
@@ -290,10 +370,13 @@ std::istream& StreamController<StreamT>::getLine(std::istream& stream, std::stri
 
 				result += c;
 			}
+
+			if(stream.peek() == EOF) break;
+			else stream.get(c);
 		}
 
-		if(result.empty()) stream.get();
-		else line = result;
+		if(!delimPart.empty()) result += delimPart;
+		if(!result.empty()) line = result;
 
 		return stream;
 	}
@@ -301,7 +384,7 @@ std::istream& StreamController<StreamT>::getLine(std::istream& stream, std::stri
 
 template<typename StreamT>
 template<typename... Args>
-std::string StreamController<StreamT>::createCommand(const std::string& command, Args... params) const
+std::string StreamController<StreamT>::createFormattedCommand(const std::string& command, Args... params) const
 {
 	std::size_t size = std::snprintf(nullptr, 0, command.c_str(), params...) + 1;
 	char *buffer = new char[size];

@@ -67,7 +67,7 @@ private:
 	double startAngle = -135 * M_PI / 180;
 
 protected:
-	virtual inline std::string getScanCommand() const override { return this->createCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount); }
+	virtual inline std::string getScanCommand() const override { return this->createFormattedCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount); }
 	virtual bool parseScanData(std::istream& in, ScanData& data) override;
 
 public:
@@ -142,11 +142,7 @@ std::map<std::string, std::string> HokuyoController<ProtocolController>::getVers
 {
 	std::map<std::string, std::string> versionInfo;
 
-	char status;
-	this->sendCommand(CMD_GET_VERSION);
-	this->deviceOutput >> status;
-
-	if(status == '0')
+	if(ProtocolController::template sendCommand<char>(CMD_GET_VERSION) == '0')
 	{
 		std::string line;
 		while(std::getline(this->deviceOutput, line))

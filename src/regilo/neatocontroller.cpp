@@ -21,9 +21,6 @@
 
 #include "regilo/neatocontroller.hpp"
 
-#include "regilo/serialcontroller.hpp"
-#include "regilo/socketcontroller.hpp"
-
 namespace regilo {
 
 template class NeatoController<SerialController>;
