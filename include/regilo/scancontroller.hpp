@@ -54,7 +54,7 @@ template<typename ProtocolController>
 class ScanController : public IScanController, public ProtocolController
 {
 protected:
-	std::size_t lastScanId = 0;
+	std::size_t lastScanId = 0; ///< A scan id (starting from zero) that is used for new scans.
 
 	/**
 	 * @brief Get a string that can be used for getting a scan.
