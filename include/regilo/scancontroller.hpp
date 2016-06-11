@@ -28,6 +28,9 @@
 
 namespace regilo {
 
+/**
+ * @brief The IScanController interface is used for all controller classes that implement scanning functionality.
+ */
 class IScanController : public virtual IController
 {
 public:
@@ -38,19 +41,33 @@ public:
 
 	/**
 	 * @brief Get a scan from the device.
-	 * @param fromDevice Specify if you want to get a scan from the device (true) or log (false). Default: true
+	 * @param fromDevice Specify if you want to get a scan from the device (true) or log (false). Default: true.
 	 * @return ScanData
 	 */
 	virtual ScanData getScan(bool fromDevice = true) = 0;
 };
 
+/**
+ * @brief The ScanController class implements parsing of scanned laser data.
+ */
 template<typename ProtocolController>
 class ScanController : public IScanController, public ProtocolController
 {
 protected:
 	std::size_t lastScanId = 0;
 
+	/**
+	 * @brief Get a string that can be used for getting a scan.
+	 * @return A command for getting a scan.
+	 */
 	virtual std::string getScanCommand() const = 0;
+
+	/**
+	 * @brief Parse the raw scan data.
+	 * @param in The input stream that stores the raw scan data.
+	 * @param data Output for the scanned data.
+	 * @return True if the parsing ends without an error.
+	 */
 	virtual bool parseScanData(std::istream& in, ScanData& data) = 0;
 
 public:

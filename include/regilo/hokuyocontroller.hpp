@@ -45,8 +45,8 @@ public:
 	virtual ~IHokuyoController() = default;
 
 	/**
-	 * @brief Return information about version.
-	 * @return Key-value pairs with the information
+	 * @brief Return information about the scanner version.
+	 * @return Key-value pairs with the information.
 	 */
 	virtual std::map<std::string, std::string> getVersionInfo() = 0;
 };
@@ -71,8 +71,8 @@ protected:
 	virtual bool parseScanData(std::istream& in, ScanData& data) override;
 
 public:
-	static std::string CMD_GET_VERSION;
-	static std::string CMD_GET_SCAN;
+	static std::string CMD_GET_VERSION; ///< A command for getting the scanner version.
+	static std::string CMD_GET_SCAN; ///< A command for getting a scan.
 
 	/**
 	 * @brief Default constructor.

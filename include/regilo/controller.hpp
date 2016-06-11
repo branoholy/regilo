@@ -48,44 +48,44 @@ public:
 
 	/**
 	 * @brief Connect the controller to a device.
-	 * @param endpoint The endpoint of device.
+	 * @param endpoint The device endpoint (a path, IP address, etc.).
 	 */
 	virtual void connect(const std::string& endpoint) = 0;
 
 	/**
 	 * @brief Test if the controller is connected.
-	 * @return True if connected
+	 * @return True if connected.
 	 */
 	virtual bool isConnected() const = 0;
 
 	/**
 	 * @brief Get the endpoint of device.
-	 * @return The endpoint or empty string
+	 * @return The device endpoint or empty string.
 	 */
 	virtual std::string getEndpoint() const = 0;
 
 	/**
 	 * @brief Get the current Log.
-	 * @return The Log or empty std::shared_ptr
+	 * @return The Log or empty std::shared_ptr.
 	 */
 	virtual std::shared_ptr<ILog> getLog() = 0;
 
 	/**
 	 * @brief Get the current Log (a const variant).
-	 * @return The Log or empty std::shared_ptr
+	 * @return The Log or empty std::shared_ptr.
 	 */
 	virtual std::shared_ptr<const ILog> getLog() const = 0;
 
 	/**
 	 * @brief Set a Log (it can be shared between more controllers).
-	 * @param log Smart pointer to a Log
+	 * @param log Smart pointer to the Log.
 	 */
 	virtual void setLog(std::shared_ptr<ILog> log) = 0;
 
 	/**
 	 * @brief Send a command to the device.
-	 * @param command A commmand with all parameters.
-	 * @return A response to the command.
+	 * @param command A command with all parameters.
+	 * @return A string response to the command.
 	 */
 	virtual std::string sendCommand(const std::string& command) = 0;
 };
@@ -106,22 +106,29 @@ private:
 	static std::istream& getLine(std::istream& stream, std::string& line, const std::string& delim);
 
 protected:
-	std::istringstream deviceOutput;
-	std::ostringstream deviceInput;
+	std::istringstream deviceOutput; ///< A buffer for the device output.
+	std::ostringstream deviceInput; ///< A buffer for the device input.
 
-	ba::io_service ioService;
-	StreamT stream;
+	ba::io_service ioService; ///< The Boost IO service.
+	StreamT stream; ///< A stream (TCP, socket, etc.) that is used for read/write operations.
 
-	std::shared_ptr<Log> log;
+	std::shared_ptr<Log> log; ///< A log that is connected to the controller.
 
+	/**
+	 * @brief Send a command from the device input to the device.
+	 */
 	template<typename Response = void, typename std::enable_if<std::is_void<Response>::value>::type* = nullptr>
 	void sendCommand();
 
+	/**
+	 * @brief Send a command from the device input to the device.
+	 * @return A response to the command.
+	 */
 	template<typename Response, typename std::enable_if<!std::is_void<Response>::value>::type* = nullptr>
 	Response sendCommand();
 
 public:
-	typedef StreamT Stream;
+	typedef StreamT Stream; ///< The stream type for this Controller.
 
 	std::string REQUEST_END = "\n"; ///< A string that the request ends with.
 	std::string RESPONSE_END = "\n"; ///< A string that the response ends with.
@@ -162,7 +169,7 @@ public:
 
 	/**
 	 * @brief Send a command to the device.
-	 * @param command A commmand with all parameters.
+	 * @param command A command with all parameters.
 	 * @return A response to the command.
 	 */
 	template<typename Response = void, typename Command>
@@ -170,8 +177,9 @@ public:
 
 	/**
 	 * @brief Send a command to the device.
-	 * @param command A commmand without parameters.
-	 * @return Parameters that will be inserted into the command (separated by space).
+	 * @param command A command without parameters.
+	 * @param params Parameters that will be inserted into the command (separated by space).
+	 * @return A response to the command.
 	 */
 	template<typename Response = void, typename Command, typename... Args>
 	Response sendCommand(const Command& command, const Args& ... params);

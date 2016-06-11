@@ -55,13 +55,13 @@ public:
 
 	/**
 	 * @brief Get the current underlying stream.
-	 * @return The underlying stream
+	 * @return The underlying stream.
 	 */
 	virtual std::iostream& getStream() = 0;
 
 	/**
 	 * @brief Test if the stream is EOF.
-	 * @return true/false
+	 * @return True if the log is in the EOF state.
 	 */
 	virtual bool isEnd() const = 0;
 
@@ -117,10 +117,19 @@ private:
 	bool metadataWritten = false;
 
 protected:
-	std::iostream& stream;
-	std::size_t version = 1;
+	std::iostream& stream; ///< The underlying stream.
+	std::size_t version = 1; ///< The log version.
 
+	/**
+	 * @brief Read meta data from the log.
+	 * @param metaStream A stream that is used for reading.
+	 */
 	virtual void readMetadata(std::istream& metaStream);
+
+	/**
+	 * @brief Write meta data to the log.
+	 * @param metaStream A stream that is used for writing.
+	 */
 	virtual void writeMetadata(std::ostream& metaStream);
 
 public:
@@ -128,13 +137,13 @@ public:
 
 	/**
 	 * @brief Log constructor with logging to a file.
-	 * @param filePath The path of file
+	 * @param filePath The path of file.
 	 */
 	Log(const std::string& filePath);
 
 	/**
 	 * @brief Log constructor with logging to a stream.
-	 * @param stream Input/output stream
+	 * @param stream Input/output stream.
 	 */
 	Log(std::iostream& stream);
 
@@ -165,13 +174,13 @@ public:
 
 	/**
 	 * @brief Get the last command time (after reading).
-	 * @return Time since epoch as std::chrono::nanoseconds
+	 * @return Time since epoch as std::chrono::nanoseconds.
 	 */
 	virtual std::chrono::nanoseconds getLastCommandNanoseconds() const = 0;
 
 	/**
 	 * @brief Get the last command time (after reading).
-	 * @return Time since epoch as Duration
+	 * @return Time since epoch as Duration.
 	 */
 	template<typename Duration>
 	inline Duration getLastCommandTimeAs() const { return std::chrono::duration_cast<Duration>(this->getLastCommandNanoseconds()); }
@@ -204,10 +213,13 @@ protected:
 	virtual void writeMetadata(std::ostream& metaStream) override;
 
 public:
-	typedef DurationT Duration;
+	typedef DurationT Duration; ///< The duration type for this log.
 
 	using Log::Log;
 
+	/**
+	 * @brief Default destructor.
+	 */
 	virtual ~TimedLog() = default;
 
 	inline virtual std::chrono::nanoseconds getLastCommandNanoseconds() const override
@@ -217,7 +229,7 @@ public:
 
 	/**
 	 * @brief Get the last command time (after reading).
-	 * @return Time since epoch as Duration
+	 * @return Time since epoch as Duration.
 	 */
 	inline DurationT getLastCommandTime() const { return lastCommandTime; }
 

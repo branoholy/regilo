@@ -28,7 +28,7 @@ namespace regilo {
 
 /**
  * @brief Get time since epoch.
- * @return Time as std::duration
+ * @return Time as std::duration.
  */
 template<typename T>
 T epoch()

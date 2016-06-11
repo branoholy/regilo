@@ -51,8 +51,8 @@ public:
 
 	/**
 	 * @brief Connect the controller to a device.
-	 * @param ip The IP address of the device (e.g. "10.0.0.1")
-	 * @param port The port number of the device (e.g. 12345)
+	 * @param ip The IP address of the device (e.g. "10.0.0.1").
+	 * @param port The port number of the device (e.g. 12345).
 	 */
 	void connect(const std::string& ip, unsigned short port);
 

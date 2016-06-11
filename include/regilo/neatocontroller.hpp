@@ -45,25 +45,25 @@ public:
 
 	/**
 	 * @brief Get whether the Neato is in the test mode.
-	 * @return true/false
+	 * @return True if the Neato is in the test mode.
 	 */
 	virtual bool getTestMode() const = 0;
 
 	/**
 	 * @brief Set or unset the test mode.
-	 * @param testMode true/false
+	 * @param testMode True for setting the test mode.
 	 */
 	virtual void setTestMode(bool testMode) = 0;
 
 	/**
 	 * @brief Get whether the Neato has LDS rotation on or off.
-	 * @return true/false
+	 * @return True if the LIDAR is rotating.
 	 */
 	virtual bool getLdsRotation() const = 0;
 
 	/**
 	 * @brief Set LDS rotation on or off.
-	 * @param ldsRotation true/false
+	 * @param ldsRotation True for starting the LIDAR rotation.
 	 */
 	virtual void setLdsRotation(bool ldsRotation) = 0;
 
@@ -77,7 +77,7 @@ public:
 
 	/**
 	 * @brief Get the current scheduler time.
-	 * @return "DayOfWeek HourOf24:Min:Sec" (example: "Sunday 13:57:09")
+	 * @return "DayOfWeek HourOf24:Min:Sec" (example: "Sunday 13:57:09").
 	 */
 	virtual std::string getTime() = 0;
 };
