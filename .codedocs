@@ -1,7 +1,7 @@
 # CodeDocs.xyz Configuration File
 
 PROJECT_NAME = Regilo
-PROJECT_BRIEF = A simple C++ library for controlling the Neato XV robot and the Hokuyo scanner.
+PROJECT_BRIEF = "A simple C++ library for controlling the Neato XV robot and the Hokuyo scanner."
 
 EXAMPLE_PATH = examples/
 EXCLUDE = examples/
