@@ -27,7 +27,8 @@ SocketController::~SocketController()
 {
 	if(stream.is_open())
 	{
-		stream.shutdown(bai::tcp::socket::shutdown_both);
+		boost::system::error_code ec;
+		stream.shutdown(bai::tcp::socket::shutdown_both, ec);
 	}
 }
 
