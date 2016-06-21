@@ -88,7 +88,7 @@ ScanData ScanController<ProtocolController>::getScan(bool fromDevice)
 
 	if(fromDevice)
 	{
-		this->sendCommand(getScanCommand());
+		ProtocolController::template sendCommand<>(getScanCommand());
 		data.time = epoch<std::chrono::milliseconds>().count();
 
 		parseScanData(this->deviceOutput, data);
