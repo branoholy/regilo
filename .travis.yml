@@ -9,16 +9,28 @@ before_install:
   - export CXX="g++-4.9"
   - g++-4.9 --version
 
+install:
+  - cd $TRAVIS_BUILD_DIR
+  - gem install coveralls-lcov
+
 before_script:
   - cd $TRAVIS_BUILD_DIR
   - mkdir build && cd build
-  - cmake -Dexample:bool=on ..
-#  - cmake -Dexamples:bool=on .. # cannot build GUI example
+  - cmake -Dexample:bool=on -Dtests:bool=on ..
+#  - cmake -Dexamples:bool=on .. # cannot build the GUI example
 
 script:
   - cd $TRAVIS_BUILD_DIR
   - cd build
   - make -j$(nproc)
+  - tests/tests
+
+after_success:
+  - cd $TRAVIS_BUILD_DIR
+  - lcov --directory . --capture --output-file coverage.info
+  - lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info
+  - lcov --list coverage.info
+  - coveralls-lcov --repo-token $COVERALLS_TOKEN coverage.info
 
 addons:
   apt:
@@ -27,4 +39,5 @@ addons:
     packages:
       - g++-4.9
       - libboost-system-dev
+      - lcov
 #      - libwxgtk3.0-dev # still not working

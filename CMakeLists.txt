@@ -31,6 +31,7 @@ option(example "Build the console example")
 option(example-gui "Build the GUI example")
 option(examples "Build all examples")
 option(examples-only "Build only examples (not the library)")
+option(tests "Build the unit tests")
 
 option(INSTALL_LIB_DIR "Installation directory for libraries")
 if(${INSTALL_LIB_DIR} STREQUAL "OFF")
@@ -98,6 +99,11 @@ endif()
 
 if((${example-gui}) OR (${examples}))
 	add_subdirectory("examples/regilo-visual")
+endif()
+
+# Add unit tests
+if(${tests})
+	add_subdirectory("tests")
 endif()
 
 # Add uninstall
