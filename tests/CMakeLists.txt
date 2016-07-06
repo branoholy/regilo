@@ -1,8 +1,10 @@
 # Set project name
 project("tests")
 
-add_definitions("-g -O0")
-add_definitions("--coverage")
+# add_definitions("-g -O0")
+# add_definitions("--coverage")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
 
 # Create executable
 add_executable(${PROJECT_NAME} "src/main.cpp")
