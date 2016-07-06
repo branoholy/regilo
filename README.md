@@ -85,7 +85,7 @@ Use one of the following options if you want to build the
 For a faster build on a multicore processor, you can use:
 
 ```text
-$ make -j$(nproc)
+$ make -j $(nproc)
 ```
 
 ## Installation
