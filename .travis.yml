@@ -16,7 +16,7 @@ install:
 before_script:
   - cd $TRAVIS_BUILD_DIR
   - mkdir build && cd build
-  - cmake -Dexample:bool=on -Dtests:bool=on ..
+  - cmake -DCMAKE_BUILD_TYPE:string="Debug" -Dexample:bool=on -Dtests:bool=on ..
 #  - cmake -Dexamples:bool=on .. # cannot build the GUI example
 
 script:
