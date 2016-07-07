@@ -28,7 +28,7 @@ script:
 
 after_success:
   - cd $TRAVIS_BUILD_DIR
-  - coveralls --exclude tests --gcov-options '\-lp'
+  - coveralls -e build -e examples -e tests --gcov-options '\-lp'
 
 addons:
   apt:
