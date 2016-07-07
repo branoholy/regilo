@@ -37,5 +37,5 @@ addons:
     packages:
       - g++-4.9
       - libboost-system-dev
-      - lcov
+      - libboost-test-dev
 #      - libwxgtk3.0-dev # still not working
