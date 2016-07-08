@@ -79,7 +79,7 @@ BOOST_FIXTURE_TEST_CASE(LogRead, LogFixture)
 
 		for(std::size_t i = 0; i < 6; i++)
 		{
-			log->read(logCommand);
+			log->read();
 		}
 
 		BOOST_CHECK(log->isEnd());
