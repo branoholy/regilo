@@ -2,23 +2,26 @@
 #include <iostream>
 
 #include <boost/test/unit_test.hpp>
+#include <boost/mpl/list.hpp>
 
 #include "regilo/utils.hpp"
 
 BOOST_AUTO_TEST_SUITE(UtilsSuite)
 
-BOOST_AUTO_TEST_CASE(TimeSinceEpoch)
+typedef boost::mpl::list<std::chrono::nanoseconds, std::chrono::milliseconds, std::chrono::seconds> TimeTypes;
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(TimeSinceEpoch, T, TimeTypes)
 {
-	auto epochSecondsBefore = std::chrono::system_clock::now().time_since_epoch();
-	std::chrono::seconds secondsBefore = std::chrono::duration_cast<std::chrono::seconds>(epochSecondsBefore);
+	auto epochTimeBefore = std::chrono::system_clock::now().time_since_epoch();
+	T timeBefore = std::chrono::duration_cast<T>(epochTimeBefore);
 
-	std::chrono::seconds seconds = regilo::epoch<std::chrono::seconds>();
+	T time = regilo::epoch<T>();
 
-	auto epochSecondsAfter = std::chrono::system_clock::now().time_since_epoch();
-	std::chrono::seconds secondsAfter = std::chrono::duration_cast<std::chrono::seconds>(epochSecondsAfter);
+	auto epochTimeAfter = std::chrono::system_clock::now().time_since_epoch();
+	T timeAfter = std::chrono::duration_cast<T>(epochTimeAfter);
 
-	BOOST_REQUIRE(secondsBefore <= seconds);
-	BOOST_REQUIRE(secondsAfter >= seconds);
+	BOOST_REQUIRE(timeBefore <= time);
+	BOOST_REQUIRE(timeAfter >= time);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
