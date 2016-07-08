@@ -9,10 +9,10 @@ before_install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 90
   - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-4.9 90
   - g++-4.9 --version
-  - gcov --version
+  - lcov --version
 
 install:
-  - pip install --user cpp-coveralls
+  - gem install coveralls-lcov
 
 before_script:
   - cd $TRAVIS_BUILD_DIR
@@ -29,7 +29,10 @@ script:
 
 after_success:
   - cd $TRAVIS_BUILD_DIR
-  - coveralls -e examples -e tests --gcov-options '\-lp'
+  - lcov --directory . --no-external --capture --output-file coverage.info
+  - lcov --remove coverage.info 'tests/*' --output-file coverage.info
+  - lcov --list coverage.info
+  - coveralls-lcov --repo-token $COVERALLS_TOKEN coverage.info
 
 addons:
   apt:
@@ -39,4 +42,5 @@ addons:
       - g++-4.9
       - libboost-system-dev
       - libboost-test-dev
+      - lcov
 #      - libwxgtk3.0-dev # still not working
