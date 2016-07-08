@@ -24,11 +24,12 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - cd build
   - make -j $(nproc)
-  - tests/tests
+  - cd tests
+  - ./tests
 
 after_success:
   - cd $TRAVIS_BUILD_DIR
-  - coveralls -e build -e examples -e tests --gcov-options '\-lp'
+  - coveralls -e examples -e tests --gcov-options '\-lp'
 
 addons:
   apt:
