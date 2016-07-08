@@ -19,6 +19,14 @@ struct TimedLogFixture
 		timedLogs.push_back(new regilo::TimedLog<std::chrono::nanoseconds>(logPath));
 		timedLogs.emplace_back(new regilo::TimedLog<std::chrono::nanoseconds>(logStream));
 	}
+
+	~TimedLogFixture()
+	{
+		for(regilo::TimedLog<std::chrono::nanoseconds> *log : timedLogs)
+		{
+			delete log;
+		}
+	}
 };
 
 BOOST_AUTO_TEST_SUITE(LogSuite)
