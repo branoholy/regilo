@@ -1,11 +1,15 @@
 # Set project name
 project("tests")
 
+# Include headers
+include_directories("include")
+
 # Find source code
 file(GLOB_RECURSE CPPS "src/*.cpp")
+file(GLOB_RECURSE HPPS "include/*.hpp")
 
 # Create executable
-add_executable(${PROJECT_NAME} ${CPPS})
+add_executable(${PROJECT_NAME} ${CPPS} ${HPPS})
 
 # Link libraries
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
