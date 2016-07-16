@@ -26,6 +26,14 @@
 
 #include "regilo/utils.hpp"
 
+SocketSimulator::SocketSimulator(const std::string& filePath, unsigned short port) : Simulator(filePath),
+	acceptor(ioService, bai::tcp::endpoint(bai::tcp::v4(), port)),
+	socket(ioService),
+	socketIStream(&socketIStreamBuffer),
+	socketOStream(&socketOStreamBuffer)
+{
+}
+
 SocketSimulator::SocketSimulator(std::iostream& stream, unsigned short port) : Simulator(stream),
 	acceptor(ioService, bai::tcp::endpoint(bai::tcp::v4(), port)),
 	socket(ioService),

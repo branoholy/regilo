@@ -21,6 +21,11 @@
 
 #include "simulators/simulator.hpp"
 
+Simulator::Simulator(const std::string& filePath) :
+	log(filePath)
+{
+}
+
 Simulator::Simulator(std::iostream& stream) :
 	log(stream)
 {

@@ -115,7 +115,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StreamControllerCommunication, StreamController
 	mutex.lock();
 	controller.connect(deviceEndpoint);
 
-	BOOST_CHECK(controller.isConnected());
+	BOOST_REQUIRE(controller.isConnected());
 	BOOST_CHECK_EQUAL(controller.getEndpoint(), deviceEndpoint);
 
 	std::string response1 = ((regilo::IController*)&controller)->sendCommand("CMD1");

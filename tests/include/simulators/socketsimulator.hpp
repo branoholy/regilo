@@ -49,7 +49,9 @@ private:
 	virtual bool write(const std::string& data) override;
 
 public:
+	SocketSimulator(const std::string& filePath, unsigned short port);
 	SocketSimulator(std::iostream& stream, unsigned short port);
+
 	virtual ~SocketSimulator();
 
 	virtual void start() override;

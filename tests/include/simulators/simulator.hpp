@@ -38,7 +38,9 @@ public:
 	std::string requestEnd = "\n";
 	std::string responseEnd = "\n";
 
+	Simulator(const std::string& filePath);
 	Simulator(std::iostream& stream);
+
 	virtual ~Simulator() = default;
 
 	virtual void start() = 0;
