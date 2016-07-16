@@ -86,7 +86,7 @@ public:
 	/**
 	 * @brief Send a command to the device.
 	 * @param command A command with all parameters.
-	 * @return A string response to the command.
+	 * @return A string with a whole response to the command.
 	 */
 	virtual std::string sendCommand(const std::string& command) = 0;
 };
@@ -241,7 +241,12 @@ void StreamController<StreamT>::setLog(std::shared_ptr<ILog> log)
 template<typename StreamT>
 std::string StreamController<StreamT>::sendCommand(const std::string& command)
 {
-	return sendCommand<std::string>(command);
+	sendCommand<>(command);
+
+	std::string response;
+	std::getline(deviceOutput, response, '\0');
+
+	return response;
 }
 
 template<typename StreamT>
