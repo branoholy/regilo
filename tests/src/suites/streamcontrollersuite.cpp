@@ -46,7 +46,7 @@ struct StreamControllerFixture
 	std::vector<StreamController*> controllers;
 
 	StreamControllerFixture() :
-		logStream("1$CMD1\n$RESPONSE1$V\n$RESPONSE2$CMD2\n$2.5$")
+		logStream("1$CMD1\n$RESPONSE1$V\n$RESPONSE2$CMD3\n$2.5$CMD 4 5\n$RESPONSE4$CMD6\n$5$")
 	{
 		controllers.push_back(new StreamController(logPath));
 		controllers.push_back(new StreamController(logStream));
@@ -124,8 +124,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StreamControllerCommunication, StreamController
 	std::string response2 = controller.template sendCommand<std::string>('V');
 	BOOST_CHECK_EQUAL(response2, "RESPONSE2");
 
-	double response3 = controller.template sendCommand<double>("CMD2");
+	double response3 = controller.template sendCommand<double>("CMD3");
 	BOOST_CHECK_CLOSE(response3, 2.5, 0.00001);
+
+	std::string response4 = controller.template sendCommand<std::string>("CMD", 4, 5);
+	BOOST_CHECK_EQUAL(response4, "RESPONSE4");
+
+	int response5 = controller.template sendFormattedCommand<int>("CMD%d", 6);
+	BOOST_CHECK_EQUAL(response5, 5);
 
 	mutex.unlock();
 
