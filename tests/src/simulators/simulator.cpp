@@ -19,34 +19,33 @@
  *
  */
 
-#ifndef REGILO_UTILS_HPP
-#define REGILO_UTILS_HPP
+#include "simulators/simulator.hpp"
 
-#include <chrono>
-#include <iostream>
-
-namespace regilo {
-
-/**
- * @brief Get time since epoch.
- * @return Time as std::duration.
- */
-template<typename T>
-T epoch()
+Simulator::Simulator(const std::string& filePath) :
+	log(filePath)
 {
-	auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
-	return std::chrono::duration_cast<T>(sinceEpoch);
 }
 
-/**
- * @brief Get a line from a stream with a multi-char delimiter.
- * @param stream A stream from which characters are extracted.
- * @param line A string where the extracted line is stored.
- * @param delim A string that is used as a delimiter.
- * @return The input stream.
- */
-std::istream& getLine(std::istream& stream, std::string& line, const std::string& delim);
-
+Simulator::Simulator(std::iostream& stream) :
+	log(stream)
+{
 }
 
-#endif // REGILO_UTILS_HPP
+bool Simulator::run()
+{
+	if(!isRunning()) return false;
+
+	while(isRunning())
+	{
+		std::string logCommand;
+		std::string logResponse = log.read(logCommand);
+		if(log.isEnd()) break;
+
+		std::string devCommand = read();
+		if(logCommand != devCommand) return false;
+
+		if(!write(devCommand + logResponse + responseEnd)) return false;
+	}
+
+	return true;
+}

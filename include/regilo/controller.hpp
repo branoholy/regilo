@@ -30,6 +30,7 @@
 #include <boost/asio/write.hpp>
 
 #include "log.hpp"
+#include "utils.hpp"
 
 namespace regilo {
 
@@ -85,7 +86,7 @@ public:
 	/**
 	 * @brief Send a command to the device.
 	 * @param command A command with all parameters.
-	 * @return A string response to the command.
+	 * @return A string with a whole response to the command.
 	 */
 	virtual std::string sendCommand(const std::string& command) = 0;
 };
@@ -102,8 +103,6 @@ private:
 
 	ba::streambuf ostreamBuffer;
 	std::ostream ostream;
-
-	static std::istream& getLine(std::istream& stream, std::string& line, const std::string& delim);
 
 protected:
 	std::istringstream deviceOutput; ///< A buffer for the device output.
@@ -242,7 +241,12 @@ void StreamController<StreamT>::setLog(std::shared_ptr<ILog> log)
 template<typename StreamT>
 std::string StreamController<StreamT>::sendCommand(const std::string& command)
 {
-	return sendCommand<std::string>(command);
+	sendCommand<>(command);
+
+	std::string response;
+	std::getline(deviceOutput, response, '\0');
+
+	return response;
 }
 
 template<typename StreamT>
@@ -313,50 +317,6 @@ Response StreamController<StreamT>::sendCommand()
 	deviceOutput >> output;
 
 	return output;
-}
-
-template<typename StreamT>
-std::istream& StreamController<StreamT>::getLine(std::istream& stream, std::string& line, const std::string& delim)
-{
-	if(delim.empty()) return std::getline(stream, line);
-	else if(delim.size() == 1) return std::getline(stream, line, delim.front());
-	else
-	{
-		char c;
-		stream.get(c);
-
-		std::string delimPart, result;
-		while(stream)
-		{
-			if(c == delim.at(delimPart.size()))
-			{
-				delimPart += c;
-				if(delimPart.size() == delim.size())
-				{
-					delimPart.clear();
-					break;
-				}
-			}
-			else
-			{
-				if(!delimPart.empty())
-				{
-					result += delimPart;
-					delimPart.clear();
-				}
-
-				result += c;
-			}
-
-			if(stream.peek() == EOF) break;
-			else stream.get(c);
-		}
-
-		if(!delimPart.empty()) result += delimPart;
-		if(!result.empty()) line = result;
-
-		return stream;
-	}
 }
 
 template<typename StreamT>

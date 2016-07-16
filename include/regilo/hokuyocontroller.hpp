@@ -166,10 +166,10 @@ std::map<std::string, std::string> HokuyoController<ProtocolController>::getVers
 template<typename ProtocolController>
 void HokuyoController<ProtocolController>::setScanParameters(std::size_t fromStep, std::size_t toStep, std::size_t clusterCount)
 {
-	if(fromStep > maxStep) throw new std::invalid_argument("Invalid fromStep argument.");
-	if(toStep > maxStep) throw new std::invalid_argument("Invalid fromStep argument.");
-	if(clusterCount > 99) throw new std::invalid_argument("Invalid clusterCount argument.");
-	if(fromStep > toStep) throw new std::invalid_argument("fromStep has to be lower than toStep.");
+	if(fromStep > maxStep) throw std::invalid_argument("Invalid fromStep argument.");
+	if(toStep > maxStep) throw std::invalid_argument("Invalid fromStep argument.");
+	if(clusterCount > 99) throw std::invalid_argument("Invalid clusterCount argument.");
+	if(fromStep > toStep) throw std::invalid_argument("fromStep has to be lower than toStep.");
 
 	this->fromStep = fromStep;
 	this->toStep = toStep;

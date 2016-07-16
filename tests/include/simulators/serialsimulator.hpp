@@ -19,34 +19,36 @@
  *
  */
 
-#ifndef REGILO_UTILS_HPP
-#define REGILO_UTILS_HPP
+#ifndef SERIALSIMULATOR_HPP
+#define SERIALSIMULATOR_HPP
 
-#include <chrono>
 #include <iostream>
+#include <fcntl.h>
 
-namespace regilo {
+#include "regilo/log.hpp"
 
-/**
- * @brief Get time since epoch.
- * @return Time as std::duration.
- */
-template<typename T>
-T epoch()
+#include "simulator.hpp"
+
+class SerialSimulator : public Simulator
 {
-	auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
-	return std::chrono::duration_cast<T>(sinceEpoch);
-}
+private:
+	int ptmx;
+	bool opened = false;
 
-/**
- * @brief Get a line from a stream with a multi-char delimiter.
- * @param stream A stream from which characters are extracted.
- * @param line A string where the extracted line is stored.
- * @param delim A string that is used as a delimiter.
- * @return The input stream.
- */
-std::istream& getLine(std::istream& stream, std::string& line, const std::string& delim);
+protected:
+	inline virtual std::string read() override { return read(256); }
+	std::string read(std::size_t bufferSize);
+	virtual bool write(const std::string& data) override;
 
-}
+public:
+	using Simulator::Simulator;
+	virtual ~SerialSimulator();
 
-#endif // REGILO_UTILS_HPP
+	virtual void start() override;
+	virtual void stop() override;
+
+	inline virtual bool isRunning() const override { return opened; }
+	inline virtual std::string getEndpoint() const override { return std::string(ptsname(ptmx)); }
+};
+
+#endif // SERIALSIMULATOR_HPP

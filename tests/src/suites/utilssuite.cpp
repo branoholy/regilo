@@ -19,34 +19,30 @@
  *
  */
 
-#ifndef REGILO_UTILS_HPP
-#define REGILO_UTILS_HPP
-
 #include <chrono>
 #include <iostream>
 
-namespace regilo {
+#include <boost/test/unit_test.hpp>
+#include <boost/mpl/list.hpp>
 
-/**
- * @brief Get time since epoch.
- * @return Time as std::duration.
- */
-template<typename T>
-T epoch()
+#include "regilo/utils.hpp"
+
+BOOST_AUTO_TEST_SUITE(UtilsSuite)
+
+typedef boost::mpl::list<std::chrono::nanoseconds, std::chrono::milliseconds, std::chrono::seconds> TimeTypes;
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(TimeSinceEpoch, T, TimeTypes)
 {
-	auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
-	return std::chrono::duration_cast<T>(sinceEpoch);
+	auto epochTimeBefore = std::chrono::system_clock::now().time_since_epoch();
+	T timeBefore = std::chrono::duration_cast<T>(epochTimeBefore);
+
+	T time = regilo::epoch<T>();
+
+	auto epochTimeAfter = std::chrono::system_clock::now().time_since_epoch();
+	T timeAfter = std::chrono::duration_cast<T>(epochTimeAfter);
+
+	BOOST_REQUIRE(timeBefore <= time);
+	BOOST_REQUIRE(timeAfter >= time);
 }
 
-/**
- * @brief Get a line from a stream with a multi-char delimiter.
- * @param stream A stream from which characters are extracted.
- * @param line A string where the extracted line is stored.
- * @param delim A string that is used as a delimiter.
- * @return The input stream.
- */
-std::istream& getLine(std::istream& stream, std::string& line, const std::string& delim);
-
-}
-
-#endif // REGILO_UTILS_HPP
+BOOST_AUTO_TEST_SUITE_END()

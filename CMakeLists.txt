@@ -31,6 +31,7 @@ option(example "Build the console example")
 option(example-gui "Build the GUI example")
 option(examples "Build all examples")
 option(examples-only "Build only examples (not the library)")
+option(tests "Build the unit tests")
 
 option(INSTALL_LIB_DIR "Installation directory for libraries")
 if(${INSTALL_LIB_DIR} STREQUAL "OFF")
@@ -48,13 +49,18 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
 	add_definitions("-O3")
 endif()
 
+if(${tests})
+	add_definitions("-g -O0")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+endif()
+
 add_definitions("-std=c++11")
 add_definitions("-Wall -Wextra -pedantic")
 
 # Find libraries
 find_package(Threads)
 
-find_package(Boost 1.54 COMPONENTS system REQUIRED)
+find_package(Boost 1.54 REQUIRED COMPONENTS system unit_test_framework)
 include_directories(${Boost_INCLUDE_DIR})
 
 if(${examples-only} STREQUAL "OFF")
@@ -98,6 +104,11 @@ endif()
 
 if((${example-gui}) OR (${examples}))
 	add_subdirectory("examples/regilo-visual")
+endif()
+
+# Add unit tests
+if(${tests})
+	add_subdirectory("tests")
 endif()
 
 # Add uninstall

@@ -3,6 +3,7 @@
 [![Latest Version](https://badges.branoholy.com/github/regilo/release)](https://github.com/branoholy/regilo/releases)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Documentation](https://codedocs.xyz/branoholy/regilo.svg)](https://codedocs.xyz/branoholy/regilo)
+[![Coverage Status](https://coveralls.io/repos/github/branoholy/regilo/badge.svg?branch=master)](https://coveralls.io/github/branoholy/regilo)
 
 *A simple C++ library for controlling the Neato XV robot and the Hokuyo scanner.*
 
@@ -85,7 +86,7 @@ Use one of the following options if you want to build the
 For a faster build on a multicore processor, you can use:
 
 ```text
-$ make -j$(nproc)
+$ make -j $(nproc)
 ```
 
 ## Installation
