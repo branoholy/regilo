@@ -36,7 +36,7 @@ namespace regilo {
 /**
  * @brief The IHokuyoController interface is used for the HokuyoController class.
  */
-class IHokuyoController
+class IHokuyoController : public virtual IScanController
 {
 public:
 	/**

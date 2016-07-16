@@ -51,7 +51,7 @@ public:
  * @brief The ScanController class implements parsing of scanned laser data.
  */
 template<typename ProtocolController>
-class ScanController : public IScanController, public ProtocolController
+class ScanController : public virtual IScanController, public ProtocolController
 {
 protected:
 	std::size_t lastScanId = 0; ///< A scan id (starting from zero) that is used for new scans.

@@ -35,7 +35,7 @@ namespace regilo {
 /**
  * @brief The INeatoController interface is used for the NeatoController class.
  */
-class INeatoController
+class INeatoController : public virtual IScanController
 {
 public:
 	/**
