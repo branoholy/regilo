@@ -40,6 +40,7 @@ template<typename HokuyoController>
 struct HokuyoControllerFixture
 {
 	std::string logPath = "data/hokuyo-log-scan-version.txt";
+	std::string timedLogPath = "data/hokuyo-timed-log.txt";
 	std::stringstream logStream;
 
 	std::vector<HokuyoController*> controllers;
@@ -145,6 +146,19 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromDevice, HokuyoControlle
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromLog, HokuyoController, HokuyoControllers, HF)
 {
 	HokuyoController *controller = HF::controllers.at(1);
+
+	regilo::ScanData scanData = controller->getScan(false);
+	std::ostringstream scanStream;
+	scanStream << scanData;
+
+	BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromTimedLog, HokuyoController, HokuyoControllers, HF)
+{
+	HokuyoController *controller = HF::controllers.at(0);
+	auto timedLog = std::make_shared<regilo::TimedLog<>>(HF::timedLogPath);
+	controller->setLog(timedLog);
 
 	regilo::ScanData scanData = controller->getScan(false);
 	std::ostringstream scanStream;

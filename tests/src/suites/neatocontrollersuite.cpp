@@ -40,6 +40,7 @@ template<typename NeatoController>
 struct NeatoControllerFixture
 {
 	std::string logPath = "data/neato-log-scan-move-time.txt";
+	std::string timedLogPath = "data/neato-timed-log-scan-move-time.txt";
 	std::stringstream logStream;
 
 	std::vector<NeatoController*> controllers;
@@ -154,6 +155,19 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerScanFromDevice, NeatoController,
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerScanFromLog, NeatoController, NeatoControllers, NF)
 {
 	NeatoController *controller = NF::controllers.at(1);
+
+	regilo::ScanData scanData = controller->getScan(false);
+	std::ostringstream scanStream;
+	scanStream << scanData;
+
+	BOOST_CHECK_EQUAL(scanStream.str(), NF::correctScan);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerScanFromTimedLog, NeatoController, NeatoControllers, NF)
+{
+	NeatoController *controller = NF::controllers.at(0);
+	auto timedLog = std::make_shared<regilo::TimedLog<>>(NF::timedLogPath);
+	controller->setLog(timedLog);
 
 	regilo::ScanData scanData = controller->getScan(false);
 	std::ostringstream scanStream;
