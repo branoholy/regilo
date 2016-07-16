@@ -4,7 +4,7 @@ PROJECT_NAME = Regilo
 PROJECT_BRIEF = "A simple C++ library for controlling the Neato XV robot and the Hokuyo scanner."
 
 FILE_PATTERNS = *.hpp *.md
-EXCLUDE = examples/
+EXCLUDE = examples/ tests/
 
 USE_MDFILE_AS_MAINPAGE = README.md
 GENERATE_TREEVIEW = YES
