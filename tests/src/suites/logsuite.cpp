@@ -116,7 +116,6 @@ BOOST_AUTO_TEST_CASE(LogWrite)
 	for(std::size_t i = 0; i < 2; i++)
 	{
 		regilo::ILog *log = logs[i];
-		std::string path = log->getFilePath();
 
 		BOOST_CHECK(log->getStream());
 		if(log->getStream())
@@ -124,15 +123,15 @@ BOOST_AUTO_TEST_CASE(LogWrite)
 			log->write("cmd1", "response1");
 			log->write("cmd2", "response2");
 		}
+		log->close();
 
-		delete log;
-
-		std::ifstream logFile(path);
+		std::ifstream logFile(log->getFilePath());
 		std::string line;
 		std::getline(logFile, line);
 		BOOST_CHECK_EQUAL(line, contents[i]);
 
-		std::remove(path.c_str());
+		std::remove(log->getFilePath().c_str());
+		delete log;
 	}
 }
 

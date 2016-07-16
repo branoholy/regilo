@@ -118,6 +118,11 @@ void Log::write(const std::string& command, const std::string& response)
 	streamMutex.unlock();
 }
 
+void Log::close()
+{
+	if(fileStream != nullptr) fileStream->close();
+}
+
 template class TimedLog<std::chrono::nanoseconds>;
 template class TimedLog<std::chrono::microseconds>;
 template class TimedLog<std::chrono::milliseconds>;

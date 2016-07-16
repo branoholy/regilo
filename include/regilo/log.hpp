@@ -99,6 +99,11 @@ public:
 	 * @param response The response of the command.
 	 */
 	virtual void write(const std::string& command, const std::string& response) = 0;
+
+	/**
+	 * @brief Close the log file.
+	 */
+	virtual void close() = 0;
 };
 
 /**
@@ -159,6 +164,8 @@ public:
 	virtual std::string readCommand(const std::string& command, std::string& logCommand) override;
 
 	virtual void write(const std::string& command, const std::string& response) override;
+
+	virtual void close() override;
 };
 
 /**
