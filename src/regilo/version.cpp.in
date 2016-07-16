@@ -27,6 +27,5 @@ const std::string Version::VERSION = "${PROJECT_VERSION}";
 const std::string Version::VERSION_MAJOR = "${PROJECT_VERSION_MAJOR}";
 const std::string Version::VERSION_MINOR = "${PROJECT_VERSION_MINOR}";
 const std::string Version::VERSION_PATCH = "${PROJECT_VERSION_PATCH}";
-const std::string Version::VERSION_TWEAK = "${PROJECT_VERSION_TWEAK}";
 
 }
