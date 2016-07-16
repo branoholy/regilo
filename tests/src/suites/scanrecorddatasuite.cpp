@@ -24,7 +24,6 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "regilo/scanrecord.hpp"
 #include "regilo/scandata.hpp"
 
 struct ScanRecordDataFixture

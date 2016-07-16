@@ -26,8 +26,8 @@
 #include <type_traits>
 #include <vector>
 
-#include <boost/test/unit_test.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include "regilo/neatocontroller.hpp"
 
@@ -87,7 +87,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerScanFromDevice, NeatoController,
 
 	std::string deviceEndpoint;
 	bool deviceStatus = false;
-	std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus]()
+	std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus] ()
 	{
 		Simulator *simulator = nullptr;
 		if(std::is_same<NeatoController, regilo::NeatoSerialController>::value)

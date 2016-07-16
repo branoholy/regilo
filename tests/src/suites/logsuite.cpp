@@ -110,8 +110,8 @@ BOOST_FIXTURE_TEST_CASE(LogRead, LogFixture)
 
 BOOST_AUTO_TEST_CASE(LogWrite)
 {
-	std::string contents[] = {"1$cmd1$response1$cmd2$response2$", "1 1 1000$cmd1$response1$0$cmd2$response2$0$"};
-	regilo::ILog *logs[] = {new regilo::Log("log.txt"), new regilo::TimedLog<std::chrono::milliseconds>("timed-log.txt")};
+	std::string contents[] = { "1$cmd1$response1$cmd2$response2$", "1 1 1000$cmd1$response1$0$cmd2$response2$0$" };
+	regilo::ILog *logs[] = { new regilo::Log("log.txt"), new regilo::TimedLog<std::chrono::milliseconds>("timed-log.txt") };
 
 	for(std::size_t i = 0; i < 2; i++)
 	{

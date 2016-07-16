@@ -22,8 +22,8 @@
 #include <chrono>
 #include <iostream>
 
-#include <boost/test/unit_test.hpp>
 #include <boost/mpl/list.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include "regilo/utils.hpp"
 

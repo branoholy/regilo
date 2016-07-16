@@ -23,6 +23,7 @@
 #define SERIALSIMULATOR_HPP
 
 #include <iostream>
+
 #include <fcntl.h>
 
 #include "regilo/log.hpp"

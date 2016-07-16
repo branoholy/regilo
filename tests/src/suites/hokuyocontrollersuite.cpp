@@ -26,8 +26,8 @@
 #include <type_traits>
 #include <vector>
 
-#include <boost/test/unit_test.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include "regilo/hokuyocontroller.hpp"
 
@@ -94,7 +94,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromDevice, HokuyoControlle
 
 	std::string deviceEndpoint;
 	bool deviceStatus = false;
-	std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus]()
+	std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus] ()
 	{
 		Simulator *simulator = nullptr;
 		if(std::is_same<HokuyoController, regilo::HokuyoSerialController>::value)

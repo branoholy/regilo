@@ -416,7 +416,7 @@ void RegiloVisual::refreshStatusBar()
 	int lastWidth = statusBar->GetTextExtent(statusBar->GetStatusText(1)).GetWidth() + 10;
 	if(lastWidth > 400) lastWidth = 400;
 
-	const int statusBarWidths[] = {-1, lastWidth};
+	const int statusBarWidths[] = { -1, lastWidth };
 	statusBar->SetStatusWidths(2, statusBarWidths);
 }
 

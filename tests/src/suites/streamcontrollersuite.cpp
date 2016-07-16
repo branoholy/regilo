@@ -26,8 +26,8 @@
 #include <type_traits>
 #include <vector>
 
-#include <boost/test/unit_test.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include "regilo/serialcontroller.hpp"
 #include "regilo/socketcontroller.hpp"
@@ -83,7 +83,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StreamControllerCommunication, StreamController
 
 	std::string deviceEndpoint;
 	bool deviceStatus = false;
-	std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus]()
+	std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus] ()
 	{
 		Simulator *simulator = nullptr;
 		if(std::is_same<StreamController, regilo::SerialController>::value)
@@ -118,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StreamControllerCommunication, StreamController
 	BOOST_REQUIRE(controller.isConnected());
 	BOOST_CHECK_EQUAL(controller.getEndpoint(), deviceEndpoint);
 
-	std::string response1 = ((regilo::IController*)&controller)->sendCommand("CMD1");
+	std::string response1 = ((regilo::IController*) &controller)->sendCommand("CMD1");
 	BOOST_CHECK_EQUAL(response1, "RESPONSE1");
 
 	std::string response2 = controller.template sendCommand<std::string>('V');
