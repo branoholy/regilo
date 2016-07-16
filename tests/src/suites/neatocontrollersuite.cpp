@@ -44,15 +44,18 @@ struct NeatoControllerFixture
 
 	std::vector<NeatoController*> controllers;
 
+	std::string correctScan;
 	std::string correctTime = "Sunday 13:57:09";
 
 	NeatoControllerFixture() :
-		logStream("1$CMD1\n$RESPONSE1$")
+		logStream("1$getldsscan\n$AngleInDegre$")
 	{
 		controllers.emplace_back(new NeatoController());
 		controllers.emplace_back(new NeatoController(logPath));
 		controllers.emplace_back(new NeatoController(logStream));
 
+		std::ifstream dataFile("data/neato-correct-scan.txt");
+		std::getline(dataFile, correctScan, '\0');
 	}
 
 	~NeatoControllerFixture()
@@ -76,7 +79,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerConstructorValues, NeatoControll
 	}
 }
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerCommunication, NeatoController, NeatoControllers, NF)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerScanFromDevice, NeatoController, NeatoControllers, NF)
 {
 	std::mutex mutex;
 	mutex.lock();
@@ -125,15 +128,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerCommunication, NeatoController, 
 	BOOST_REQUIRE(controller->getTestMode());
 	BOOST_REQUIRE(controller->getLdsRotation());
 
-	regilo::ScanData data = controller->getScan();
-	std::ostringstream dataStream;
-	dataStream << data;
+	regilo::ScanData scanData = controller->getScan();
+	std::ostringstream scanStream;
+	scanStream << scanData;
 
-	std::ifstream dataFile("data/neato-correct-scan.txt");
-	std::string correctData;
-	std::getline(dataFile, correctData, '\0');
-
-	BOOST_CHECK_EQUAL(dataStream.str(), correctData);
+	BOOST_CHECK_EQUAL(scanStream.str(), NF::correctScan);
 
 	controller->setMotor(100, 100, 50);
 	std::string time = controller->getTime();
@@ -150,6 +149,25 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerCommunication, NeatoController, 
 	if(deviceThread.joinable()) deviceThread.join();
 
 	BOOST_CHECK(deviceStatus);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerScanFromLog, NeatoController, NeatoControllers, NF)
+{
+	NeatoController *controller = NF::controllers.at(1);
+
+	regilo::ScanData scanData = controller->getScan(false);
+	std::ostringstream scanStream;
+	scanStream << scanData;
+
+	BOOST_CHECK_EQUAL(scanStream.str(), NF::correctScan);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerWrongHeader, NeatoController, NeatoControllers, NF)
+{
+	NeatoController *controller = NF::controllers.at(2);
+
+	regilo::ScanData scanData = controller->getScan(false);
+	BOOST_CHECK(scanData.empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

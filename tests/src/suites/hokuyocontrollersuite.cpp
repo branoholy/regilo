@@ -43,6 +43,8 @@ struct HokuyoControllerFixture
 	std::stringstream logStream;
 
 	std::vector<HokuyoController*> controllers;
+
+	std::string correctScan;
 	std::map<std::string, std::string> correctVersion;
 
 	HokuyoControllerFixture() :
@@ -51,6 +53,9 @@ struct HokuyoControllerFixture
 		controllers.emplace_back(new HokuyoController());
 		controllers.emplace_back(new HokuyoController(logPath));
 		controllers.emplace_back(new HokuyoController(logStream));
+
+		std::ifstream dataFile("data/hokuyo-correct-scan.txt");
+		std::getline(dataFile, correctScan, '\0');
 
 		correctVersion["VEND"] = "Hokuyo Automatic Co.,Ltd.";
 		correctVersion["PROD"] = "SOKUIKI Sensor URG-04LX";
@@ -81,7 +86,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerConstructorValues, HokuyoContro
 	}
 }
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerCommunication, HokuyoController, HokuyoControllers, HF)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromDevice, HokuyoController, HokuyoControllers, HF)
 {
 	std::mutex mutex;
 	mutex.lock();
@@ -121,15 +126,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerCommunication, HokuyoController
 
 	BOOST_REQUIRE(controller->isConnected());
 
-	regilo::ScanData data = controller->getScan();
-	std::ostringstream dataStream;
-	dataStream << data;
+	regilo::ScanData scandata = controller->getScan();
+	std::ostringstream scanStream;
+	scanStream << scandata;
 
-	std::ifstream dataFile("data/hokuyo-correct-scan.txt");
-	std::string correctData;
-	std::getline(dataFile, correctData, '\0');
-
-	BOOST_CHECK_EQUAL(dataStream.str(), correctData);
+	BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
 
 	std::map<std::string, std::string> version = controller->getVersionInfo();
 	BOOST_CHECK(version == HF::correctVersion);
@@ -139,6 +140,28 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerCommunication, HokuyoController
 	if(deviceThread.joinable()) deviceThread.join();
 
 	BOOST_CHECK(deviceStatus);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromLog, HokuyoController, HokuyoControllers, HF)
+{
+	HokuyoController *controller = HF::controllers.at(1);
+
+	regilo::ScanData scanData = controller->getScan(false);
+	std::ostringstream scanStream;
+	scanStream << scanData;
+
+	BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerSetScanParameters, HokuyoController, HokuyoControllers, HF)
+{
+	HokuyoController *controller = HF::controllers.at(0);
+
+	BOOST_CHECK_NO_THROW(controller->setScanParameters(50, 80, 1));
+	BOOST_CHECK_THROW(controller->setScanParameters(800, 900, 1), std::invalid_argument);
+	BOOST_CHECK_THROW(controller->setScanParameters(50, 800, 1), std::invalid_argument);
+	BOOST_CHECK_THROW(controller->setScanParameters(50, 80, 100), std::invalid_argument);
+	BOOST_CHECK_THROW(controller->setScanParameters(80, 50, 1), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
