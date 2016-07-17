@@ -55,7 +55,7 @@ add_definitions("-Wall -Wextra -pedantic")
 # Find libraries
 find_package(Threads)
 
-find_package(Boost 1.54 REQUIRED COMPONENTS system unit_test_framework)
+find_package(Boost 1.54 REQUIRED COMPONENTS system)
 include_directories(${Boost_INCLUDE_DIR})
 
 if(${examples-only} STREQUAL "OFF")
