@@ -1,6 +1,10 @@
 # Set project name
 project("tests")
 
+# Find libraries
+find_package(Boost 1.54 REQUIRED COMPONENTS system unit_test_framework)
+include_directories(${Boost_INCLUDE_DIR})
+
 # Include headers
 include_directories("include")
 
