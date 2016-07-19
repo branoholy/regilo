@@ -19,35 +19,13 @@
  *
  */
 
-#ifndef SERIALSIMULATOR_HPP
-#define SERIALSIMULATOR_HPP
+#include "regilo/timedlog.hpp"
 
-#include <iostream>
+namespace regilo {
 
-#include <fcntl.h>
+template class TimedLog<std::chrono::nanoseconds>;
+template class TimedLog<std::chrono::microseconds>;
+template class TimedLog<std::chrono::milliseconds>;
+template class TimedLog<std::chrono::seconds>;
 
-#include "simulator.hpp"
-
-class SerialSimulator : public Simulator
-{
-private:
-	int ptmx;
-	bool opened = false;
-
-protected:
-	inline virtual std::string read() override { return read(256); }
-	std::string read(std::size_t bufferSize);
-	virtual bool write(const std::string& data) override;
-
-public:
-	using Simulator::Simulator;
-	virtual ~SerialSimulator();
-
-	virtual void start() override;
-	virtual void stop() override;
-
-	inline virtual bool isRunning() const override { return opened; }
-	inline virtual std::string getEndpoint() const override { return std::string(ptsname(ptmx)); }
-};
-
-#endif // SERIALSIMULATOR_HPP
+}

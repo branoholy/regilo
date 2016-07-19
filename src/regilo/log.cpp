@@ -21,6 +21,10 @@
 
 #include "regilo/log.hpp"
 
+#include <sstream>
+
+#include <boost/algorithm/string/predicate.hpp>
+
 namespace regilo {
 
 Log::Log(const std::string& filePath) :
@@ -122,10 +126,5 @@ void Log::close()
 {
 	if(fileStream != nullptr) fileStream->close();
 }
-
-template class TimedLog<std::chrono::nanoseconds>;
-template class TimedLog<std::chrono::microseconds>;
-template class TimedLog<std::chrono::milliseconds>;
-template class TimedLog<std::chrono::seconds>;
 
 }

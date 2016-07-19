@@ -26,7 +26,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "regilo/log.hpp"
+#include "regilo/timedlog.hpp"
 
 struct LogFixture
 {
