@@ -177,7 +177,7 @@ std::string Log::read()
 
 std::string Log::read(std::string& logCommand)
 {
-	streamMutex.lock();
+	std::lock_guard<std::mutex> streamLock(streamMutex);
 
 	readMetadata();
 
@@ -190,8 +190,6 @@ std::string Log::read(std::string& logCommand)
 	}
 
 	if(!responseEnd.empty()) throw InvalidLogException("Missing a new line after data.");
-
-	streamMutex.unlock();
 
 	return response;
 }
@@ -225,7 +223,7 @@ void Log::writeData(const std::string& command, const std::string& response)
 
 void Log::write(const std::string& command, const std::string& response)
 {
-	streamMutex.lock();
+	std::lock_guard<std::mutex> streamLock(streamMutex);
 
 	if(!metadataWritten)
 	{
@@ -238,8 +236,6 @@ void Log::write(const std::string& command, const std::string& response)
 
 	writeData(command, response);
 	stream << std::endl;
-
-	streamMutex.unlock();
 }
 
 void Log::close()

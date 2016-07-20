@@ -200,7 +200,7 @@ void TimedLog<DurationT>::writeMetadata(std::ostream& metaStream)
 template<typename DurationT>
 std::string TimedLog<DurationT>::readData(std::string& logCommand)
 {
-	streamMutex.lock();
+	std::lock_guard<std::mutex> streamLock(streamMutex);
 
 	std::string response = Log::readData(logCommand);
 
@@ -227,22 +227,18 @@ std::string TimedLog<DurationT>::readData(std::string& logCommand)
 		}
 	}
 
-	streamMutex.unlock();
-
 	return response;
 }
 
 template<typename DurationT>
 void TimedLog<DurationT>::writeData(const std::string& command, const std::string& response)
 {
-	streamMutex.lock();
+	std::lock_guard<std::mutex> streamLock(streamMutex);
 
 	Log::writeData(command, response);
 
 	if(firstWriteTime == DurationT::min()) firstWriteTime = epoch<DurationT>();
 	stream << "t " << (epoch<DurationT>() - firstWriteTime).count() << std::endl;
-
-	streamMutex.unlock();
 }
 
 }
