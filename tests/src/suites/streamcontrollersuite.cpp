@@ -46,7 +46,7 @@ struct StreamControllerFixture
 	std::vector<StreamController*> controllers;
 
 	StreamControllerFixture() :
-		logStream("1$CMD1\n$RESPONSE1$V\n$RESPONSE2$CMD3\n$2.5$CMD 4 5\n$RESPONSE4$CMD6\n$5$")
+		logStream("type log\nversion 2\n\nc 5 CMD1\n\nr 10 RESPONSE1\n\n\nc 2 V\n\nr 10 RESPONSE2\n\n\nc 5 CMD3\n\nr 4 2.5\n\n\nc 8 CMD 4 5\n\nr 10 RESPONSE4\n\n\nc 5 CMD6\n\nr 2 5\n\n\n")
 	{
 		controllers.push_back(new StreamController(logPath));
 		controllers.push_back(new StreamController(logStream));

@@ -32,6 +32,56 @@
 
 namespace regilo {
 
+template<typename DurationT>
+class TimedLog;
+
+/**
+ * @brief The ITimedLogMetadata interface is used for TimedLogMetadata.
+ */
+class ITimedLogMetadata
+{
+public:
+	/**
+	 * @brief Get the num of ratio.
+	 * @return The num value.
+	 */
+	virtual std::intmax_t getNum() const = 0;
+
+	/**
+	 * @brief Get the den of ratio.
+	 * @return The den value.
+	 */
+	virtual std::intmax_t getDen() const = 0;
+};
+
+/**
+ * @brief The TimedLogMetadata class specifies the metadata for TimedLog.
+ */
+template<typename DurationT>
+class TimedLogMetadata : public LogMetadata, public ITimedLogMetadata
+{
+private:
+	std::intmax_t num = DurationT::period::num;
+	std::intmax_t den = DurationT::period::den;
+
+protected:
+	/**
+	 * @brief The default constructor is available only in derived and friend classes.
+	 */
+	TimedLogMetadata();
+
+public:
+	/**
+	 * @brief The default destructor.
+	 */
+	virtual ~TimedLogMetadata() = default;
+
+	inline virtual std::intmax_t getNum() const override final { return num; }
+	inline virtual std::intmax_t getDen() const override final { return den; }
+
+	friend class TimedLog<DurationT>;
+};
+
 /**
  * @brief The ITimedLog interface is implemented in TimedLog.
  */
@@ -42,6 +92,12 @@ public:
 	 * @brief Default destructor.
 	 */
 	virtual ~ITimedLog() = default;
+
+	/**
+	 * @brief Get the associated timed metadata.
+	 * @return A pointer to timed metadata
+	 */
+	virtual const ITimedLogMetadata* getTimedMetadata() const = 0;
 
 	/**
 	 * @brief Get the last command time (after reading).
@@ -72,8 +128,6 @@ class TimedLog : public Log, public ITimedLog
 private:
 	std::mutex streamMutex;
 
-	std::intmax_t num, den;
-
 	DurationT lastCommandTime;
 
 	DurationT firstReadTime = DurationT::zero();
@@ -83,15 +137,20 @@ protected:
 	virtual void readMetadata(std::istream& metaStream) override;
 	virtual void writeMetadata(std::ostream& metaStream) override;
 
+	virtual std::string readData(std::string& logCommand) override;
+	virtual void writeData(const std::string& command, const std::string& response) override;
+
 public:
 	typedef DurationT Duration; ///< The duration type for this log.
 
 	using Log::Log;
 
 	/**
-	 * @brief Default destructor.
+	 * @brief The default destructor.
 	 */
 	virtual ~TimedLog() = default;
+
+	virtual inline const ITimedLogMetadata* getTimedMetadata() const override { return (TimedLogMetadata<DurationT>*)metadata; }
 
 	inline virtual std::chrono::nanoseconds getLastCommandNanoseconds() const override
 	{
@@ -105,9 +164,6 @@ public:
 	inline DurationT getLastCommandTime() const { return lastCommandTime; }
 
 	virtual inline void syncTime(bool sync = true) override { firstReadTime = (sync ? DurationT::max() : DurationT::zero()); }
-
-	virtual std::string read(std::string& logCommand) override;
-	virtual void write(const std::string& command, const std::string& response) override;
 };
 
 extern template class TimedLog<std::chrono::nanoseconds>;
@@ -116,46 +172,58 @@ extern template class TimedLog<std::chrono::milliseconds>;
 extern template class TimedLog<std::chrono::seconds>;
 
 template<typename DurationT>
+TimedLogMetadata<DurationT>::TimedLogMetadata() :
+	LogMetadata("timedlog", 2)
+{
+}
+
+template<typename DurationT>
 void TimedLog<DurationT>::readMetadata(std::istream& metaStream)
 {
+	if(metadata == nullptr) metadata = new TimedLogMetadata<DurationT>();
 	Log::readMetadata(metaStream);
-	metaStream >> num >> den;
+
+	readName(metaStream, "timeres");
+	TimedLogMetadata<DurationT> *timedMetadata = (TimedLogMetadata<DurationT>*)metadata;
+	metaStream >> timedMetadata->num >> timedMetadata->den;
 }
 
 template<typename DurationT>
 void TimedLog<DurationT>::writeMetadata(std::ostream& metaStream)
 {
+	if(metadata == nullptr) metadata = new TimedLogMetadata<DurationT>();
 	Log::writeMetadata(metaStream);
-	metaStream << ' ' << DurationT::period::num << ' ' << DurationT::period::den;
+
+	metaStream << "timeres " << DurationT::period::num << ' ' << DurationT::period::den << std::endl;
 }
 
 template<typename DurationT>
-std::string TimedLog<DurationT>::read(std::string& logCommand)
+std::string TimedLog<DurationT>::readData(std::string& logCommand)
 {
 	streamMutex.lock();
 
-	std::string response = Log::read(logCommand);
+	std::string response = Log::readData(logCommand);
 
-	std::string epochTime;
-	std::getline(stream, epochTime, MESSAGE_END);
-	std::istringstream epochStream(epochTime);
+	std::int64_t commandTimeCount = 0;
+	readName(stream, 't');
+	stream >> commandTimeCount;
 
-	std::int64_t commandTimeCount;
-	epochStream >> commandTimeCount;
-
-	long double numRatio = num / DurationT::period::num;
-	long double denRation = DurationT::period::den / den;
-	lastCommandTime = DurationT(std::int64_t(std::round(commandTimeCount * numRatio * denRation)));
-
-	if(firstReadTime == DurationT::max()) firstReadTime = epoch<DurationT>();
-	else
+	if(stream)
 	{
-		DurationT elapsed = epoch<DurationT>() - firstReadTime;
+		long double numRatio = getTimedMetadata()->getNum() / (long double)DurationT::period::num;
+		long double denRation = DurationT::period::den / (long double)getTimedMetadata()->getDen();
+		lastCommandTime = DurationT(std::int64_t(std::round(commandTimeCount * numRatio * denRation)));
 
-		while(elapsed < lastCommandTime)
+		if(firstReadTime == DurationT::max()) firstReadTime = epoch<DurationT>();
+		else
 		{
-			std::this_thread::sleep_for(lastCommandTime - elapsed);
-			elapsed = epoch<DurationT>() - firstReadTime;
+			DurationT elapsed = epoch<DurationT>() - firstReadTime;
+
+			while(elapsed < lastCommandTime)
+			{
+				std::this_thread::sleep_for(lastCommandTime - elapsed);
+				elapsed = epoch<DurationT>() - firstReadTime;
+			}
 		}
 	}
 
@@ -165,14 +233,14 @@ std::string TimedLog<DurationT>::read(std::string& logCommand)
 }
 
 template<typename DurationT>
-void TimedLog<DurationT>::write(const std::string& command, const std::string& response)
+void TimedLog<DurationT>::writeData(const std::string& command, const std::string& response)
 {
 	streamMutex.lock();
 
-	Log::write(command, response);
+	Log::writeData(command, response);
 
 	if(firstWriteTime == DurationT::min()) firstWriteTime = epoch<DurationT>();
-	stream << (epoch<DurationT>() - firstWriteTime).count() << MESSAGE_END;
+	stream << "t " << (epoch<DurationT>() - firstWriteTime).count() << std::endl;
 
 	streamMutex.unlock();
 }

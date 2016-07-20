@@ -27,6 +27,15 @@
 
 namespace regilo {
 
+InvalidLogException::InvalidLogException(const std::string& message) : std::runtime_error(message)
+{
+}
+
+LogMetadata::LogMetadata(const std::string& type, int version) :
+	type(type), version(version)
+{
+}
+
 Log::Log(const std::string& filePath) :
 	filePath(filePath),
 	fileStream(new std::fstream(filePath, std::fstream::in | std::fstream::out | std::fstream::app)),
@@ -43,42 +52,144 @@ Log::Log(std::iostream& stream) :
 Log::~Log()
 {
 	delete fileStream;
+	delete metadata;
+}
+
+void Log::readName(std::istream& stream, char name)
+{
+	char logName;
+	stream >> logName;
+
+	if(stream)
+	{
+		if(logName == '#')
+		{
+			std::string comment;
+			std::getline(stream, comment);
+
+			readName(stream, name);
+		}
+		else if(name != logName) throw InvalidLogException('\'' + std::string(1, logName) + "' found but '" + name + "' expected.");
+	}
+}
+
+void Log::readName(std::istream& stream, const std::string& name)
+{
+	std::string logName;
+	stream >> logName;
+
+	if(stream)
+	{
+		if(logName.front() == '#')
+		{
+			std::string comment;
+			std::getline(stream, comment);
+
+			readName(stream, name);
+		}
+		else if(name != logName) throw InvalidLogException('\'' + logName + "' found but '" + name + "' expected.");
+	}
+}
+
+std::string Log::readValue(std::istream& stream)
+{
+	std::size_t length;
+	stream >> length;
+
+	// Read the space between length and data.
+	stream.get();
+
+	std::string value;
+	if(stream)
+	{
+		char *data = new char[length];
+		stream.read(data, length);
+
+		value = std::string(data, length);
+		delete[] data;
+	}
+
+	return value;
+}
+
+std::string Log::readNameValue(std::istream& stream, char name)
+{
+	readName(stream, name);
+	return readValue(stream);
+}
+
+std::string Log::readNameValue(std::istream& stream, const std::string& name)
+{
+	readName(stream, name);
+	return readValue(stream);
+}
+
+void Log::readMetadata()
+{
+	if(!metadataRead)
+	{
+		std::string metaLine;
+		std::stringstream metaStream;
+		while(std::getline(stream, metaLine) && !metaLine.empty())
+		{
+			if(metaLine.front() == '#') continue;
+
+			metaStream << metaLine << std::endl;
+		}
+
+		readMetadata(metaStream);
+		metadataRead = true;
+	}
 }
 
 void Log::readMetadata(std::istream& metaStream)
 {
-	metaStream >> version;
+	if(metadata == nullptr) metadata = new LogMetadata();
+
+	readName(metaStream, "type");
+	metaStream >> metadata->type;
+
+	readName(metaStream, "version");
+	metaStream >> metadata->version;
 }
 
 void Log::writeMetadata(std::ostream& metaStream)
 {
-	metaStream << version;
+	if(metadata == nullptr) metadata = new LogMetadata();
+
+	metaStream << "type " << metadata->type << std::endl;
+	metaStream << "version " << metadata->version << std::endl;
+}
+
+std::string Log::readData(std::string& logCommand)
+{
+	logCommand = readNameValue(stream, 'c');
+	std::string response = readNameValue(stream, 'r');
+
+	return response;
 }
 
 std::string Log::read()
 {
-	std::string command;
-	return read(command);
+	std::string logCommand;
+	return read(logCommand);
 }
 
 std::string Log::read(std::string& logCommand)
 {
 	streamMutex.lock();
 
-	if(!metadataRead)
-	{
-		std::string metaData;
-		std::getline(stream, metaData, MESSAGE_END);
-		std::istringstream metaStream(metaData);
+	readMetadata();
 
-		readMetadata(metaStream);
-		metadataRead = true;
+	std::string response = readData(logCommand);
+
+	std::string responseEnd;
+	while(std::getline(stream, responseEnd) && !responseEnd.empty())
+	{
+		if(responseEnd.front() != '#') break;
 	}
 
-	std::string response;
-
-	std::getline(stream, logCommand, MESSAGE_END);
-	std::getline(stream, response, MESSAGE_END);
+	if(!responseEnd.empty()) throw InvalidLogException("Missing a new line after data.");
 
 	streamMutex.unlock();
 
@@ -103,6 +214,15 @@ std::string Log::readCommand(const std::string& command, std::string& logCommand
 	return response;
 }
 
+void Log::writeData(const std::string& command, const std::string& response)
+{
+	stream << "c " << command.length() << ' ' << command << std::endl;
+
+	stream << "r " << response.length();
+	if(!response.empty()) stream << ' ' << response;
+	stream << std::endl;
+}
+
 void Log::write(const std::string& command, const std::string& response)
 {
 	streamMutex.lock();
@@ -112,12 +232,12 @@ void Log::write(const std::string& command, const std::string& response)
 		std::ostringstream metaStream;
 		writeMetadata(metaStream);
 
-		stream << metaStream.str() << MESSAGE_END;
+		stream << metaStream.str() << std::endl;
 		metadataWritten = true;
 	}
 
-	stream << command << MESSAGE_END;
-	stream << response << MESSAGE_END;
+	writeData(command, response);
+	stream << std::endl;
 
 	streamMutex.unlock();
 }

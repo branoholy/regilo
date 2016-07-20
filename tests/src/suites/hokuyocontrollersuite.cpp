@@ -49,7 +49,7 @@ struct HokuyoControllerFixture
 	std::map<std::string, std::string> correctVersion;
 
 	HokuyoControllerFixture() :
-		logStream("1$CMD1\n$RESPONSE1$")
+		logStream("type log\nversion 2\n\nc 5 CMD1\n\nr 9 RESPONSE1\n\n")
 	{
 		controllers.emplace_back(new HokuyoController());
 		controllers.emplace_back(new HokuyoController(logPath));

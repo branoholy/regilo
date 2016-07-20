@@ -49,7 +49,7 @@ struct NeatoControllerFixture
 	std::string correctTime = "Sunday 13:57:09";
 
 	NeatoControllerFixture() :
-		logStream("1$getldsscan\n$AngleInDegre$")
+		logStream("type log\nversion 2\n\nc 11 getldsscan\n\nr 13 AngleInDegre\n\n\n")
 	{
 		controllers.emplace_back(new NeatoController());
 		controllers.emplace_back(new NeatoController(logPath));

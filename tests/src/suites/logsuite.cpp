@@ -44,8 +44,8 @@ struct LogFixture
 	std::vector<regilo::ILog*> logs;
 
 	LogFixture() :
-		logStream("1$G00076801\n$0\n0C0C0C0C0C0C0C0C0C0C$V\n$0\nVERSION1$G00076801\n$0\n0C0C0C0C0C0C0C0C0C0C$V\n$0\nVERSION2$"),
-		timedLogStream("1 1 1000000000$G00076801\n$0\n0C0C0C0C0C0C0C0C0C0C$103203758$V\n$0\nVERSION1$103203759$G00076801\n$0\n0C0C0C0C0C0C0C0C0C0C$103203760$V\n$0\nVERSION2$103203761$"),
+		logStream("type log\nversion 2\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\n\nc 2 V\n\nr 10 0\nVERSION1\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\n\nc 2 V\n\nr 10 0\nVERSION2\n\n"),
+		timedLogStream("type timedlog\nversion 2\ntimeres 1 1000000000\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\nt 103203758\n\nc 2 V\n\nr 10 0\nVERSION1\nt 103203759\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\nt 103203760\n\nc 2 V\n\nr 10 0\nVERSION2\nt 103203761\n\n"),
 		fileLog(new regilo::Log(logPath)),
 		streamLog(new regilo::Log(logStream)),
 		timedFileLog(new regilo::TimedLog<std::chrono::nanoseconds>(timedLogPath)),
@@ -110,8 +110,11 @@ BOOST_FIXTURE_TEST_CASE(LogRead, LogFixture)
 
 BOOST_AUTO_TEST_CASE(LogWrite)
 {
-	std::string contents[] = { "1$cmd1$response1$cmd2$response2$", "1 1 1000$cmd1$response1$0$cmd2$response2$0$" };
-	regilo::ILog *logs[] = { new regilo::Log("log.txt"), new regilo::TimedLog<std::chrono::milliseconds>("timed-log.txt") };
+	std::string contents[] = {
+		"type log\nversion 2\n\nc 4 cmd1\nr 9 response1\n\nc 4 cmd2\nr 9 response2\n\n",
+		"type timedlog\nversion 2\ntimeres 1 1\n\nc 4 cmd1\nr 9 response1\nt 0\n\nc 4 cmd2\nr 9 response2\nt 0\n\n"
+	};
+	regilo::ILog *logs[] = { new regilo::Log("log.txt"), new regilo::TimedLog<std::chrono::seconds>("timed-log.txt") };
 
 	for(std::size_t i = 0; i < 2; i++)
 	{
@@ -126,9 +129,9 @@ BOOST_AUTO_TEST_CASE(LogWrite)
 		log->close();
 
 		std::ifstream logFile(log->getFilePath());
-		std::string line;
-		std::getline(logFile, line);
-		BOOST_CHECK_EQUAL(line, contents[i]);
+		std::string content;
+		std::getline(logFile, content, '\0');
+		BOOST_CHECK_EQUAL(content, contents[i]);
 
 		std::remove(log->getFilePath().c_str());
 		delete log;

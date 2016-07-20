@@ -33,10 +33,11 @@ Simulator::Simulator(std::iostream& stream) :
 
 bool Simulator::run()
 {
-	if(!isRunning()) return false;
-
+	bool status = false;
 	while(isRunning())
 	{
+		status = true;
+
 		std::string logCommand;
 		std::string logResponse = log.read(logCommand);
 		if(log.isEnd()) break;
@@ -44,8 +45,8 @@ bool Simulator::run()
 		std::string devCommand = read();
 		if(logCommand != devCommand) return false;
 
-		if(!write(devCommand + logResponse + responseEnd)) return false;
+		if(!write(devCommand + logResponse)) return false;
 	}
 
-	return true;
+	return status;
 }
