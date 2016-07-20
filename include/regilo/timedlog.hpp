@@ -210,8 +210,8 @@ std::string TimedLog<DurationT>::readData(std::string& logCommand)
 
 	if(stream)
 	{
-		long double numRatio = getTimedMetadata()->getNum() / (long double)DurationT::period::num;
-		long double denRation = DurationT::period::den / (long double)getTimedMetadata()->getDen();
+		long double numRatio = getTimedMetadata()->getNum() / (long double) DurationT::period::num;
+		long double denRation = DurationT::period::den / (long double) getTimedMetadata()->getDen();
 		lastCommandTime = DurationT(std::int64_t(std::round(commandTimeCount * numRatio * denRation)));
 
 		if(firstReadTime == DurationT::max()) firstReadTime = epoch<DurationT>();

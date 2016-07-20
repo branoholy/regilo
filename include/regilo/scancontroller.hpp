@@ -23,8 +23,8 @@
 #define REGILO_SCANCONTROLLER_HPP
 
 #include "controller.hpp"
-#include "timedlog.hpp"
 #include "scandata.hpp"
+#include "timedlog.hpp"
 #include "utils.hpp"
 
 namespace regilo {

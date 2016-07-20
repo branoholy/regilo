@@ -204,7 +204,8 @@ BOOST_FIXTURE_TEST_CASE(LogReadWrongName, LogFixture)
 
 BOOST_AUTO_TEST_CASE(LogWrite)
 {
-	std::string contents[] = {
+	std::string contents[] =
+	{
 		"type log\nversion 2\n\nc 4 cmd1\nr 9 response1\n\nc 4 cmd2\nr 9 response2\n\n",
 		"type timedlog\nversion 2\ntimeres 1 1\n\nc 4 cmd1\nr 9 response1\nt 0\n\nc 4 cmd2\nr 9 response2\nt 0\n\n"
 	};
