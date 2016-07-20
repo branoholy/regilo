@@ -296,7 +296,6 @@ void StreamController<StreamT>::sendCommand()
 		{
 			std::string cmdInput;
 			getLine(istream, cmdInput, REQUEST_END);
-			cmdInput = cmdInput.substr(0, cmdInput.length() - REQUEST_END.length());
 		}
 
 		getLine(istream, output, RESPONSE_END);
