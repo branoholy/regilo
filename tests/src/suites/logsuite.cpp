@@ -67,8 +67,8 @@ struct LogFixture
 	LogFixture() :
 		logStream("type log\nversion 2\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\n\nc 2 V\n\nr 10 0\nVERSION1\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\n\nc 2 V\n\nr 10 0\nVERSION2\n\n"),
 		timedLogStream("type timedlog\nversion 2\ntimeres 1 1000000000\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\nt 103203758\n\nc 2 V\n\nr 10 0\nVERSION1\nt 103203759\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\nt 103203760\n\nc 2 V\n\nr 10 0\nVERSION2\nt 103203761\n\n"),
-		commentStream("# First line comment\ntype log\n# Comment in metadata\nversion 2\n\nc 2 V\n\nr 2 2\n\n\n"),
-		stringNameStream("type stringlog\nversion 2\n\ncommand 8 getscan\n\nresponse 2 2\n\n\n"),
+		commentStream("# First line comment\ntype log\n# Comment in metadata\nversion 2\n\nc 2 V\n\n# Comment in data\nr 2 2\n\n\n"),
+		stringNameStream("type stringlog\nversion 2\n\ncommand 8 getscan\n\n# Comment in string-name log\nresponse 2 2\n\n\n"),
 		fileLog(new regilo::Log(logPath)),
 		streamLog(new regilo::Log(logStream)),
 		commentLog(new regilo::Log(commentStream)),
