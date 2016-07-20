@@ -28,15 +28,36 @@
 
 #include "regilo/timedlog.hpp"
 
+class StringNameLog : public regilo::Log
+{
+public:
+	using Log::Log;
+	virtual ~StringNameLog() = default;
+
+	virtual std::string readData(std::string& logCommand);
+};
+
+std::string StringNameLog::readData(std::string& logCommand)
+{
+	logCommand = readNameValue(stream, "command");
+	std::string response = readNameValue(stream, "response");
+
+	return response;
+}
+
 struct LogFixture
 {
 	std::string logPath = "data/hokuyo-log.txt";
 	std::string timedLogPath = "data/hokuyo-timed-log.txt";
 	std::stringstream logStream;
 	std::stringstream timedLogStream;
+	std::stringstream commentStream;
+	std::stringstream stringNameStream;
 
 	regilo::Log *fileLog;
 	regilo::Log *streamLog;
+	regilo::Log *commentLog;
+	regilo::Log *stringNameLog;
 
 	regilo::TimedLog<std::chrono::nanoseconds> *timedFileLog;
 	regilo::TimedLog<std::chrono::nanoseconds> *timedStreamLog;
@@ -46,8 +67,12 @@ struct LogFixture
 	LogFixture() :
 		logStream("type log\nversion 2\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\n\nc 2 V\n\nr 10 0\nVERSION1\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\n\nc 2 V\n\nr 10 0\nVERSION2\n\n"),
 		timedLogStream("type timedlog\nversion 2\ntimeres 1 1000000000\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\nt 103203758\n\nc 2 V\n\nr 10 0\nVERSION1\nt 103203759\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\nt 103203760\n\nc 2 V\n\nr 10 0\nVERSION2\nt 103203761\n\n"),
+		commentStream("# First line comment\ntype log\n# Comment in metadata\nversion 2\n\nc 2 V\n\nr 2 2\n\n\n"),
+		stringNameStream("type stringlog\nversion 2\n\ncommand 8 getscan\n\nresponse 2 2\n\n\n"),
 		fileLog(new regilo::Log(logPath)),
 		streamLog(new regilo::Log(logStream)),
+		commentLog(new regilo::Log(commentStream)),
+		stringNameLog(new StringNameLog(stringNameStream)),
 		timedFileLog(new regilo::TimedLog<std::chrono::nanoseconds>(timedLogPath)),
 		timedStreamLog(new regilo::TimedLog<std::chrono::nanoseconds>(timedLogStream))
 	{
@@ -70,10 +95,29 @@ BOOST_AUTO_TEST_SUITE(LogSuite)
 
 BOOST_FIXTURE_TEST_CASE(LogConstructorValues, LogFixture)
 {
-	BOOST_CHECK(logs.at(0)->getFilePath() == logPath);
-	BOOST_CHECK(&logs.at(1)->getStream() == &logStream);
-	BOOST_CHECK(logs.at(2)->getFilePath() == timedLogPath);
-	BOOST_CHECK(&logs.at(3)->getStream() == &timedLogStream);
+	BOOST_CHECK(fileLog->getFilePath() == logPath);
+	BOOST_CHECK(&streamLog->getStream() == &logStream);
+	BOOST_CHECK(timedFileLog->getFilePath() == timedLogPath);
+	BOOST_CHECK(&timedStreamLog->getStream() == &timedLogStream);
+}
+
+BOOST_FIXTURE_TEST_CASE(LogMetadata, LogFixture)
+{
+	std::string types[] = { "log", "timedlog" };
+
+	for(std::size_t i = 0; i < 2; i++)
+	{
+		regilo::ILog *log = logs[2 * i + 1];
+
+		BOOST_CHECK(log->getMetadata() == nullptr);
+
+		log->readMetadata();
+		const regilo::LogMetadata *metadata = log->getMetadata();
+		BOOST_REQUIRE(metadata != nullptr);
+
+		BOOST_CHECK_EQUAL(metadata->getType(), types[i]);
+		BOOST_CHECK_EQUAL(metadata->getVersion(), 2);
+	}
 }
 
 BOOST_FIXTURE_TEST_CASE(LogRead, LogFixture)
@@ -106,6 +150,36 @@ BOOST_FIXTURE_TEST_CASE(LogRead, LogFixture)
 		BOOST_CHECK(log->isEnd());
 		BOOST_CHECK(bool(log->getStream()) == !log->isEnd());
 	}
+}
+
+BOOST_FIXTURE_TEST_CASE(LogReadStringName, LogFixture)
+{
+	std::string logCommand;
+	std::string response = stringNameLog->read(logCommand);
+
+	BOOST_CHECK_EQUAL(logCommand, "getscan\n");
+	BOOST_CHECK_EQUAL(response, "2\n");
+
+	const regilo::LogMetadata *metadata = stringNameLog->getMetadata();
+	BOOST_REQUIRE(metadata != nullptr);
+
+	BOOST_CHECK_EQUAL(metadata->getType(), "stringlog");
+	BOOST_CHECK_EQUAL(metadata->getVersion(), 2);
+}
+
+BOOST_FIXTURE_TEST_CASE(LogSkipComments, LogFixture)
+{
+	std::string logCommand;
+	std::string response = commentLog->read(logCommand);
+
+	BOOST_CHECK_EQUAL(logCommand, "V\n");
+	BOOST_CHECK_EQUAL(response, "2\n");
+
+	const regilo::LogMetadata *metadata = commentLog->getMetadata();
+	BOOST_REQUIRE(metadata != nullptr);
+
+	BOOST_CHECK_EQUAL(metadata->getType(), "log");
+	BOOST_CHECK_EQUAL(metadata->getVersion(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(LogWrite)
