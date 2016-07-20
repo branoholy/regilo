@@ -164,7 +164,10 @@ void Log::writeMetadata(std::ostream& metaStream)
 std::string Log::readData(std::string& logCommand)
 {
 	logCommand = readNameValue(stream, 'c');
+	stream.get(); // Read the new line after the command
+
 	std::string response = readNameValue(stream, 'r');
+	stream.get(); // Read the new line after the response
 
 	return response;
 }

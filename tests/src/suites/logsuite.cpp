@@ -31,6 +31,9 @@
 class StringNameLog : public regilo::Log
 {
 public:
+	std::string commandName = "command";
+	char responseName = 'r';
+
 	using Log::Log;
 	virtual ~StringNameLog() = default;
 
@@ -39,8 +42,8 @@ public:
 
 std::string StringNameLog::readData(std::string& logCommand)
 {
-	logCommand = readNameValue(stream, "command");
-	std::string response = readNameValue(stream, "response");
+	logCommand = readNameValue(stream, commandName);
+	std::string response = readNameValue(stream, responseName);
 
 	return response;
 }
@@ -57,7 +60,7 @@ struct LogFixture
 	regilo::Log *fileLog;
 	regilo::Log *streamLog;
 	regilo::Log *commentLog;
-	regilo::Log *stringNameLog;
+	StringNameLog *stringNameLog;
 
 	regilo::TimedLog<std::chrono::nanoseconds> *timedFileLog;
 	regilo::TimedLog<std::chrono::nanoseconds> *timedStreamLog;
@@ -67,8 +70,8 @@ struct LogFixture
 	LogFixture() :
 		logStream("type log\nversion 2\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\n\nc 2 V\n\nr 10 0\nVERSION1\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\n\nc 2 V\n\nr 10 0\nVERSION2\n\n"),
 		timedLogStream("type timedlog\nversion 2\ntimeres 1 1000000000\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\nt 103203758\n\nc 2 V\n\nr 10 0\nVERSION1\nt 103203759\n\nc 10 G00076801\n\nr 22 0\n0C0C0C0C0C0C0C0C0C0C\nt 103203760\n\nc 2 V\n\nr 10 0\nVERSION2\nt 103203761\n\n"),
-		commentStream("# First line comment\ntype log\n# Comment in metadata\nversion 2\n\nc 2 V\n\n# Comment in data\nr 2 2\n\n\n"),
-		stringNameStream("type stringlog\nversion 2\n\ncommand 8 getscan\n\n# Comment in string-name log\nresponse 2 2\n\n\n"),
+		commentStream("# First line comment\ntype log\n# Comment in metadata\nversion 2\n\nc 2 V\n\n# Comment in data\nr 2 2\n\n\nc 11 missing_nl\n\nr 1 \n\nc 2 C\n\nr 2 R\n\n\n"),
+		stringNameStream("type stringlog\nversion 2\n\ncommand 8 getscan\n\n# Comment in string-name log\nr 2 2\n\n\n"),
 		fileLog(new regilo::Log(logPath)),
 		streamLog(new regilo::Log(logStream)),
 		commentLog(new regilo::Log(commentStream)),
@@ -180,6 +183,23 @@ BOOST_FIXTURE_TEST_CASE(LogSkipComments, LogFixture)
 
 	BOOST_CHECK_EQUAL(metadata->getType(), "log");
 	BOOST_CHECK_EQUAL(metadata->getVersion(), 2);
+}
+
+BOOST_FIXTURE_TEST_CASE(LogReadMissingNewLine, LogFixture)
+{
+	std::string logCommand, response;
+	commentLog->read(logCommand);
+
+	BOOST_CHECK_THROW(response = commentLog->read(logCommand), regilo::InvalidLogException);
+}
+
+BOOST_FIXTURE_TEST_CASE(LogReadWrongName, LogFixture)
+{
+	stringNameLog->responseName = 'w';
+	BOOST_CHECK_THROW(stringNameLog->read(), regilo::InvalidLogException);
+
+	stringNameLog->commandName = "wrong";
+	BOOST_CHECK_THROW(stringNameLog->read(), regilo::InvalidLogException);
 }
 
 BOOST_AUTO_TEST_CASE(LogWrite)
