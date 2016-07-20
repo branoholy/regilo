@@ -1,7 +1,22 @@
-1 1 1000000000$testmode on
-$$103203758$setldsrotation on
-$$103204758$getldsscan
-$AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX
+# Neato TimedLog
+# scans, move, time
+type timedlog
+version 2
+timeres 1 1000000000
+
+c 12 testmode on
+
+r 1 
+t 103203758
+
+c 18 setldsrotation on
+
+r 1 
+t 103204758
+
+c 11 getldsscan
+
+r 4836 AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX
 0,5527,10,0
 1,0,0,8035
 2,0,0,8021
@@ -362,9 +377,26 @@ $AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX
 357,5613,7,0
 358,5538,9,0
 359,5510,8,0
-ROTATION_SPEED,5.00
-$199178178$setmotor 100 100 50
-$$307209388$gettime
-$Sunday 13:57:09$396278016$setldsrotation off
-$$502350089$testmode off
-$$502380089$
+ROTATION_SPEED,5.00
+t 199178178
+
+c 20 setmotor 100 100 50
+
+r 1 
+t 307209388
+
+c 8 gettime
+
+r 16 Sunday 13:57:09
+t 396278016
+
+c 19 setldsrotation off
+
+r 1 
+t 502350089
+
+c 13 testmode off
+
+r 1 
+t 502380089
+

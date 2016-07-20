@@ -22,19 +22,70 @@
 #ifndef REGILO_LOG_HPP
 #define REGILO_LOG_HPP
 
-#include <chrono>
-#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <mutex>
-#include <sstream>
-#include <thread>
-
-#include <boost/algorithm/string/predicate.hpp>
 
 #include "regilo/utils.hpp"
 
 namespace regilo {
+
+/**
+ * @brief The InvalidLogException is thrown when the data stream contains
+ *		  a value that is not expected.
+ */
+class InvalidLogException : public std::runtime_error
+{
+public:
+	/**
+	 * @brief The default constructor.
+	 * @param message A string that is printed.
+	 */
+	InvalidLogException(const std::string& message);
+};
+
+/**
+ * @brief The LogMetadata class stores metadata of a Log.
+ */
+class LogMetadata
+{
+private:
+	std::string type = "log";
+	int version = 2;
+
+protected:
+	/**
+	 * @brief The default constructor is available only in derived and friend classes.
+	 */
+	LogMetadata() = default;
+
+	/**
+	 * @brief This constructor is available only in derived and friend classes.
+	 * @param type A log type.
+	 * @param version A log version.
+	 */
+	LogMetadata(const std::string& type, int version);
+
+public:
+	/**
+	 * @brief The default destructor.
+	 */
+	virtual ~LogMetadata() = default;
+
+	/**
+	 * @brief Get the log type.
+	 * @return A string with the type.
+	 */
+	inline virtual const std::string& getType() const final { return type; }
+
+	/**
+	 * @brief Get the log version.
+	 * @return The version number.
+	 */
+	inline virtual int getVersion() const final { return version; }
+
+	friend class Log;
+};
 
 /**
  * @brief The ILog interface has to be implemented in all Log classes.
@@ -64,6 +115,17 @@ public:
 	 * @return True if the log is in the EOF state.
 	 */
 	virtual bool isEnd() const = 0;
+
+	/**
+	 * @brief Read the metadata. It is usefull to determinate the metadata in runtime.
+	 */
+	virtual void readMetadata() = 0;
+
+	/**
+	 * @brief Get the associated metadata.
+	 * @return A pointer to metadata
+	 */
+	virtual const LogMetadata* getMetadata() const = 0;
 
 	/**
 	 * @brief Read one command from the log.
@@ -123,23 +185,90 @@ private:
 
 protected:
 	std::iostream& stream; ///< The underlying stream.
-	std::size_t version = 1; ///< The log version.
+	LogMetadata *metadata = nullptr; ///< The metadata object.
 
 	/**
-	 * @brief Read meta data from the log.
+	 * @brief Read the next char and check if it matches.
+	 *
+	 * Read the next char and check if it matches with the name. If not
+	 * an exception is thrown.
+	 *
+	 * @param stream A stream that is used for reading.
+	 * @param name A char that is used to check.
+	 */
+	void readName(std::istream& stream, char name);
+
+	/**
+	 * @brief Read the next string and check if it matches.
+	 *
+	 * Read the next string and check if it matches with the name. If not
+	 * an exception is thrown.
+	 *
+	 * @param stream A stream that is used for reading.
+	 * @param name A string that is used to check.
+	 */
+	void readName(std::istream& stream, const std::string& name);
+
+	/**
+	 * @brief Read the next value that is specified with a length.
+	 * @param stream A stream that is used for reading.
+	 * @return The value.
+	 */
+	std::string readValue(std::istream& stream);
+
+	/**
+	 * @brief Read the next char and value that is specified with a length.
+	 *
+	 * Read the next char and value that is specified with a length and check
+	 * if the char matches with the name. If not an exception is thrown.
+	 *
+	 * @param stream A stream that is used for reading.
+	 * @param name A char that is used to check.
+	 * @return The value.
+	 */
+	std::string readNameValue(std::istream& stream, char name);
+
+	/**
+	 * @brief Read the next char and value that is specified with a length.
+	 *
+	 * Read the next char and value that is specified with a length and check
+	 * if the char matches with the name. If not an exception is thrown.
+	 *
+	 * @param stream A stream that is used for reading.
+	 * @param name A string that is used to check.
+	 * @return The value.
+	 */
+	std::string readNameValue(std::istream& stream, const std::string& name);
+
+	/**
+	 * @brief Read metadata from the log.
 	 * @param metaStream A stream that is used for reading.
 	 */
 	virtual void readMetadata(std::istream& metaStream);
 
 	/**
-	 * @brief Write meta data to the log.
+	 * @brief Write metadata to the log.
 	 * @param metaStream A stream that is used for writing.
 	 */
 	virtual void writeMetadata(std::ostream& metaStream);
 
-public:
-	char MESSAGE_END = '$'; ///< A char that the log message ends with.
+	/**
+	 * @brief Read a command and response from the log.
+	 *		  This method can be safely overridden.
+	 * @param logCommand The input of the command that was read.
+	 * @return The response of the command.
+	 */
+	virtual std::string readData(std::string& logCommand);
 
+	/**
+	 * @brief Write a command and response to the log.
+	 *		  This method can be safely overridden.
+	 * @param command The command (with all parameters).
+	 * @param response The response of the command.
+	 */
+	virtual void writeData(const std::string& command, const std::string& response);
+
+public:
 	/**
 	 * @brief Log constructor with logging to a file.
 	 * @param filePath The path of file.
@@ -152,166 +281,27 @@ public:
 	 */
 	Log(std::iostream& stream);
 
+	/**
+	 * @brief Default destructor.
+	 */
 	virtual ~Log();
 
 	virtual inline const std::string& getFilePath() const override { return filePath; }
 	virtual inline std::iostream& getStream() override { return stream; }
 	virtual inline bool isEnd() const override { return !stream; }
 
-	virtual std::string read() override;
-	virtual std::string read(std::string& logCommand) override;
-	virtual std::string readCommand(const std::string& command) override;
-	virtual std::string readCommand(const std::string& command, std::string& logCommand) override;
+	virtual void readMetadata() override final;
+	virtual inline const LogMetadata* getMetadata() const override { return metadata; }
 
-	virtual void write(const std::string& command, const std::string& response) override;
+	virtual std::string read() override final;
+	virtual std::string read(std::string& logCommand) override final;
+	virtual std::string readCommand(const std::string& command) override final;
+	virtual std::string readCommand(const std::string& command, std::string& logCommand) override final;
+
+	virtual void write(const std::string& command, const std::string& response) override final;
 
 	virtual void close() override;
 };
-
-/**
- * @brief The ITimedLog interface is implemented in TimedLog.
- */
-class ITimedLog : public virtual ILog
-{
-public:
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~ITimedLog() = default;
-
-	/**
-	 * @brief Get the last command time (after reading).
-	 * @return Time since epoch as std::chrono::nanoseconds.
-	 */
-	virtual std::chrono::nanoseconds getLastCommandNanoseconds() const = 0;
-
-	/**
-	 * @brief Get the last command time (after reading).
-	 * @return Time since epoch as Duration.
-	 */
-	template<typename Duration>
-	inline Duration getLastCommandTimeAs() const { return std::chrono::duration_cast<Duration>(this->getLastCommandNanoseconds()); }
-
-	/**
-	 * @brief Sync command times with real time. It means that all read methods will block
-	 *        their executions until the current time is bigger than the command time.
-	 */
-	virtual void syncTime(bool sync = true) = 0;
-};
-
-/**
- * @brief The TimedLog class is used to log all commands with their timestamp.
- */
-template<typename DurationT = std::chrono::milliseconds>
-class TimedLog : public Log, public ITimedLog
-{
-private:
-	std::mutex streamMutex;
-
-	std::intmax_t num, den;
-
-	DurationT lastCommandTime;
-
-	DurationT firstReadTime = DurationT::zero();
-	DurationT firstWriteTime = DurationT::min();
-
-protected:
-	virtual void readMetadata(std::istream& metaStream) override;
-	virtual void writeMetadata(std::ostream& metaStream) override;
-
-public:
-	typedef DurationT Duration; ///< The duration type for this log.
-
-	using Log::Log;
-
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~TimedLog() = default;
-
-	inline virtual std::chrono::nanoseconds getLastCommandNanoseconds() const override
-	{
-		return std::chrono::duration_cast<std::chrono::nanoseconds>(lastCommandTime);
-	}
-
-	/**
-	 * @brief Get the last command time (after reading).
-	 * @return Time since epoch as Duration.
-	 */
-	inline DurationT getLastCommandTime() const { return lastCommandTime; }
-
-	virtual inline void syncTime(bool sync = true) override { firstReadTime = (sync ? DurationT::max() : DurationT::zero()); }
-
-	virtual std::string read(std::string& logCommand) override;
-	virtual void write(const std::string& command, const std::string& response) override;
-};
-
-extern template class TimedLog<std::chrono::nanoseconds>;
-extern template class TimedLog<std::chrono::microseconds>;
-extern template class TimedLog<std::chrono::milliseconds>;
-extern template class TimedLog<std::chrono::seconds>;
-
-template<typename DurationT>
-void TimedLog<DurationT>::readMetadata(std::istream& metaStream)
-{
-	Log::readMetadata(metaStream);
-	metaStream >> num >> den;
-}
-
-template<typename DurationT>
-void TimedLog<DurationT>::writeMetadata(std::ostream& metaStream)
-{
-	Log::writeMetadata(metaStream);
-	metaStream << ' ' << DurationT::period::num << ' ' << DurationT::period::den;
-}
-
-template<typename DurationT>
-std::string TimedLog<DurationT>::read(std::string& logCommand)
-{
-	streamMutex.lock();
-
-	std::string response = Log::read(logCommand);
-
-	std::string epochTime;
-	std::getline(stream, epochTime, MESSAGE_END);
-	std::istringstream epochStream(epochTime);
-
-	std::int64_t commandTimeCount;
-	epochStream >> commandTimeCount;
-
-	long double numRatio = num / DurationT::period::num;
-	long double denRation = DurationT::period::den / den;
-	lastCommandTime = DurationT(std::int64_t(std::round(commandTimeCount * numRatio * denRation)));
-
-	if(firstReadTime == DurationT::max()) firstReadTime = epoch<DurationT>();
-	else
-	{
-		DurationT elapsed = epoch<DurationT>() - firstReadTime;
-
-		while(elapsed < lastCommandTime)
-		{
-			std::this_thread::sleep_for(lastCommandTime - elapsed);
-			elapsed = epoch<DurationT>() - firstReadTime;
-		}
-	}
-
-	streamMutex.unlock();
-
-	return response;
-}
-
-template<typename DurationT>
-void TimedLog<DurationT>::write(const std::string& command, const std::string& response)
-{
-	streamMutex.lock();
-
-	Log::write(command, response);
-
-	if(firstWriteTime == DurationT::min()) firstWriteTime = epoch<DurationT>();
-	stream << (epoch<DurationT>() - firstWriteTime).count() << MESSAGE_END;
-
-	streamMutex.unlock();
-}
 
 }
 

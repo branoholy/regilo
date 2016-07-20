@@ -28,8 +28,6 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/streambuf.hpp>
 
-#include "regilo/log.hpp"
-
 #include "simulator.hpp"
 
 namespace bai = boost::asio::ip;
