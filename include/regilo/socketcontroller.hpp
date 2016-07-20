@@ -24,7 +24,7 @@
 
 #include <boost/asio/ip/tcp.hpp>
 
-#include "controller.hpp"
+#include "streamcontroller.hpp"
 
 namespace regilo {
 

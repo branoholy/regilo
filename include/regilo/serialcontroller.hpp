@@ -24,7 +24,7 @@
 
 #include <boost/asio/serial_port.hpp>
 
-#include "controller.hpp"
+#include "streamcontroller.hpp"
 
 namespace regilo {
 
