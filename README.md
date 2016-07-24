@@ -4,6 +4,7 @@
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Documentation](https://codedocs.xyz/branoholy/regilo.svg)](https://codedocs.xyz/branoholy/regilo)
 [![Coverage Status](https://coveralls.io/repos/github/branoholy/regilo/badge.svg?branch=master)](https://coveralls.io/github/branoholy/regilo)
+[![Gitter](https://img.shields.io/badge/chat-on_gitter-eb2165.svg)](https://gitter.im/branoholy/regilo)
 
 *A simple C++ library for controlling the Neato XV robot and the Hokuyo scanner.*
 
