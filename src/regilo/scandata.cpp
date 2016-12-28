@@ -25,28 +25,29 @@
 
 namespace regilo {
 
-ScanData::ScanData(std::size_t scanId, double rotationSpeed) :
-	scanId(scanId), rotationSpeed(rotationSpeed)
+ScanData::ScanData(std::size_t index, double rotationSpeed) :
+    index(index),
+    rotationSpeed(rotationSpeed)
 {
 }
 
 std::ostream& operator<<(std::ostream& out, const ScanData& data)
 {
-	out << "ScanData("
-		<< data.scanId
-		<< ", "
-		<< data.rotationSpeed
-		<< ", "
-		<< data.size()
-		<< ')'
-		<< std::endl;
+    out << "ScanData("
+        << data.index
+        << ", "
+        << data.rotationSpeed
+        << ", "
+        << data.size()
+        << ')'
+        << std::endl;
 
-	for(const ScanRecord& record : data)
-	{
-		out << record << std::endl;
-	}
+    for(const ScanRecord& record : data)
+    {
+        out << record << std::endl;
+    }
 
-	return out;
+    return out;
 }
 
 }

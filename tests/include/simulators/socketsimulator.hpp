@@ -35,30 +35,30 @@ namespace bai = boost::asio::ip;
 class SocketSimulator : public Simulator
 {
 private:
-	boost::asio::io_service ioService;
-	bai::tcp::acceptor acceptor;
-	bai::tcp::socket socket;
+    boost::asio::io_service ioService;
+    bai::tcp::acceptor acceptor;
+    bai::tcp::socket socket;
 
-	boost::asio::streambuf socketIStreamBuffer, socketOStreamBuffer;
-	std::istream socketIStream;
-	std::ostream socketOStream;
+    boost::asio::streambuf socketIStreamBuffer, socketOStreamBuffer;
+    std::istream socketIStream;
+    std::ostream socketOStream;
 
-	virtual std::string read() override;
-	virtual bool write(const std::string& data) override;
+    virtual std::string read() override;
+    virtual bool write(const std::string& data) override;
 
 public:
-	SocketSimulator(const std::string& filePath, unsigned short port);
-	SocketSimulator(std::iostream& stream, unsigned short port);
+    SocketSimulator(const std::string& filePath, unsigned short port);
+    SocketSimulator(std::iostream& stream, unsigned short port);
 
-	virtual ~SocketSimulator();
+    virtual ~SocketSimulator();
 
-	virtual void start() override;
-	virtual void stop() override;
+    virtual void start() override;
+    virtual void stop() override;
 
-	virtual bool isRunning() const override;
-	virtual std::string getEndpoint() const override;
+    virtual bool isRunning() const override;
+    virtual std::string getEndpoint() const override;
 
-	virtual bool run() override;
+    virtual bool run() override;
 };
 
 #endif // SOCKETSIMULATOR_HPP

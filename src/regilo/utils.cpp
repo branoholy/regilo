@@ -25,45 +25,43 @@ namespace regilo {
 
 std::istream& getLine(std::istream& stream, std::string& line, const std::string& delim)
 {
-	if(delim.empty()) return std::getline(stream, line);
-	else if(delim.size() == 1) return std::getline(stream, line, delim.front());
-	else
-	{
-		char c;
-		stream.get(c);
+    if(delim.empty()) return std::getline(stream, line);
+    if(delim.size() == 1) return std::getline(stream, line, delim.front());
 
-		std::string delimPart, result;
-		while(stream)
-		{
-			if(c == delim.at(delimPart.size()))
-			{
-				delimPart += c;
-				if(delimPart.size() == delim.size())
-				{
-					delimPart.clear();
-					break;
-				}
-			}
-			else
-			{
-				if(!delimPart.empty())
-				{
-					result += delimPart;
-					delimPart.clear();
-				}
+    char character;
+    stream.get(character);
 
-				result += c;
-			}
+    std::string delimPart, result;
+    while(stream)
+    {
+        if(character == delim.at(delimPart.size()))
+        {
+            delimPart += character;
+            if(delimPart.size() == delim.size())
+            {
+                delimPart.clear();
+                break;
+            }
+        }
+        else
+        {
+            if(!delimPart.empty())
+            {
+                result += delimPart;
+                delimPart.clear();
+            }
 
-			if(stream.peek() == EOF) break;
-			else stream.get(c);
-		}
+            result += character;
+        }
 
-		if(!delimPart.empty()) result += delimPart;
-		if(!result.empty()) line = result;
+        if(stream.peek() == EOF) break;
+        else stream.get(character);
+    }
 
-		return stream;
-	}
+    if(!delimPart.empty()) result += delimPart;
+    if(!result.empty()) line = result;
+
+    return stream;
 }
 
 }

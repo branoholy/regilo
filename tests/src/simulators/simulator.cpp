@@ -22,31 +22,31 @@
 #include "simulators/simulator.hpp"
 
 Simulator::Simulator(const std::string& filePath) :
-	log(filePath)
+    log(filePath)
 {
 }
 
 Simulator::Simulator(std::iostream& stream) :
-	log(stream)
+    log(stream)
 {
 }
 
 bool Simulator::run()
 {
-	bool status = false;
-	while(isRunning())
-	{
-		status = true;
+    bool status = false;
+    while(isRunning())
+    {
+        status = true;
 
-		std::string logCommand;
-		std::string logResponse = log.read(logCommand);
-		if(log.isEnd()) break;
+        std::string logCommand;
+        std::string logResponse = log.read(logCommand);
+        if(log.isEnd()) break;
 
-		std::string devCommand = read();
-		if(logCommand != devCommand) return false;
+        std::string devCommand = read();
+        if(logCommand != devCommand) return false;
 
-		if(!write(devCommand + logResponse)) return false;
-	}
+        if(!write(devCommand + logResponse)) return false;
+    }
 
-	return status;
+    return status;
 }

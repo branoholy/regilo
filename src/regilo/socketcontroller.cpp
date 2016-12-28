@@ -25,48 +25,48 @@ namespace regilo {
 
 SocketController::~SocketController()
 {
-	if(stream.is_open())
-	{
-		boost::system::error_code ec;
-		stream.shutdown(bai::tcp::socket::shutdown_both, ec);
-	}
+    if(stream.is_open())
+    {
+        boost::system::error_code errorCode;
+        stream.shutdown(bai::tcp::socket::shutdown_both, errorCode);
+    }
 }
 
 void SocketController::connect(const std::string& endpoint)
 {
-	std::string ip = endpoint;
-	unsigned short port = 0;
+    std::string ipAddress = endpoint;
+    unsigned short port = 0;
 
-	std::size_t colonPos = endpoint.find(':');
-	if(colonPos != std::string::npos)
-	{
-		ip = endpoint.substr(0, colonPos);
-		port = static_cast<unsigned short>(std::stoul(endpoint.substr(colonPos + 1)));
-	}
+    std::size_t colonPos = endpoint.find(':');
+    if(colonPos != std::string::npos)
+    {
+        ipAddress = endpoint.substr(0, colonPos);
+        port = static_cast<unsigned short>(std::stoul(endpoint.substr(colonPos + 1)));
+    }
 
-	connect(ip, port);
+    connect(ipAddress, port);
 }
 
-void SocketController::connect(const std::string& ip, unsigned short port)
+void SocketController::connect(const std::string& ipAddress, unsigned short port)
 {
-	connect(bai::tcp::endpoint(bai::address::from_string(ip), port));
+    connect(bai::tcp::endpoint(bai::address::from_string(ipAddress), port));
 }
 
 void SocketController::connect(const bai::tcp::endpoint& endpoint)
 {
-	stream.connect(endpoint);
+    stream.connect(endpoint);
 }
 
 std::string SocketController::getEndpoint() const
 {
-	if(!isConnected()) return "";
+    if(!isConnected()) return "";
 
-	Stream::endpoint_type endpoint = stream.remote_endpoint();
+    Stream::endpoint_type endpoint = stream.remote_endpoint();
 
-	std::string ip = endpoint.address().to_string();
-	std::string port = std::to_string(endpoint.port());
+    std::string ipAddress = endpoint.address().to_string();
+    std::string port = std::to_string(endpoint.port());
 
-	return ip + ':' + port;
+    return ipAddress + ':' + port;
 }
 
 }

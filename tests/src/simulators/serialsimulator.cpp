@@ -25,63 +25,57 @@
 
 SerialSimulator::~SerialSimulator()
 {
-	stop();
+    stop();
 }
 
 void SerialSimulator::start()
 {
-	if(!opened)
-	{
-		ptmx = ::open("/dev/ptmx", O_RDWR | O_NOCTTY);
-		opened = (ptmx != -1 && grantpt(ptmx) == 0 && unlockpt(ptmx) == 0);
-	}
+    if(!opened)
+    {
+        ptmx = ::open("/dev/ptmx", O_RDWR | O_NOCTTY);
+        opened = (ptmx != -1 && grantpt(ptmx) == 0 && unlockpt(ptmx) == 0);
+    }
 }
 
 void SerialSimulator::stop()
 {
-	if(opened)
-	{
-		::close(ptmx);
-		opened = false;
-	}
+    if(opened)
+    {
+        ::close(ptmx);
+        opened = false;
+    }
 }
 
 std::string SerialSimulator::read(std::size_t bufferSize)
 {
-	std::string response;
-	char *buffer = new char[bufferSize];
+    std::string response;
+    char *buffer = new char[bufferSize];
 
-	ssize_t readBytes;
-	std::size_t found = 0;
-	while((readBytes = ::read(ptmx, buffer, bufferSize - 1)) > 0)
-	{
-		if(!requestEnd.empty())
-		{
-			for(int i = 0; i < readBytes; i++)
-			{
-				if(buffer[i] == requestEnd[found])
-				{
-					found++;
-					if(found == requestEnd.length())
-					{
-						response.append(buffer, i + 1);
-						delete[] buffer;
+    ssize_t readBytes;
+    while((readBytes = ::read(ptmx, buffer, bufferSize - 1)) > 0)
+    {
+        if(!requestEnd.empty())
+        {
+            std::string bufferString(buffer, readBytes);
+            std::size_t requestEndPos = bufferString.find(requestEnd);
 
-						return response;
-					}
-				}
-				else found = 0;
-			}
-		}
+            if(requestEndPos != std::string::npos)
+            {
+                response.append(buffer, requestEndPos + 1);
+                delete[] buffer;
 
-		response.append(buffer, readBytes);
-	}
+                return response;
+            }
+        }
 
-	return response;
+        response.append(buffer, readBytes);
+    }
+
+    return response;
 }
 
 bool SerialSimulator::write(const std::string& data)
 {
-	ssize_t writtenBytes = ::write(ptmx, data.c_str(), data.length());
-	return (writtenBytes != -1 && std::size_t(writtenBytes) == data.length());
+    ssize_t writtenBytes = ::write(ptmx, data.c_str(), data.length());
+    return writtenBytes != -1 && std::size_t(writtenBytes) == data.length();
 }

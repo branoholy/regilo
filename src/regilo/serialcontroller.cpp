@@ -25,8 +25,8 @@ namespace regilo {
 
 void SerialController::connect(const std::string& endpoint)
 {
-	this->endpoint = endpoint;
-	stream.open(endpoint);
+    this->endpoint = endpoint;
+    stream.open(endpoint);
 }
 
 }

@@ -32,33 +32,33 @@ namespace regilo {
 class ScanRecord
 {
 public:
-	int id; ///< The id of the record (starting from zero).
-	double angle; ///< The angle of the record (in radians).
-	double distance; ///< The distance that was measured in the angle (in millimeters).
-	int intensity; ///< The normalized spot intensity that was measured in the angle.
-	int errorCode; ///< The error code.
-	bool error; ///< True if this record has an error.
+    int index; ///< The index of the record (starting from zero).
+    double angle; ///< The angle of the record (in radians).
+    double distance; ///< The distance that was measured in the angle (in millimeters).
+    int intensity; ///< The normalized spot intensity that was measured in the angle.
+    int errorCode; ///< The error code.
+    bool error; ///< True if this record has an error.
 
-	/**
-	 * @brief Default constructor.
-	 */
-	ScanRecord() = default;
+    /**
+     * @brief Default constructor.
+     */
+    ScanRecord() = default;
 
-	/**
-	 * @brief Construct a ScanRecord from all attributes.
-	 * @param id The id of the record (starting from zero).
-	 * @param angle The angle of the record (in radians).
-	 * @param distance The distance that was measured in the angle (in millimeters).
-	 * @param intensity The normalized spot intensity that was measured in the angle.
-	 * @param errorCode The error code.
-	 * @param error True if this record has an error.
-	 */
-	ScanRecord(int id, double angle, double distance, int intensity, int errorCode, bool error = false);
+    /**
+     * @brief Construct a ScanRecord from all attributes.
+     * @param index The index of the record (starting from zero).
+     * @param angle The angle of the record (in radians).
+     * @param distance The distance that was measured in the angle (in millimeters).
+     * @param intensity The normalized spot intensity that was measured in the angle.
+     * @param errorCode The error code.
+     * @param error True if this record has an error.
+     */
+    ScanRecord(int index, double angle, double distance, int intensity, int errorCode, bool error = false);
 
-	/**
-	 * @brief Output the record as a string.
-	 */
-	friend std::ostream& operator<<(std::ostream& out, const ScanRecord& record);
+    /**
+     * @brief Output the record as a string.
+     */
+    friend std::ostream& operator<<(std::ostream& out, const ScanRecord& record);
 };
 
 }

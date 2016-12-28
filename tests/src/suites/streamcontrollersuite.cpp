@@ -40,19 +40,20 @@
 template<typename StreamController>
 struct StreamControllerFixture
 {
-	std::string logPath = "data/hokuyo-log.txt";
-	std::stringstream logStream;
+    std::string logPath = "data/hokuyo-log.txt";
+    std::stringstream logStream;
 
-	std::vector<StreamController*> controllers;
+    std::vector<StreamController*> controllers;
 
-	StreamControllerFixture() :
-		logStream("type log\nversion 2\n\nc 5 CMD1\n\nr 10 RESPONSE1\n\n\nc 2 V\n\nr 10 RESPONSE2\n\n\nc 5 CMD3\n\nr 4 2.5\n\n\nc 8 CMD 4 5\n\nr 10 RESPONSE4\n\n\nc 5 CMD6\n\nr 2 5\n\n\n")
-	{
-		controllers.push_back(new StreamController(logPath));
-		controllers.push_back(new StreamController(logStream));
-	}
+    __attribute__((annotate("oclint:suppress[long line]")))
+    StreamControllerFixture() :
+        logStream("type log\nversion 2\n\nc 5 CMD1\n\nr 10 RESPONSE1\n\n\nc 2 V\n\nr 10 RESPONSE2\n\n\nc 5 CMD3\n\nr 4 2.5\n\n\nc 8 CMD 4 5\n\nr 10 RESPONSE4\n\n\nc 5 CMD6\n\nr 2 5\n\n\n")
+    {
+        controllers.push_back(new StreamController(logPath));
+        controllers.push_back(new StreamController(logStream));
+    }
 
-	inline const StreamController* getFileController() const { return controllers.at(0); }
+    inline const StreamController* getFileController() const { return controllers.at(0); }
 };
 
 typedef boost::mpl::vector<regilo::SerialController, regilo::SocketController> StreamControllers;
@@ -61,83 +62,83 @@ BOOST_AUTO_TEST_SUITE(StreamControllerSuite)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(StreamControllerConstructorValues, StreamController, StreamControllers, SF)
 {
-	BOOST_CHECK(SF::controllers.at(0)->getLog()->getFilePath() == SF::logPath);
-	BOOST_CHECK(&(SF::controllers.at(1)->getLog()->getStream()) == &(SF::logStream));
+    BOOST_CHECK(SF::controllers.at(0)->getLog()->getFilePath() == SF::logPath);
+    BOOST_CHECK(&(SF::controllers.at(1)->getLog()->getStream()) == &(SF::logStream));
 
-	const StreamController *constController = SF::getFileController();
-	BOOST_CHECK(constController->getLog()->getFilePath() == SF::logPath);
+    const StreamController *constController = SF::getFileController();
+    BOOST_CHECK(constController->getLog()->getFilePath() == SF::logPath);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(StreamControllerLog, StreamController, StreamControllers, SF)
 {
-	auto log = std::make_shared<regilo::Log>(SF::logPath);
-	SF::controllers.at(0)->setLog(log);
+    auto log = std::make_shared<regilo::Log>(SF::logPath);
+    SF::controllers.at(0)->setLog(log);
 
-	BOOST_CHECK(SF::controllers.at(0)->getLog()->getFilePath() == SF::logPath);
+    BOOST_CHECK(SF::controllers.at(0)->getLog()->getFilePath() == SF::logPath);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(StreamControllerCommunication, StreamController, StreamControllers, SF)
 {
-	std::mutex mutex;
-	mutex.lock();
+    std::mutex mutex;
+    mutex.lock();
 
-	std::string deviceEndpoint;
-	bool deviceStatus = false;
-	std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus] ()
-	{
-		Simulator *simulator = nullptr;
-		if(std::is_same<StreamController, regilo::SerialController>::value)
-		{
-			simulator = new SerialSimulator(SF::logStream);
-		}
-		else if(std::is_same<StreamController, regilo::SocketController>::value)
-		{
-			simulator = new SocketSimulator(SF::logStream, 12345);
-		}
+    std::string deviceEndpoint;
+    bool deviceStatus = false;
+    std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus] ()
+    {
+        Simulator *simulator = nullptr;
+        if(std::is_same<StreamController, regilo::SerialController>::value)
+        {
+            simulator = new SerialSimulator(SF::logStream);
+        }
+        else if(std::is_same<StreamController, regilo::SocketController>::value)
+        {
+            simulator = new SocketSimulator(SF::logStream, 12345);
+        }
 
-		BOOST_REQUIRE(simulator != nullptr);
+        BOOST_REQUIRE(simulator != nullptr);
 
-		simulator->start();
-		deviceEndpoint = simulator->getEndpoint();
-		mutex.unlock();
+        simulator->start();
+        deviceEndpoint = simulator->getEndpoint();
+        mutex.unlock();
 
-		deviceStatus = simulator->run();
-		mutex.lock();
+        deviceStatus = simulator->run();
+        mutex.lock();
 
-		delete simulator;
-	});
+        delete simulator;
+    });
 
-	StreamController controller;
+    StreamController controller;
 
-	BOOST_CHECK(!controller.isConnected());
-	BOOST_CHECK(controller.getEndpoint().empty());
+    BOOST_CHECK(!controller.isConnected());
+    BOOST_CHECK(controller.getEndpoint().empty());
 
-	mutex.lock();
-	controller.connect(deviceEndpoint);
+    mutex.lock();
+    controller.connect(deviceEndpoint);
 
-	BOOST_REQUIRE(controller.isConnected());
-	BOOST_CHECK_EQUAL(controller.getEndpoint(), deviceEndpoint);
+    BOOST_REQUIRE(controller.isConnected());
+    BOOST_CHECK_EQUAL(controller.getEndpoint(), deviceEndpoint);
 
-	std::string response1 = ((regilo::IController*) &controller)->sendCommand("CMD1");
-	BOOST_CHECK_EQUAL(response1, "RESPONSE1");
+    std::string response1 = ((regilo::IController*) &controller)->sendCommand("CMD1");
+    BOOST_CHECK_EQUAL(response1, "RESPONSE1");
 
-	std::string response2 = controller.template sendCommand<std::string>('V');
-	BOOST_CHECK_EQUAL(response2, "RESPONSE2");
+    std::string response2 = controller.template sendCommand<std::string>('V');
+    BOOST_CHECK_EQUAL(response2, "RESPONSE2");
 
-	double response3 = controller.template sendCommand<double>("CMD3");
-	BOOST_CHECK_CLOSE(response3, 2.5, 0.00001);
+    double response3 = controller.template sendCommand<double>("CMD3");
+    BOOST_CHECK_CLOSE(response3, 2.5, 0.00001);
 
-	std::string response4 = controller.template sendCommand<std::string>("CMD", 4, 5);
-	BOOST_CHECK_EQUAL(response4, "RESPONSE4");
+    std::string response4 = controller.template sendCommand<std::string>("CMD", 4, 5);
+    BOOST_CHECK_EQUAL(response4, "RESPONSE4");
 
-	int response5 = controller.template sendFormattedCommand<int>("CMD%d", 6);
-	BOOST_CHECK_EQUAL(response5, 5);
+    int response5 = controller.template sendFormattedCommand<int>("CMD%d", 6);
+    BOOST_CHECK_EQUAL(response5, 5);
 
-	mutex.unlock();
+    mutex.unlock();
 
-	if(deviceThread.joinable()) deviceThread.join();
+    if(deviceThread.joinable()) deviceThread.join();
 
-	BOOST_CHECK(deviceStatus);
+    BOOST_CHECK(deviceStatus);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

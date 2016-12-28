@@ -31,23 +31,23 @@
 class SerialSimulator : public Simulator
 {
 private:
-	int ptmx;
-	bool opened = false;
+    int ptmx;
+    bool opened = false;
 
 protected:
-	inline virtual std::string read() override { return read(256); }
-	std::string read(std::size_t bufferSize);
-	virtual bool write(const std::string& data) override;
+    inline virtual std::string read() override { return read(256); }
+    std::string read(std::size_t bufferSize);
+    virtual bool write(const std::string& data) override;
 
 public:
-	using Simulator::Simulator;
-	virtual ~SerialSimulator();
+    using Simulator::Simulator;
+    virtual ~SerialSimulator();
 
-	virtual void start() override;
-	virtual void stop() override;
+    virtual void start() override;
+    virtual void stop() override;
 
-	inline virtual bool isRunning() const override { return opened; }
-	inline virtual std::string getEndpoint() const override { return std::string(ptsname(ptmx)); }
+    inline virtual bool isRunning() const override { return opened; }
+    inline virtual std::string getEndpoint() const override { return std::string(ptsname(ptmx)); }
 };
 
 #endif // SERIALSIMULATOR_HPP

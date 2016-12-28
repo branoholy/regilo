@@ -30,402 +30,426 @@
 #include <regilo/serialcontroller.hpp>
 #include <regilo/socketcontroller.hpp>
 
-RegiloVisual::RegiloVisual(regilo::IScanController *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
-	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning),
-	fullscreen(false), zoom(0.08),
-	radarColor(0, 200, 0), pointColor(200, 200, 200), radarAngle(0), radarRayLength(4000)
+RegiloVisual::RegiloVisual(
+    regilo::IScanController *controller,
+    bool useScanner,
+    bool manualScanning,
+    bool moveScanning
+) : wxApp(),
+    controller(controller),
+    useScanner(useScanner),
+    manualScanning(manualScanning),
+    moveScanning(moveScanning)
 {
 }
 
+__attribute__((annotate("oclint:suppress[high cyclomatic complexity]")))
 bool RegiloVisual::OnInit()
 {
-	wxPathList pathList;
-	pathList.Add(".");
-	pathList.Add(wxStandardPaths::Get().GetResourcesDir());
+    wxPathList pathList;
+    pathList.Add(".");
+    pathList.Add(wxStandardPaths::Get().GetResourcesDir());
 
-	wxInitAllImageHandlers();
-	radarGradient.LoadFile(pathList.FindValidPath("images/radar-gradient.png"));
-	radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+    wxInitAllImageHandlers();
+    radarGradient.LoadFile(pathList.FindValidPath("images/radar-gradient.png"));
+    radarGradientZoom = zoomImage(radarGradient, zoom * 10);
 
-	// Frame
-	frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
+    // Frame
+    frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
 
-	// Frame StatusBar
-	frame->CreateStatusBar(2, wxSTB_ELLIPSIZE_MIDDLE | wxSTB_SHOW_TIPS | wxFULL_REPAINT_ON_RESIZE);
+    // Frame StatusBar
+    frame->CreateStatusBar(2, wxSTB_ELLIPSIZE_MIDDLE | wxSTB_SHOW_TIPS | wxFULL_REPAINT_ON_RESIZE);
 
-	std::string endpoint;
-	if(useScanner) endpoint = controller->getEndpoint();
-	else endpoint = controller->getLog()->getFilePath();
+    std::string endpoint;
+    if(useScanner) endpoint = controller->getEndpoint();
+    else endpoint = controller->getLog()->getFilePath();
 
-	setStatusText("", 0);
-	setStatusText("Connected to " + endpoint, 1);
+    setStatusText("", 0);
+    setStatusText("Connected to " + endpoint, 1);
 
-	// Panel
-	panel = new wxPanel(frame);
-	panel->GetEventHandler()->Bind(wxEVT_KEY_UP, &RegiloVisual::setMotorByKey, this);
-	panel->GetEventHandler()->Bind(wxEVT_PAINT, &RegiloVisual::repaint, this);
-	panel->GetEventHandler()->Bind(wxEVT_LEFT_DCLICK, [this] (wxMouseEvent&)
-	{
-		if((zoom * 2) > 2) return;
+    // Panel
+    panel = new wxPanel(frame);
+    panel->GetEventHandler()->Bind(wxEVT_KEY_UP, &RegiloVisual::setMotorByKey, this);
+    panel->GetEventHandler()->Bind(wxEVT_PAINT, &RegiloVisual::repaint, this);
+    panel->GetEventHandler()->Bind(wxEVT_LEFT_DCLICK, [this] (wxMouseEvent&)
+    {
+        if((zoom * 2) > 2) return;
 
-		zoom *= 2;
-		radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+        zoom *= 2;
+        radarGradientZoom = zoomImage(radarGradient, zoom * 10);
 
-		int width, height;
-		panel->GetSize(&width, &height);
-		double maxWidth = std::sqrt(std::pow(width / 2, 2) + std::pow(height / 2, 2));
+        int width, height;
+        panel->GetSize(&width, &height);
+        double maxWidth = std::sqrt(std::pow(width / 2, 2) + std::pow(height / 2, 2));
 
-		if(radarGradientZoom.GetWidth() > maxWidth)
-		{
-			double scale = maxWidth / radarGradientZoom.GetWidth();
-			radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
-		}
-	});
-	panel->GetEventHandler()->Bind(wxEVT_RIGHT_DCLICK, [this] (wxMouseEvent&)
-	{
-		if((zoom * 0.5) < 0.002) return;
+        if(radarGradientZoom.GetWidth() > maxWidth)
+        {
+            double scale = maxWidth / radarGradientZoom.GetWidth();
+            radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
+        }
+    });
+    panel->GetEventHandler()->Bind(wxEVT_RIGHT_DCLICK, [this] (wxMouseEvent&)
+    {
+        if((zoom * 0.5) < 0.002) return;
 
-		zoom *= 0.5;
-		radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+        zoom *= 0.5;
+        radarGradientZoom = zoomImage(radarGradient, zoom * 10);
 
-		int width, height;
-		panel->GetSize(&width, &height);
-		double maxWidth = std::sqrt(std::pow(width / 2, 2) + std::pow(height / 2, 2));
+        int width, height;
+        panel->GetSize(&width, &height);
+        double maxWidth = std::sqrt(std::pow(width / 2, 2) + std::pow(height / 2, 2));
 
-		if(radarGradientZoom.GetWidth() > maxWidth)
-		{
-			double scale = maxWidth / radarGradientZoom.GetWidth();
-			radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
-		}
-	});
+        if(radarGradientZoom.GetWidth() > maxWidth)
+        {
+            double scale = maxWidth / radarGradientZoom.GetWidth();
+            radarGradientZoom.Resize(radarGradientZoom.GetSize() * scale, wxPoint());
+        }
+    });
 
-	if(!manualScanning && !moveScanning)
-	{
-		scanThreadRunning = true;
-		scanThread = std::thread([this] ()
-		{
-			while(scanThreadRunning)
-			{
-				scanAndShow();
+    if(!manualScanning && !moveScanning)
+    {
+        scanThreadRunning = true;
+        scanThread = std::thread([this] ()
+        {
+            while(scanThreadRunning)
+            {
+                scanAndShow();
 
-				if(scanThreadRunning)
-				{
-					std::unique_lock<std::mutex> lock(scanThreadCVMutex);
-					scanThreadCV.wait_for(lock, std::chrono::milliseconds(500));
-				}
-			}
-		});
-	}
+                if(scanThreadRunning)
+                {
+                    std::unique_lock<std::mutex> lock(scanThreadCVMutex);
+                    scanThreadCV.wait_for(lock, std::chrono::milliseconds(500));
+                }
+            }
+        });
+    }
 
-	std::size_t fps = 24;
-	radarThread = std::thread([this, fps] ()
-	{
-		while(scanThreadRunning)
-		{
-			radarMutex.lock();
-			radarAngle += M_PI / fps / 2;
-			radarMutex.unlock();
+    std::size_t fps = 24;
+    radarThread = std::thread([this, fps] ()
+    {
+        while(scanThreadRunning)
+        {
+            radarMutex.lock();
+            radarAngle += M_PI / fps / 2;
+            radarMutex.unlock();
 
-			this->GetTopWindow()->GetEventHandler()->CallAfter([this] ()
-			{
-				frame->Refresh();
-			});
+            this->GetTopWindow()->GetEventHandler()->CallAfter([this] ()
+            {
+                frame->Refresh();
+            });
 
-			if(scanThreadRunning)
-			{
-				std::unique_lock<std::mutex> lock(radarThreadCVMutex);
-				radarThreadCV.wait_for(lock, std::chrono::milliseconds(1000 / fps));
-			}
-		}
-	});
+            if(scanThreadRunning)
+            {
+                std::unique_lock<std::mutex> lock(radarThreadCVMutex);
+                radarThreadCV.wait_for(lock, std::chrono::milliseconds(1000 / fps));
+            }
+        }
+    });
 
-	frame->Show(true);
+    frame->Show(true);
 
-	return true;
+    return true;
 }
 
 int RegiloVisual::OnExit()
 {
-	stopScanThread();
-	if(scanThread.joinable()) scanThread.join();
-	if(radarThread.joinable()) radarThread.join();
+    stopScanThread();
+    if(scanThread.joinable()) scanThread.join();
+    if(radarThread.joinable()) radarThread.join();
 
-	return wxApp::OnExit();
+    return wxApp::OnExit();
 }
 
+__attribute__((
+    annotate("oclint:suppress[high npath complexity]"),
+    annotate("oclint:suppress[high ncss method]"),
+    annotate("oclint:suppress[high cyclomatic complexity]")
+))
 void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 {
-	int keyCode = keyEvent.GetKeyCode();
+    int keyCode = keyEvent.GetKeyCode();
+    bool isArrow = keyCode == WXK_UP
+                || keyCode == WXK_DOWN
+                || keyCode == WXK_LEFT
+                || keyCode == WXK_RIGHT;
 
-	if(keyCode == WXK_UP || keyCode == WXK_DOWN || keyCode == WXK_LEFT || keyCode == WXK_RIGHT)
-	{
-		if(moveScanning)
-		{
-			setStatusText("Move scanning...", 0);
-			scanAndShow();
-		}
-	}
+    if(moveScanning && isArrow)
+    {
+        setStatusText("Move scanning...", 0);
+        scanAndShow();
+    }
 
-	regilo::INeatoController *neatoController = dynamic_cast<regilo::NeatoController<regilo::SocketController>*>(controller);
-	if(neatoController == nullptr) neatoController = dynamic_cast<regilo::NeatoController<regilo::SerialController>*>(controller);
+    regilo::INeatoController *neatoController = dynamic_cast<regilo::NeatoSocketController*>(controller);
+    if(neatoController == nullptr)
+    {
+        neatoController = dynamic_cast<regilo::NeatoSerialController*>(controller);
+    }
 
-	switch(keyCode)
-	{
-		case WXK_UP:
-			if(neatoController != nullptr)
-			{
-				controllerMutex.lock();
-				setStatusText("Going up...", 0);
+    switch(keyCode)
+    {
+        case WXK_UP:
+            if(neatoController != nullptr)
+            {
+                controllerMutex.lock();
+                setStatusText("Going up...", 0);
 
-				if(keyEvent.ControlDown()) neatoController->setMotor(500, 500, 100);
-				else neatoController->setMotor(100, 100, 50);
+                if(keyEvent.ControlDown()) neatoController->setMotor(500, 500, 100);
+                else neatoController->setMotor(100, 100, 50);
 
-				setStatusText("Going up... Done!", 0);
-				controllerMutex.unlock();
-			}
-			break;
+                setStatusText("Going up... Done!", 0);
+                controllerMutex.unlock();
+            }
+            break;
 
-		case WXK_DOWN:
-			if(neatoController != nullptr)
-			{
-				controllerMutex.lock();
-				setStatusText("Going down...", 0);
+        case WXK_DOWN:
+            if(neatoController != nullptr)
+            {
+                controllerMutex.lock();
+                setStatusText("Going down...", 0);
 
-				neatoController->setMotor(-100, -100, 50);
+                neatoController->setMotor(-100, -100, 50);
 
-				setStatusText("Going down... Done!", 0);
-				controllerMutex.unlock();
-			}
-			break;
+                setStatusText("Going down... Done!", 0);
+                controllerMutex.unlock();
+            }
+            break;
 
-		case WXK_LEFT:
-			if(neatoController != nullptr)
-			{
-				controllerMutex.lock();
-				setStatusText("Turning left...", 0);
+        case WXK_LEFT:
+            if(neatoController != nullptr)
+            {
+                controllerMutex.lock();
+                setStatusText("Turning left...", 0);
 
-				if(keyEvent.ControlDown()) neatoController->setMotor(-30, 30, 50);
-				else neatoController->setMotor(20, 100, 50);
+                if(keyEvent.ControlDown()) neatoController->setMotor(-30, 30, 50);
+                else neatoController->setMotor(20, 100, 50);
 
-				setStatusText("Turning left... Done!", 0);
-				controllerMutex.unlock();
-			}
-			break;
+                setStatusText("Turning left... Done!", 0);
+                controllerMutex.unlock();
+            }
+            break;
 
-		case WXK_RIGHT:
-			if(neatoController != nullptr)
-			{
-				controllerMutex.lock();
-				setStatusText("Turning right...", 0);
+        case WXK_RIGHT:
+            if(neatoController != nullptr)
+            {
+                controllerMutex.lock();
+                setStatusText("Turning right...", 0);
 
-				if(keyEvent.ControlDown()) neatoController->setMotor(30, -30, 50);
-				else neatoController->setMotor(100, 20, 50);
+                if(keyEvent.ControlDown()) neatoController->setMotor(30, -30, 50);
+                else neatoController->setMotor(100, 20, 50);
 
-				setStatusText("Turning right... Done!", 0);
-				controllerMutex.unlock();
-			}
-			break;
+                setStatusText("Turning right... Done!", 0);
+                controllerMutex.unlock();
+            }
+            break;
 
-		case WXK_SPACE:
-			if(neatoController != nullptr)
-			{
-				controllerMutex.lock();
-				setStatusText("Stopping...", 0);
+        case WXK_SPACE:
+            if(neatoController != nullptr)
+            {
+                controllerMutex.lock();
+                setStatusText("Stopping...", 0);
 
-				neatoController->setMotor(0, 0, 0);
+                neatoController->setMotor(0, 0, 0);
 
-				setStatusText("Stopping... Done!", 0);
-				controllerMutex.unlock();
-			}
-			break;
+                setStatusText("Stopping... Done!", 0);
+                controllerMutex.unlock();
+            }
+            break;
 
-		case 'S':
-			if(manualScanning)
-			{
-				setStatusText("Manual scanning...", 0);
-				scanAndShow();
-			}
-			break;
+        case 'S':
+            if(manualScanning)
+            {
+                setStatusText("Manual scanning...", 0);
+                scanAndShow();
+            }
+            break;
 
-		case WXK_F11:
-			fullscreen = !fullscreen;
-			frame->ShowFullScreen(fullscreen);
-			break;
+        case WXK_F11:
+            fullscreen = !fullscreen;
+            frame->ShowFullScreen(fullscreen);
+            break;
 
-		case WXK_ESCAPE:
-			fullscreen = false;
-			frame->ShowFullScreen(fullscreen);
-			break;
+        case WXK_ESCAPE:
+            fullscreen = false;
+            frame->ShowFullScreen(fullscreen);
+            break;
 
-		default:
-			keyEvent.Skip();
-	}
+        default:
+            keyEvent.Skip();
+            break;
+    }
 }
 
 wxImage RegiloVisual::zoomImage(const wxImage& image, double zoom)
 {
-	wxImage zoomedImage = image;
-	zoomedImage.Rescale(int(image.GetWidth() * zoom), int(image.GetHeight() * zoom));
+    wxImage zoomedImage = image;
+    zoomedImage.Rescale(int(image.GetWidth() * zoom), int(image.GetHeight() * zoom));
 
-	return zoomedImage;
+    return zoomedImage;
 }
 
 wxRect RegiloVisual::getRotatedBoundingBox(const wxRect& rect, double angle)
 {
-	double c = std::cos(angle);
-	double s = std::sin(angle);
+    double cosine = std::cos(angle);
+    double sine = std::sin(angle);
 
-	wxPoint minBound(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
-	wxPoint maxBound(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
+    wxPoint minBound(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+    wxPoint maxBound(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
 
-	wxPoint points[] = { rect.GetLeftTop(), rect.GetLeftBottom(), rect.GetRightTop(), rect.GetRightBottom() };
-	for(wxPoint& point : points)
-	{
-		int x = int(std::ceil(c * point.x - s * point.y));
-		int y = int(std::ceil(s * point.x + c * point.y));
+    wxPoint points[] =
+    {
+        rect.GetLeftTop(),
+        rect.GetLeftBottom(),
+        rect.GetRightTop(),
+        rect.GetRightBottom()
+    };
 
-		if(x < minBound.x) minBound.x = x;
-		if(y < minBound.y) minBound.y = y;
-		if(x > maxBound.x) maxBound.x = x;
-		if(y > maxBound.y) maxBound.y = y;
+    for(wxPoint& point : points)
+    {
+        int rotatedX = int(std::ceil(cosine * point.x - sine * point.y));
+        int rotatedY = int(std::ceil(sine * point.x + cosine * point.y));
 
-		point.x = x;
-		point.y = y;
-	}
+        if(rotatedX < minBound.x) minBound.x = rotatedX;
+        if(rotatedY < minBound.y) minBound.y = rotatedY;
+        if(rotatedX > maxBound.x) maxBound.x = rotatedX;
+        if(rotatedY > maxBound.y) maxBound.y = rotatedY;
 
-	wxRect box;
-	box.SetLeftTop(minBound);
-	box.SetRightBottom(maxBound);
+        point.x = rotatedX;
+        point.y = rotatedY;
+    }
 
-	return box;
+    wxRect box;
+    box.SetLeftTop(minBound);
+    box.SetRightBottom(maxBound);
+
+    return box;
 }
 
-void RegiloVisual::drawRadarGradient(wxDC& dc, int width2, int height2)
+void RegiloVisual::drawRadarGradient(wxDC& context, int width2, int height2)
 {
-	wxImage rotatedImage = radarGradientZoom.Rotate(radarAngle, wxPoint());
+    wxImage rotatedImage = radarGradientZoom.Rotate(radarAngle, wxPoint());
 
-	wxRect box(radarGradientZoom.GetSize());
-	box.width++;
-	box.height++;
-	wxRect rotatedBox = getRotatedBoundingBox(box, -radarAngle);
+    wxRect box(radarGradientZoom.GetSize());
+    box.width++;
+    box.height++;
+    wxRect rotatedBox = getRotatedBoundingBox(box, -radarAngle);
 
-	wxPoint offset = rotatedBox.GetLeftTop();
-	offset.x += width2 - 1;
-	offset.y += height2 - 1;
+    wxPoint offset = rotatedBox.GetLeftTop();
+    offset.x += width2 - 1;
+    offset.y += height2 - 1;
 
-	dc.DrawBitmap(wxBitmap(rotatedImage), offset);
+    context.DrawBitmap(wxBitmap(rotatedImage), offset);
 }
 
 void RegiloVisual::repaint(wxPaintEvent&)
 {
-	wxPaintDC dc(panel);
-	wxGCDC gcdc(dc);
+    wxPaintDC paintContext(panel);
+    wxGCDC graphicsContext(paintContext);
 
-	// Draw backgroud
-	dc.SetBrush(*wxBLACK_BRUSH);
-	dc.DrawRectangle(panel->GetSize());
+    // Draw backgroud
+    paintContext.SetBrush(*wxBLACK_BRUSH);
+    paintContext.DrawRectangle(panel->GetSize());
 
-	int width, height;
-	panel->GetSize(&width, &height);
+    int width, height;
+    panel->GetSize(&width, &height);
 
-	int width2 = width / 2;
-	int height2 = height / 2;
+    int width2 = width / 2;
+    int height2 = height / 2;
 
-	// Draw axis
-	dc.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
-	dc.DrawLine(0, height2, width, height2);
-	dc.DrawLine(width2, 0, width2, height);
+    // Draw axis
+    paintContext.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
+    paintContext.DrawLine(0, height2, width, height2);
+    paintContext.DrawLine(width2, 0, width2, height);
 
-	// Draw circles
-	gcdc.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
-	gcdc.SetBrush(*wxTRANSPARENT_BRUSH);
-	for(std::size_t radius = 1000; radius <= 4000; radius += 1000)
-	{
-		gcdc.DrawCircle(width2, height2, int(radius * zoom));
-	}
+    // Draw circles
+    graphicsContext.SetPen(*wxThePenList->FindOrCreatePen(radarColor, 2));
+    graphicsContext.SetBrush(*wxTRANSPARENT_BRUSH);
+    for(std::size_t radius = 1000; radius <= 4000; radius += 1000)
+    {
+        graphicsContext.DrawCircle(width2, height2, int(radius * zoom));
+    }
 
-	// Draw radar ray
-	radarMutex.lock();
+    // Draw radar ray
+    radarMutex.lock();
 
-	double rayLength = zoom * radarRayLength;
-	double maxRayLength = std::sqrt(width2 * width2 + height2 * height2);
-	if(rayLength > maxRayLength) rayLength = maxRayLength;
+    double rayLength = zoom * radarRayLength;
+    double maxRayLength = std::sqrt(width2 * width2 + height2 * height2);
+    if(rayLength > maxRayLength) rayLength = maxRayLength;
 
-	int radarLineX = int(width2 + rayLength * std::cos(radarAngle));
-	int radarLineY = int(height2 - rayLength * std::sin(radarAngle));
-	gcdc.DrawLine(width2, height2, radarLineX, radarLineY);
+    int radarLineX = int(width2 + rayLength * std::cos(radarAngle));
+    int radarLineY = int(height2 - rayLength * std::sin(radarAngle));
+    graphicsContext.DrawLine(width2, height2, radarLineX, radarLineY);
 
-	drawRadarGradient(dc, width2, height2);
+    drawRadarGradient(paintContext, width2, height2);
 
-	radarMutex.unlock();
+    radarMutex.unlock();
 
-	controllerMutex.lock();
+    controllerMutex.lock();
 
-	dc.SetPen(*wxThePenList->FindOrCreatePen(pointColor));
-	for(const regilo::ScanRecord& record : data)
-	{
-		if(record.error) continue;
+    paintContext.SetPen(*wxThePenList->FindOrCreatePen(pointColor));
+    for(const regilo::ScanRecord& record : data)
+    {
+        if(record.error) continue;
 
-		double distance = record.distance * zoom;
-		int x = int(width2 + distance * std::cos(record.angle));
-		int y = int(height2 - distance * std::sin(record.angle));
+        double distance = record.distance * zoom;
+        int pointX = int(width2 + distance * std::cos(record.angle));
+        int pointY = int(height2 - distance * std::sin(record.angle));
 
-		dc.DrawRectangle(x, y, 2, 2);
-	}
+        paintContext.DrawRectangle(pointX, pointY, 2, 2);
+    }
 
-	controllerMutex.unlock();
+    controllerMutex.unlock();
 }
 
 void RegiloVisual::stopScanThread()
 {
-	if(scanThreadRunning)
-	{
-		scanThreadRunning = false;
-		scanThreadCV.notify_one();
-		radarThreadCV.notify_one();
-	}
+    if(scanThreadRunning)
+    {
+        scanThreadRunning = false;
+        scanThreadCV.notify_one();
+        radarThreadCV.notify_one();
+    }
 }
 
 void RegiloVisual::scanAndShow()
 {
-	controllerMutex.lock();
+    controllerMutex.lock();
 
-	data = controller->getScan(useScanner);
-	bool emptyData = data.empty();
-	if(emptyData) stopScanThread();
+    data = controller->getScan(useScanner);
+    bool emptyData = data.empty();
+    if(emptyData) stopScanThread();
 
-	controllerMutex.unlock();
+    controllerMutex.unlock();
 
-	this->GetTopWindow()->GetEventHandler()->CallAfter([this, emptyData] ()
-	{
-		if(emptyData) setStatusText("No more scans to show (EOF).", 0);
-		else frame->Refresh();
-	});
+    this->GetTopWindow()->GetEventHandler()->CallAfter([this, emptyData] ()
+    {
+        if(emptyData) setStatusText("No more scans to show (EOF).", 0);
+        else frame->Refresh();
+    });
 }
 
-void RegiloVisual::setStatusText(const std::string& text, int i)
+void RegiloVisual::setStatusText(const std::string& text, int number)
 {
-	frame->SetStatusText(text, i);
-	if(i == 1) refreshStatusBar();
+    frame->SetStatusText(text, number);
+    if(number == 1) refreshStatusBar();
 }
 
 void RegiloVisual::refreshStatusBar()
 {
-	wxStatusBar *statusBar = frame->GetStatusBar();
+    wxStatusBar *statusBar = frame->GetStatusBar();
 
-	int lastWidth = statusBar->GetTextExtent(statusBar->GetStatusText(1)).GetWidth() + 10;
-	if(lastWidth > 400) lastWidth = 400;
+    int lastWidth = statusBar->GetTextExtent(statusBar->GetStatusText(1)).GetWidth() + 10;
+    if(lastWidth > 400) lastWidth = 400;
 
-	const int statusBarWidths[] = { -1, lastWidth };
-	statusBar->SetStatusWidths(2, statusBarWidths);
+    const int statusBarWidths[] = { -1, lastWidth };
+    statusBar->SetStatusWidths(2, statusBarWidths);
 }
 
 void RegiloVisual::Display(wxApp *app, int& argc, char **argv)
 {
-	wxApp::SetInstance(app);
-	wxEntryStart(argc, argv);
-	app->CallOnInit();
-	app->OnRun();
-	app->OnExit();
-	wxEntryCleanup();
+    wxApp::SetInstance(app);
+    wxEntryStart(argc, argv);
+    app->CallOnInit();
+    app->OnRun();
+    app->OnExit();
+    wxEntryCleanup();
 }

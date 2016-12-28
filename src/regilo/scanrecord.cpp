@@ -26,31 +26,38 @@
 
 namespace regilo {
 
-ScanRecord::ScanRecord(int id, double angle, double distance, int intensity, int errorCode, bool error) :
-	id(id),
-	angle(angle),
-	distance(distance),
-	intensity(intensity),
-	errorCode(errorCode),
-	error(error)
+ScanRecord::ScanRecord(
+    int index,
+    double angle,
+    double distance,
+    int intensity,
+    int errorCode,
+    bool error
+) :
+    index(index),
+    angle(angle),
+    distance(distance),
+    intensity(intensity),
+    errorCode(errorCode),
+    error(error)
 {
 }
 
 std::ostream& operator<<(std::ostream& out, const ScanRecord& record)
 {
-	out << "ScanRecord("
-		<< record.id
-		<< ": "
-		<< record.angle * 180 * M_1_PI
-		<< "°; "
-		<< record.distance
-		<< "mm";
+    out << "ScanRecord("
+        << record.index
+        << ": "
+        << record.angle * 180 * M_1_PI
+        << "°; "
+        << record.distance
+        << "mm";
 
-	if(record.error) out << "; error";
+    if(record.error) out << "; error";
 
-	out << ')';
+    out << ')';
 
-	return out;
+    return out;
 }
 
 }

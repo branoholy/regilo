@@ -1,0 +1,6 @@
+disable-rules:
+  - LongMethod # HighNcssMethod is enough
+rule-paths: []
+rule-configurations:
+  - key: LONG_LINE
+    value: 120
