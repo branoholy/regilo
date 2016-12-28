@@ -32,15 +32,13 @@ regilo::NeatoSocketController controller;
 controller.connect("10.0.0.1:12345");
 
 // Set the test mode and LDS rotation
-controller.setTestMode(true);
-controller.setLdsRotation(true);
+controller.startScanner();
 
 // Grab a scan from the robot
 regilo::ScanData data = controller.getScan();
 
 // Unset the test mode and LDS rotation
-controller.setLdsRotation(false);
-controller.setTestMode(false);
+controller.stopScanner();
 ```
 
 ### Hokuyo
