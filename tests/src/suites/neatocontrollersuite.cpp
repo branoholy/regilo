@@ -123,8 +123,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerScanFromDevice, NeatoController,
     BOOST_CHECK(!controller->getTestMode());
     BOOST_CHECK(!controller->getLdsRotation());
 
-    controller->setTestMode(true);
-    controller->setLdsRotation(true);
+    controller->startScanner();
 
     BOOST_REQUIRE(controller->getTestMode());
     BOOST_REQUIRE(controller->getLdsRotation());
@@ -139,8 +138,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NeatoControllerScanFromDevice, NeatoController,
     std::string time = controller->getTime();
     BOOST_CHECK_EQUAL(time, NF::correctTime);
 
-    controller->setLdsRotation(false);
-    controller->setTestMode(false);
+    controller->stopScanner();
 
     BOOST_CHECK(!controller->getTestMode());
     BOOST_CHECK(!controller->getLdsRotation());
