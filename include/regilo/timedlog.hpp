@@ -110,7 +110,10 @@ public:
      * @return Time since epoch as Duration.
      */
     template<typename Duration>
-    inline Duration getLastCommandTimeAs() const { return std::chrono::duration_cast<Duration>(this->getLastCommandNanoseconds()); }
+    inline Duration getLastCommandTimeAs() const
+    {
+        return std::chrono::duration_cast<Duration>(this->getLastCommandNanoseconds());
+    }
 
     /**
      * @brief Sync command times with real time. It means that all read methods will block
@@ -151,7 +154,10 @@ public:
      */
     virtual ~TimedLog() = default;
 
-    virtual inline const ITimedLogMetadata* getTimedMetadata() const override { return (TimedLogMetadata<DurationT>*)metadata; }
+    virtual inline const ITimedLogMetadata* getTimedMetadata() const override
+    {
+        return (TimedLogMetadata<DurationT>*)metadata;
+    }
 
     inline virtual std::chrono::nanoseconds getLastCommandNanoseconds() const override
     {
@@ -164,7 +170,10 @@ public:
      */
     inline DurationT getLastCommandTime() const { return lastCommandTime; }
 
-    virtual inline void syncTime(bool sync = true) override { firstReadTime = (sync ? DurationT::max() : DurationT::zero()); }
+    virtual inline void syncTime(bool sync = true) override
+    {
+        firstReadTime = (sync ? DurationT::max() : DurationT::zero());
+    }
 };
 
 extern template class TimedLog<std::chrono::nanoseconds>;
@@ -195,7 +204,8 @@ void TimedLog<DurationT>::writeMetadata(std::ostream& metaStream)
     if(metadata == nullptr) metadata = new TimedLogMetadata<DurationT>();
     Log::writeMetadata(metaStream);
 
-    metaStream << "timeres " << DurationT::period::num << ' ' << DurationT::period::den << std::endl;
+    metaStream << "timeres " << DurationT::period::num << ' ' << DurationT::period::den
+               << std::endl;
 }
 
 template<typename DurationT>
@@ -205,15 +215,15 @@ std::string TimedLog<DurationT>::readData(std::string& logCommand)
 
     std::string response = Log::readData(logCommand);
 
-    std::int64_t commandTimeCount = 0;
+    std::int64_t timeCount = 0;
     readName(stream, 't');
-    stream >> commandTimeCount;
+    stream >> timeCount;
 
     if(stream)
     {
         long double numRatio = getTimedMetadata()->getNum() / (long double) DurationT::period::num;
         long double denRation = DurationT::period::den / (long double) getTimedMetadata()->getDen();
-        lastCommandTime = DurationT(std::int64_t(std::round(commandTimeCount * numRatio * denRation)));
+        lastCommandTime = DurationT(std::int64_t(std::round(timeCount * numRatio * denRation)));
 
         if(firstReadTime == DurationT::max()) firstReadTime = epoch<DurationT>();
         else

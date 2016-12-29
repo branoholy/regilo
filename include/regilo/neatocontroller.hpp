@@ -32,6 +32,8 @@
 
 namespace regilo {
 
+namespace balg = boost::algorithm;
+
 /**
  * @brief The INeatoController interface is used for the NeatoController class.
  */
@@ -80,7 +82,8 @@ public:
     /**
      * @brief Set the specified motor to run in a direction at a requested speed.
      * @param left Distance in millimeters to drive the left wheel (pos = forward, neg = backward).
-     * @param right Distance in millimeters to drive the right wheel (pos = forward, neg = backward).
+     * @param right Distance in millimeters to drive the right wheel (pos = forward,
+     *              neg = backward).
      * @param speed Speed in millimeters/second.
      */
     virtual void setMotor(int left, int right, int speed) = 0;
@@ -104,11 +107,11 @@ private:
 
 protected:
     virtual inline std::string getScanCommand() const override { return CMD_GET_LDS_SCAN; }
-    virtual bool parseScanData(std::istream& in, ScanData& data) override;
+    virtual bool parseScanData(std::istream& input, ScanData& data) override;
 
 public:
-    static std::string ON; ///< A string that represents the ON value.
-    static std::string OFF; ///< A string that represents the OFF value.
+    static std::string ON_VALUE; ///< A string that represents the ON value.
+    static std::string OFF_VALUE; ///< A string that represents the OFF value.
     static std::string LDS_SCAN_HEADER; ///< A header of the LDS scan output.
     static std::string LDS_SCAN_FOOTER; ///< A footer of the LDS scan output.
 
@@ -164,13 +167,14 @@ typedef NeatoController<SerialController> NeatoSerialController;
 typedef NeatoController<SocketController> NeatoSocketController;
 
 template<typename ProtocolController>
-std::string NeatoController<ProtocolController>::ON = "on";
+std::string NeatoController<ProtocolController>::ON_VALUE = "on";
 
 template<typename ProtocolController>
-std::string NeatoController<ProtocolController>::OFF = "off";
+std::string NeatoController<ProtocolController>::OFF_VALUE = "off";
 
 template<typename ProtocolController>
-std::string NeatoController<ProtocolController>::LDS_SCAN_HEADER = "AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX";
+std::string NeatoController<ProtocolController>::LDS_SCAN_HEADER =
+    "AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX";
 
 template<typename ProtocolController>
 std::string NeatoController<ProtocolController>::LDS_SCAN_FOOTER = "ROTATION_SPEED,";
@@ -197,13 +201,15 @@ NeatoController<ProtocolController>::NeatoController() : ScanController<Protocol
 }
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController(const std::string& logPath) : ScanController<ProtocolController>(logPath)
+NeatoController<ProtocolController>::NeatoController(const std::string& logPath) :
+    ScanController<ProtocolController>(logPath)
 {
     this->RESPONSE_END = std::string(1, 0x1a);
 }
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) : ScanController<ProtocolController>(logStream)
+NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) :
+    ScanController<ProtocolController>(logStream)
 {
     this->RESPONSE_END = std::string(1, 0x1a);
 }
@@ -211,14 +217,14 @@ NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) :
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setTestMode(bool testMode)
 {
-    this->sendFormattedCommand(CMD_TEST_MODE, (testMode ? ON : OFF).c_str());
+    this->sendFormattedCommand(CMD_TEST_MODE, (testMode ? ON_VALUE : OFF_VALUE).c_str());
     this->testMode = testMode;
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setLdsRotation(bool ldsRotation)
 {
-    this->sendFormattedCommand(CMD_SET_LDS_ROTATION, (ldsRotation ? ON : OFF).c_str());
+    this->sendFormattedCommand(CMD_SET_LDS_ROTATION, (ldsRotation ? ON_VALUE : OFF_VALUE).c_str());
     this->ldsRotation = ldsRotation;
 }
 
@@ -243,52 +249,52 @@ void NeatoController<ProtocolController>::setMotor(int left, int right, int spee
 }
 
 template<typename ProtocolController>
-bool NeatoController<ProtocolController>::parseScanData(std::istream& in, ScanData& data)
+bool NeatoController<ProtocolController>::parseScanData(std::istream& input, ScanData& data)
 {
     int lastIndex = 0;
     double M_PI_180 = M_PI / 180.0;
 
     std::string line;
-    std::getline(in, line);
-    boost::algorithm::trim(line);
+    std::getline(input, line);
+    balg::trim(line);
 
-    if(line == NeatoController<ProtocolController>::LDS_SCAN_HEADER)
+    if(line != NeatoController<ProtocolController>::LDS_SCAN_HEADER)
     {
-        while(true)
-        {
-            std::getline(in, line);
-            boost::algorithm::trim(line);
-
-            if(boost::algorithm::starts_with(line, NeatoController<ProtocolController>::LDS_SCAN_FOOTER))
-            {
-                std::vector<std::string> values;
-                boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
-                data.rotationSpeed = std::stod(values.at(1));
-
-                break;
-            }
-            else
-            {
-                std::vector<std::string> values;
-                boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
-
-                int index = lastIndex++;
-                double angle = std::stod(values.at(0)) * M_PI_180;
-                double distance = std::stod(values.at(1));
-                int intensity = std::stoi(values.at(2));
-                int errorCode = std::stoi(values.at(3));
-                bool error = (errorCode != 0);
-
-                if(error) distance = -1;
-
-                data.emplace_back(index, angle, distance, intensity, errorCode, error);
-            }
-        }
-
-        return true;
+        return false;
     }
 
-    return false;
+    while(true)
+    {
+        std::getline(input, line);
+        balg::trim(line);
+
+        if(balg::starts_with(line, NeatoController<ProtocolController>::LDS_SCAN_FOOTER))
+        {
+            std::vector<std::string> values;
+            balg::split(values, line, balg::is_any_of(","));
+            data.rotationSpeed = std::stod(values.at(1));
+
+            break;
+        }
+        else
+        {
+            std::vector<std::string> values;
+            balg::split(values, line, balg::is_any_of(","));
+
+            int index = lastIndex++;
+            double angle = std::stod(values.at(0)) * M_PI_180;
+            double distance = std::stod(values.at(1));
+            int intensity = std::stoi(values.at(2));
+            int errorCode = std::stoi(values.at(3));
+            bool error = errorCode != 0;
+
+            if(error) distance = -1;
+
+            data.emplace_back(index, angle, distance, intensity, errorCode, error);
+        }
+    }
+
+    return true;
 }
 
 template<typename ProtocolController>

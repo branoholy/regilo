@@ -65,11 +65,11 @@ protected:
 
     /**
      * @brief Parse the raw scan data.
-     * @param in The input stream that stores the raw scan data.
+     * @param input The input stream that stores the raw scan data.
      * @param data Output for the scanned data.
      * @return True if the parsing ends without an error.
      */
-    virtual bool parseScanData(std::istream& in, ScanData& data) = 0;
+    virtual bool parseScanData(std::istream& input, ScanData& data) = 0;
 
 public:
     using ProtocolController::ProtocolController;

@@ -67,8 +67,12 @@ private:
     double startAngle = -135 * M_PI / 180;
 
 protected:
-    virtual inline std::string getScanCommand() const override { return this->createFormattedCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount); }
-    virtual bool parseScanData(std::istream& in, ScanData& data) override;
+    virtual inline std::string getScanCommand() const override
+    {
+        return this->createFormattedCommand(CMD_GET_SCAN, fromStep, toStep, clusterCount);
+    }
+
+    virtual bool parseScanData(std::istream& input, ScanData& data) override;
 
 public:
     static std::string CMD_GET_VERSION; ///< A command for getting the scanner version.
@@ -126,13 +130,15 @@ HokuyoController<ProtocolController>::HokuyoController() : ScanController<Protoc
 }
 
 template<typename ProtocolController>
-HokuyoController<ProtocolController>::HokuyoController(const std::string& logPath) : ScanController<ProtocolController>(logPath)
+HokuyoController<ProtocolController>::HokuyoController(const std::string& logPath) :
+    ScanController<ProtocolController>(logPath)
 {
     this->RESPONSE_END = "\n\n";
 }
 
 template<typename ProtocolController>
-HokuyoController<ProtocolController>::HokuyoController(std::iostream& logStream) : ScanController<ProtocolController>(logStream)
+HokuyoController<ProtocolController>::HokuyoController(std::iostream& logStream) :
+    ScanController<ProtocolController>(logStream)
 {
     this->RESPONSE_END = "\n\n";
 }
@@ -140,31 +146,35 @@ HokuyoController<ProtocolController>::HokuyoController(std::iostream& logStream)
 template<typename ProtocolController>
 std::map<std::string, std::string> HokuyoController<ProtocolController>::getVersionInfo()
 {
-    std::map<std::string, std::string> versionInfo;
-
-    if(ProtocolController::template sendCommand<char>(CMD_GET_VERSION) == '0')
+    if(ProtocolController::template sendCommand<char>(CMD_GET_VERSION) != '0')
     {
-        std::string line;
-        while(std::getline(this->deviceOutput, line))
-        {
-            if(line.empty()) continue;
+        return std::map<std::string, std::string>();
+    }
 
-            std::size_t colonPos = line.find(':');
-            std::string name = line.substr(0, colonPos);
-            std::string value = line.substr(colonPos + 1);
+    std::map<std::string, std::string> versionInfo;
+    std::string line;
 
-            boost::algorithm::trim(name);
-            boost::algorithm::trim(value);
+    while(std::getline(this->deviceOutput, line))
+    {
+        if(line.empty()) continue;
 
-            versionInfo[name] = value;
-        }
+        std::size_t colonPos = line.find(':');
+        std::string name = line.substr(0, colonPos);
+        std::string value = line.substr(colonPos + 1);
+
+        boost::algorithm::trim(name);
+        boost::algorithm::trim(value);
+
+        versionInfo[name] = value;
     }
 
     return versionInfo;
 }
 
 template<typename ProtocolController>
-void HokuyoController<ProtocolController>::setScanParameters(std::size_t fromStep, std::size_t toStep, std::size_t clusterCount)
+void HokuyoController<ProtocolController>::setScanParameters(
+    std::size_t fromStep, std::size_t toStep, std::size_t clusterCount
+)
 {
     if(fromStep > maxStep) throw std::invalid_argument("Invalid fromStep argument.");
     if(toStep > maxStep) throw std::invalid_argument("Invalid fromStep argument.");
@@ -177,22 +187,22 @@ void HokuyoController<ProtocolController>::setScanParameters(std::size_t fromSte
 }
 
 template<typename ProtocolController>
-bool HokuyoController<ProtocolController>::parseScanData(std::istream& in, ScanData& data)
+bool HokuyoController<ProtocolController>::parseScanData(std::istream& input, ScanData& data)
 {
     char status;
-    in >> status;
+    input >> status;
     if(status != '0') return false;
 
     double resolution = M_PI / 512;
 
     int lastIndex = 0;
     std::size_t step = fromStep - 1;
-    while(in)
+    while(input)
     {
         step++;
 
         char high, low;
-        in >> high >> low;
+        input >> high >> low;
 
         if(step < validFromStep || step > validToStep) continue;
 
