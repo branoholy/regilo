@@ -32,54 +32,67 @@
 
 namespace regilo {
 
+namespace balg = boost::algorithm;
+
 /**
  * @brief The INeatoController interface is used for the NeatoController class.
  */
 class INeatoController : public virtual IScanController
 {
 public:
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~INeatoController() = default;
+    /**
+     * @brief Default destructor.
+     */
+    virtual ~INeatoController() = default;
 
-	/**
-	 * @brief Get whether the Neato is in the test mode.
-	 * @return True if the Neato is in the test mode.
-	 */
-	virtual bool getTestMode() const = 0;
+    /**
+     * @brief Get whether the Neato is in the test mode.
+     * @return True if the Neato is in the test mode.
+     */
+    virtual bool getTestMode() const = 0;
 
-	/**
-	 * @brief Set or unset the test mode.
-	 * @param testMode True for setting the test mode.
-	 */
-	virtual void setTestMode(bool testMode) = 0;
+    /**
+     * @brief Set or unset the test mode.
+     * @param testMode True for setting the test mode.
+     */
+    virtual void setTestMode(bool testMode) = 0;
 
-	/**
-	 * @brief Get whether the Neato has LDS rotation on or off.
-	 * @return True if the LIDAR is rotating.
-	 */
-	virtual bool getLdsRotation() const = 0;
+    /**
+     * @brief Get whether the Neato has LDS rotation on or off.
+     * @return True if the LIDAR is rotating.
+     */
+    virtual bool getLdsRotation() const = 0;
 
-	/**
-	 * @brief Set LDS rotation on or off.
-	 * @param ldsRotation True for starting the LIDAR rotation.
-	 */
-	virtual void setLdsRotation(bool ldsRotation) = 0;
+    /**
+     * @brief Set LDS rotation on or off.
+     * @param ldsRotation True for starting the LIDAR rotation.
+     */
+    virtual void setLdsRotation(bool ldsRotation) = 0;
 
-	/**
-	 * @brief Set the specified motor to run in a direction at a requested speed.
-	 * @param left Distance in millimeters to drive the left wheel (pos = forward, neg = backward).
-	 * @param right Distance in millimeters to drive the right wheel (pos = forward, neg = backward).
-	 * @param speed Speed in millimeters/second.
-	 */
-	virtual void setMotor(int left, int right, int speed) = 0;
+    /**
+     * @brief Start the scanner by turning on the test mode and LDS rotation.
+     */
+    virtual void startScanner() = 0;
 
-	/**
-	 * @brief Get the current scheduler time.
-	 * @return "DayOfWeek HourOf24:Min:Sec" (example: "Sunday 13:57:09").
-	 */
-	virtual std::string getTime() = 0;
+    /**
+     * @brief Stop the scanner by turning off the test mode and LDS rotation.
+     */
+    virtual void stopScanner() = 0;
+
+    /**
+     * @brief Set the specified motor to run in a direction at a requested speed.
+     * @param left Distance in millimeters to drive the left wheel (pos = forward, neg = backward).
+     * @param right Distance in millimeters to drive the right wheel (pos = forward,
+     *              neg = backward).
+     * @param speed Speed in millimeters/second.
+     */
+    virtual void setMotor(int left, int right, int speed) = 0;
+
+    /**
+     * @brief Get the current scheduler time.
+     * @return "DayOfWeek HourOf24:Min:Sec" (example: "Sunday 13:57:09").
+     */
+    virtual std::string getTime() = 0;
 };
 
 /**
@@ -89,58 +102,62 @@ template<typename ProtocolController>
 class NeatoController : public INeatoController, public ScanController<ProtocolController>
 {
 private:
-	bool testMode = false;
-	bool ldsRotation = false;
+    bool testMode = false;
+    bool ldsRotation = false;
 
 protected:
-	virtual inline std::string getScanCommand() const override { return CMD_GET_LDS_SCAN; }
-	virtual bool parseScanData(std::istream& in, ScanData& data) override;
+    virtual inline std::string getScanCommand() const override { return CMD_GET_LDS_SCAN; }
+    virtual bool parseScanData(std::istream& input, ScanData& data) override;
 
 public:
-	static std::string ON; ///< A string that represents the ON value.
-	static std::string OFF; ///< A string that represents the OFF value.
-	static std::string LDS_SCAN_HEADER; ///< A header of the LDS scan output.
-	static std::string LDS_SCAN_FOOTER; ///< A footer of the LDS scan output.
+    static std::string ON_VALUE; ///< A string that represents the ON value.
+    static std::string OFF_VALUE; ///< A string that represents the OFF value.
+    static std::string LDS_SCAN_HEADER; ///< A header of the LDS scan output.
+    static std::string LDS_SCAN_FOOTER; ///< A footer of the LDS scan output.
 
-	static std::string CMD_TEST_MODE; ///< A template for the `testmode` command.
-	static std::string CMD_SET_LDS_ROTATION; ///< A template for the `setldsrotation` command.
-	static std::string CMD_SET_MOTOR; ///< A template for the `setmotor` command.
-	static std::string CMD_GET_TIME; ///< A template for the `gettime` command.
-	static std::string CMD_GET_LDS_SCAN; ///< A template for the `getldsscan` command.
+    static std::string CMD_TEST_MODE; ///< A template for the `testmode` command.
+    static std::string CMD_SET_LDS_ROTATION; ///< A template for the `setldsrotation` command.
+    static std::string CMD_SET_MOTOR; ///< A template for the `setmotor` command.
+    static std::string CMD_GET_TIME; ///< A template for the `gettime` command.
+    static std::string CMD_GET_LDS_SCAN; ///< A template for the `getldsscan` command.
 
-	/**
-	 * @brief Default constructor.
-	 */
-	NeatoController();
+    /**
+     * @brief Default constructor.
+     */
+    NeatoController();
 
-	/**
-	 * @brief Constructor with a log file specified by a path.
-	 * @param logPath Path to the log file.
-	 */
-	NeatoController(const std::string& logPath);
+    /**
+     * @brief Constructor with a log file specified by a path.
+     * @param logPath Path to the log file.
+     */
+    NeatoController(const std::string& logPath);
 
-	/**
-	 * @brief Constructor with a log specified by a stream.
-	 * @param logStream The log stream.
-	 */
-	NeatoController(std::iostream& logStream);
+    /**
+     * @brief Constructor with a log specified by a stream.
+     * @param logStream The log stream.
+     */
+    NeatoController(std::iostream& logStream);
 
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~NeatoController() = default;
+    /**
+     * @brief Default destructor.
+     */
+    virtual ~NeatoController() = default;
 
-	virtual inline bool getTestMode() const override { return testMode; }
+    virtual inline bool getTestMode() const override { return testMode; }
 
-	virtual void setTestMode(bool testMode) override;
+    virtual void setTestMode(bool testMode) override;
 
-	virtual inline bool getLdsRotation() const override { return ldsRotation; }
+    virtual inline bool getLdsRotation() const override { return ldsRotation; }
 
-	virtual void setLdsRotation(bool ldsRotation) override;
+    virtual void setLdsRotation(bool ldsRotation) override;
 
-	virtual void setMotor(int left, int right, int speed) override;
+    virtual void startScanner() override;
 
-	virtual std::string getTime() override;
+    virtual void stopScanner() override;
+
+    virtual void setMotor(int left, int right, int speed) override;
+
+    virtual std::string getTime() override;
 };
 
 extern template class NeatoController<SerialController>;
@@ -150,13 +167,14 @@ typedef NeatoController<SerialController> NeatoSerialController;
 typedef NeatoController<SocketController> NeatoSocketController;
 
 template<typename ProtocolController>
-std::string NeatoController<ProtocolController>::ON = "on";
+std::string NeatoController<ProtocolController>::ON_VALUE = "on";
 
 template<typename ProtocolController>
-std::string NeatoController<ProtocolController>::OFF = "off";
+std::string NeatoController<ProtocolController>::OFF_VALUE = "off";
 
 template<typename ProtocolController>
-std::string NeatoController<ProtocolController>::LDS_SCAN_HEADER = "AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX";
+std::string NeatoController<ProtocolController>::LDS_SCAN_HEADER =
+    "AngleInDegrees,DistInMM,Intensity,ErrorCodeHEX";
 
 template<typename ProtocolController>
 std::string NeatoController<ProtocolController>::LDS_SCAN_FOOTER = "ROTATION_SPEED,";
@@ -179,94 +197,110 @@ std::string NeatoController<ProtocolController>::CMD_GET_LDS_SCAN = "getldsscan"
 template<typename ProtocolController>
 NeatoController<ProtocolController>::NeatoController() : ScanController<ProtocolController>()
 {
-	this->RESPONSE_END = std::string(1, 0x1a);
+    this->RESPONSE_END = std::string(1, 0x1a);
 }
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController(const std::string& logPath) : ScanController<ProtocolController>(logPath)
+NeatoController<ProtocolController>::NeatoController(const std::string& logPath) :
+    ScanController<ProtocolController>(logPath)
 {
-	this->RESPONSE_END = std::string(1, 0x1a);
+    this->RESPONSE_END = std::string(1, 0x1a);
 }
 
 template<typename ProtocolController>
-NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) : ScanController<ProtocolController>(logStream)
+NeatoController<ProtocolController>::NeatoController(std::iostream& logStream) :
+    ScanController<ProtocolController>(logStream)
 {
-	this->RESPONSE_END = std::string(1, 0x1a);
+    this->RESPONSE_END = std::string(1, 0x1a);
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setTestMode(bool testMode)
 {
-	this->sendFormattedCommand(CMD_TEST_MODE, (testMode ? ON : OFF).c_str());
-	this->testMode = testMode;
+    this->sendFormattedCommand(CMD_TEST_MODE, (testMode ? ON_VALUE : OFF_VALUE).c_str());
+    this->testMode = testMode;
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setLdsRotation(bool ldsRotation)
 {
-	this->sendFormattedCommand(CMD_SET_LDS_ROTATION, (ldsRotation ? ON : OFF).c_str());
-	this->ldsRotation = ldsRotation;
+    this->sendFormattedCommand(CMD_SET_LDS_ROTATION, (ldsRotation ? ON_VALUE : OFF_VALUE).c_str());
+    this->ldsRotation = ldsRotation;
+}
+
+template<typename ProtocolController>
+void NeatoController<ProtocolController>::startScanner()
+{
+    setTestMode(true);
+    setLdsRotation(true);
+}
+
+template<typename ProtocolController>
+void NeatoController<ProtocolController>::stopScanner()
+{
+    setLdsRotation(false);
+    setTestMode(false);
 }
 
 template<typename ProtocolController>
 void NeatoController<ProtocolController>::setMotor(int left, int right, int speed)
 {
-	this->sendFormattedCommand(CMD_SET_MOTOR, left, right, speed);
+    this->sendFormattedCommand(CMD_SET_MOTOR, left, right, speed);
 }
 
 template<typename ProtocolController>
-bool NeatoController<ProtocolController>::parseScanData(std::istream& in, ScanData& data)
+bool NeatoController<ProtocolController>::parseScanData(std::istream& input, ScanData& data)
 {
-	int lastId = 0;
-	double M_PI_180 = M_PI / 180.0;
+    int lastIndex = 0;
+    double M_PI_180 = M_PI / 180.0;
 
-	std::string line;
-	std::getline(in, line);
-	boost::algorithm::trim(line);
+    std::string line;
+    std::getline(input, line);
+    balg::trim(line);
 
-	if(line == NeatoController<ProtocolController>::LDS_SCAN_HEADER)
-	{
-		while(true)
-		{
-			std::getline(in, line);
-			boost::algorithm::trim(line);
+    if(line != NeatoController<ProtocolController>::LDS_SCAN_HEADER)
+    {
+        return false;
+    }
 
-			if(boost::algorithm::starts_with(line, NeatoController<ProtocolController>::LDS_SCAN_FOOTER))
-			{
-				std::vector<std::string> values;
-				boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
-				data.rotationSpeed = std::stod(values.at(1));
+    while(true)
+    {
+        std::getline(input, line);
+        balg::trim(line);
 
-				break;
-			}
-			else
-			{
-				std::vector<std::string> values;
-				boost::algorithm::split(values, line, boost::algorithm::is_any_of(","));
+        if(balg::starts_with(line, NeatoController<ProtocolController>::LDS_SCAN_FOOTER))
+        {
+            std::vector<std::string> values;
+            balg::split(values, line, balg::is_any_of(","));
+            data.rotationSpeed = std::stod(values.at(1));
 
-				int id = lastId++;
-				double angle = std::stod(values.at(0)) * M_PI_180;
-				double distance = std::stod(values.at(1));
-				int intensity = std::stoi(values.at(2));
-				int errorCode = std::stoi(values.at(3));
-				bool error = (errorCode != 0);
+            break;
+        }
+        else
+        {
+            std::vector<std::string> values;
+            balg::split(values, line, balg::is_any_of(","));
 
-				if(error) distance = -1;
+            int index = lastIndex++;
+            double angle = std::stod(values.at(0)) * M_PI_180;
+            double distance = std::stod(values.at(1));
+            int intensity = std::stoi(values.at(2));
+            int errorCode = std::stoi(values.at(3));
+            bool error = errorCode != 0;
 
-				data.emplace_back(id, angle, distance, intensity, errorCode, error);
-			}
-		}
+            if(error) distance = -1;
 
-		return true;
-	}
+            data.emplace_back(index, angle, distance, intensity, errorCode, error);
+        }
+    }
 
-	return false;
+    return true;
 }
 
 template<typename ProtocolController>
 std::string NeatoController<ProtocolController>::getTime()
 {
-	return this->sendCommand(CMD_GET_TIME);
+    return this->sendCommand(CMD_GET_TIME);
 }
 
 }

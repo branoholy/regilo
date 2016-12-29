@@ -28,7 +28,7 @@
 
 #include <wx/wxprec.h>
 #ifndef WX_PRECOMP
-	#include <wx/wx.h>
+    #include <wx/wx.h>
 #endif
 
 #include <regilo/scancontroller.hpp>
@@ -39,58 +39,59 @@ class wxGCDC;
 class RegiloVisual : public wxApp
 {
 private:
-	regilo::IScanController *controller;
-	std::mutex controllerMutex;
+    regilo::IScanController *controller;
+    std::mutex controllerMutex;
 
-	bool useScanner;
-	bool manualScanning;
-	bool moveScanning;
+    bool useScanner;
+    bool manualScanning;
+    bool moveScanning;
 
-	wxFrame *frame;
-	wxPanel *panel;
-	bool fullscreen;
-	double zoom;
+    wxFrame *frame;
+    wxPanel *panel;
+    bool fullscreen = false;
+    double zoom = 0.08;
 
-	regilo::ScanData data;
+    regilo::ScanData data;
 
-	std::thread scanThread;
-	bool scanThreadRunning;
-	std::condition_variable scanThreadCV;
-	std::mutex scanThreadCVMutex;
+    std::thread scanThread;
+    bool scanThreadRunning;
+    std::condition_variable scanThreadCV;
+    std::mutex scanThreadCVMutex;
 
-	wxColour radarColor, pointColor;
+    wxColour radarColor = wxColour(0, 200, 0);
+    wxColour pointColor = wxColour(200, 200, 200);
 
-	double radarAngle;
-	double radarRayLength;
-	std::mutex radarMutex;
-	std::thread radarThread;
-	std::condition_variable radarThreadCV;
-	std::mutex radarThreadCVMutex;
+    double radarAngle = 0;
+    double radarRayLength = 4000;
+    std::mutex radarMutex;
+    std::thread radarThread;
+    std::condition_variable radarThreadCV;
+    std::mutex radarThreadCVMutex;
 
-	wxImage radarGradient;
-	wxImage radarGradientZoom;
+    wxImage radarGradient;
+    wxImage radarGradientZoom;
 
-	void stopScanThread();
-	void scanAndShow();
+    void stopScanThread();
+    void scanAndShow();
 
-	wxImage zoomImage(const wxImage& image, double zoom);
+    wxImage zoomImage(const wxImage& image, double zoom);
 
-	wxRect getRotatedBoundingBox(const wxRect& rect, double angle);
-	void drawRadarGradient(wxDC& dc, int width2, int height2);
+    wxRect getRotatedBoundingBox(const wxRect& rect, double angle);
+    void drawRadarGradient(wxDC& dc, int width2, int height2);
 
-	void setStatusText(const std::string& text, int i = 0);
-	void refreshStatusBar();
+    void setStatusText(const std::string& text, int number = 0);
+    void refreshStatusBar();
 
 public:
-	RegiloVisual(regilo::IScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
+    RegiloVisual(regilo::IScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
 
-	virtual bool OnInit();
-	virtual int OnExit();
+    virtual bool OnInit();
+    virtual int OnExit();
 
-	void setMotorByKey(wxKeyEvent& keyEvent);
-	void repaint(wxPaintEvent& paintEvent);
+    void setMotorByKey(wxKeyEvent& keyEvent);
+    void repaint(wxPaintEvent& paintEvent);
 
-	static void Display(wxApp *app, int& argc, char **argv);
+    static void Display(wxApp *app, int& argc, char **argv);
 };
 
 #endif // REGILOVISUAL_HPP

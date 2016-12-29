@@ -39,40 +39,40 @@
 template<typename HokuyoController>
 struct HokuyoControllerFixture
 {
-	std::string logPath = "data/hokuyo-log-scan-version.txt";
-	std::string timedLogPath = "data/hokuyo-timed-log.txt";
-	std::stringstream logStream;
+    std::string logPath = "data/hokuyo-log-scan-version.txt";
+    std::string timedLogPath = "data/hokuyo-timed-log.txt";
+    std::stringstream logStream;
 
-	std::vector<HokuyoController*> controllers;
+    std::vector<HokuyoController*> controllers;
 
-	std::string correctScan;
-	std::map<std::string, std::string> correctVersion;
+    std::string correctScan;
+    std::map<std::string, std::string> correctVersion;
 
-	HokuyoControllerFixture() :
-		logStream("type log\nversion 2\n\nc 5 CMD1\n\nr 9 RESPONSE1\n\n")
-	{
-		controllers.emplace_back(new HokuyoController());
-		controllers.emplace_back(new HokuyoController(logPath));
-		controllers.emplace_back(new HokuyoController(logStream));
+    HokuyoControllerFixture() :
+        logStream("type log\nversion 2\n\nc 5 CMD1\n\nr 9 RESPONSE1\n\n")
+    {
+        controllers.emplace_back(new HokuyoController());
+        controllers.emplace_back(new HokuyoController(logPath));
+        controllers.emplace_back(new HokuyoController(logStream));
 
-		std::ifstream dataFile("data/hokuyo-correct-scan.txt");
-		std::getline(dataFile, correctScan, '\0');
+        std::ifstream dataFile("data/hokuyo-correct-scan.txt");
+        std::getline(dataFile, correctScan, '\0');
 
-		correctVersion["VEND"] = "Hokuyo Automatic Co.,Ltd.";
-		correctVersion["PROD"] = "SOKUIKI Sensor URG-04LX";
-		correctVersion["FIRM"] = "3.3.00,08/04/16(20-4095[mm],240[deg],44-725[step],600[rpm])";
-		correctVersion["PROT"] = "00003,(SCIP 1.0)";
-		correctVersion["SERI"] = "H0713090";
-		correctVersion["STAT"] = "FW Normal[FinalDist with shadow  ]";
-	}
+        correctVersion["VEND"] = "Hokuyo Automatic Co.,Ltd.";
+        correctVersion["PROD"] = "SOKUIKI Sensor URG-04LX";
+        correctVersion["FIRM"] = "3.3.00,08/04/16(20-4095[mm],240[deg],44-725[step],600[rpm])";
+        correctVersion["PROT"] = "00003,(SCIP 1.0)";
+        correctVersion["SERI"] = "H0713090";
+        correctVersion["STAT"] = "FW Normal[FinalDist with shadow  ]";
+    }
 
-	~HokuyoControllerFixture()
-	{
-		for(HokuyoController *controller : controllers)
-		{
-			delete controller;
-		}
-	}
+    ~HokuyoControllerFixture()
+    {
+        for(HokuyoController *controller : controllers)
+        {
+            delete controller;
+        }
+    }
 };
 
 typedef boost::mpl::vector<regilo::HokuyoSerialController, regilo::HokuyoSocketController> HokuyoControllers;
@@ -81,101 +81,101 @@ BOOST_AUTO_TEST_SUITE(HokuyoControllerSuite)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerConstructorValues, HokuyoController, HokuyoControllers, HF)
 {
-	for(HokuyoController *controller : HF::controllers)
-	{
-		BOOST_CHECK_EQUAL(controller->RESPONSE_END, "\n\n");
-	}
+    for(HokuyoController *controller : HF::controllers)
+    {
+        BOOST_CHECK_EQUAL(controller->RESPONSE_END, "\n\n");
+    }
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromDevice, HokuyoController, HokuyoControllers, HF)
 {
-	std::mutex mutex;
-	mutex.lock();
+    std::mutex mutex;
+    mutex.lock();
 
-	std::string deviceEndpoint;
-	bool deviceStatus = false;
-	std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus] ()
-	{
-		Simulator *simulator = nullptr;
-		if(std::is_same<HokuyoController, regilo::HokuyoSerialController>::value)
-		{
-			simulator = new SerialSimulator(HF::logPath);
-		}
-		else if(std::is_same<HokuyoController, regilo::HokuyoSocketController>::value)
-		{
-			simulator = new SocketSimulator(HF::logPath, 12345);
-		}
+    std::string deviceEndpoint;
+    bool deviceStatus = false;
+    std::thread deviceThread([this, &deviceEndpoint, &mutex, &deviceStatus] ()
+    {
+        Simulator *simulator = nullptr;
+        if(std::is_same<HokuyoController, regilo::HokuyoSerialController>::value)
+        {
+            simulator = new SerialSimulator(HF::logPath);
+        }
+        else if(std::is_same<HokuyoController, regilo::HokuyoSocketController>::value)
+        {
+            simulator = new SocketSimulator(HF::logPath, 12345);
+        }
 
-		simulator->responseEnd = "\n\n";
+        simulator->responseEnd = "\n\n";
 
-		BOOST_REQUIRE(simulator != nullptr);
+        BOOST_REQUIRE(simulator != nullptr);
 
-		simulator->start();
-		deviceEndpoint = simulator->getEndpoint();
-		mutex.unlock();
+        simulator->start();
+        deviceEndpoint = simulator->getEndpoint();
+        mutex.unlock();
 
-		deviceStatus = simulator->run();
-		mutex.lock();
+        deviceStatus = simulator->run();
+        mutex.lock();
 
-		delete simulator;
-	});
+        delete simulator;
+    });
 
-	HokuyoController *controller = HF::controllers.at(0);
+    HokuyoController *controller = HF::controllers.at(0);
 
-	mutex.lock();
-	controller->connect(deviceEndpoint);
+    mutex.lock();
+    controller->connect(deviceEndpoint);
 
-	BOOST_REQUIRE(controller->isConnected());
+    BOOST_REQUIRE(controller->isConnected());
 
-	regilo::ScanData scandata = controller->getScan();
-	std::ostringstream scanStream;
-	scanStream << scandata;
+    regilo::ScanData scandata = controller->getScan();
+    std::ostringstream scanStream;
+    scanStream << scandata;
 
-	BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
+    BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
 
-	std::map<std::string, std::string> version = controller->getVersionInfo();
-	BOOST_CHECK(version == HF::correctVersion);
+    std::map<std::string, std::string> version = controller->getVersionInfo();
+    BOOST_CHECK(version == HF::correctVersion);
 
-	mutex.unlock();
+    mutex.unlock();
 
-	if(deviceThread.joinable()) deviceThread.join();
+    if(deviceThread.joinable()) deviceThread.join();
 
-	BOOST_CHECK(deviceStatus);
+    BOOST_CHECK(deviceStatus);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromLog, HokuyoController, HokuyoControllers, HF)
 {
-	HokuyoController *controller = HF::controllers.at(1);
+    HokuyoController *controller = HF::controllers.at(1);
 
-	regilo::ScanData scanData = controller->getScan(false);
-	std::ostringstream scanStream;
-	scanStream << scanData;
+    regilo::ScanData scanData = controller->getScan(false);
+    std::ostringstream scanStream;
+    scanStream << scanData;
 
-	BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
+    BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerScanFromTimedLog, HokuyoController, HokuyoControllers, HF)
 {
-	HokuyoController *controller = HF::controllers.at(0);
-	auto timedLog = std::make_shared<regilo::TimedLog<>>(HF::timedLogPath);
-	controller->setLog(timedLog);
+    HokuyoController *controller = HF::controllers.at(0);
+    auto timedLog = std::make_shared<regilo::TimedLog<>>(HF::timedLogPath);
+    controller->setLog(timedLog);
 
-	regilo::ScanData scanData = controller->getScan(false);
-	std::ostringstream scanStream;
-	scanStream << scanData;
+    regilo::ScanData scanData = controller->getScan(false);
+    std::ostringstream scanStream;
+    scanStream << scanData;
 
-	BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
+    BOOST_CHECK_EQUAL(scanStream.str(), HF::correctScan);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(HokuyoControllerSetScanParameters, HokuyoController, HokuyoControllers, HF)
 {
-	HokuyoController *controller = HF::controllers.at(0);
+    HokuyoController *controller = HF::controllers.at(0);
 
-	BOOST_CHECK_NO_THROW(controller->setScanParameters(50, 80, 1));
-	BOOST_CHECK_THROW(controller->setScanParameters(800, 900, 1), std::invalid_argument);
-	BOOST_CHECK_THROW(controller->setScanParameters(50, 800, 1), std::invalid_argument);
-	BOOST_CHECK_THROW(controller->setScanParameters(50, 80, 100), std::invalid_argument);
-	BOOST_CHECK_THROW(controller->setScanParameters(80, 50, 1), std::invalid_argument);
+    BOOST_CHECK_NO_THROW(controller->setScanParameters(50, 80, 1));
+    BOOST_CHECK_THROW(controller->setScanParameters(800, 900, 1), std::invalid_argument);
+    BOOST_CHECK_THROW(controller->setScanParameters(50, 800, 1), std::invalid_argument);
+    BOOST_CHECK_THROW(controller->setScanParameters(50, 80, 100), std::invalid_argument);
+    BOOST_CHECK_THROW(controller->setScanParameters(80, 50, 1), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

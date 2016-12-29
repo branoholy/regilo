@@ -10,6 +10,7 @@ before_install:
   - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-4.9 90
   - g++-4.9 --version
   - lcov --version
+  - eval "$(curl -sL https://raw.githubusercontent.com/ryuichis/oclint-cpp-travis-ci-examples/master/oclint-ci-install.sh)"
 
 install:
   - gem install coveralls-lcov
@@ -19,9 +20,11 @@ before_script:
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE:string="Debug" -Dexample:bool=on -Dtests:bool=on ..
 #  - cmake -Dexamples:bool=on .. # cannot build the GUI example
+  - cp compile_commands.json ..
 
 script:
   - cd $TRAVIS_BUILD_DIR
+  - oclint-json-compilation-database
   - cd build
   - make -j $(nproc)
   - cd tests

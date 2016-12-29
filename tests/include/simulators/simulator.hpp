@@ -29,27 +29,27 @@
 class Simulator
 {
 protected:
-	regilo::Log log;
+    regilo::Log log;
 
-	virtual std::string read() = 0;
-	virtual bool write(const std::string& data) = 0;
+    virtual std::string read() = 0;
+    virtual bool write(const std::string& data) = 0;
 
 public:
-	std::string requestEnd = "\n";
-	std::string responseEnd = "\n";
+    std::string requestEnd = "\n";
+    std::string responseEnd = "\n";
 
-	Simulator(const std::string& filePath);
-	Simulator(std::iostream& stream);
+    Simulator(const std::string& filePath);
+    Simulator(std::iostream& stream);
 
-	virtual ~Simulator() = default;
+    virtual ~Simulator() = default;
 
-	virtual void start() = 0;
-	virtual void stop() = 0;
+    virtual void start() = 0;
+    virtual void stop() = 0;
 
-	virtual bool isRunning() const = 0;
-	virtual std::string getEndpoint() const = 0;
+    virtual bool isRunning() const = 0;
+    virtual std::string getEndpoint() const = 0;
 
-	virtual bool run();
+    virtual bool run();
 };
 
 #endif // SIMULATOR_HPP

@@ -35,17 +35,17 @@ namespace regilo {
 class IScanController : public virtual IController
 {
 public:
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~IScanController() = default;
+    /**
+     * @brief Default destructor.
+     */
+    virtual ~IScanController() = default;
 
-	/**
-	 * @brief Get a scan from the device.
-	 * @param fromDevice Specify if you want to get a scan from the device (true) or log (false). Default: true.
-	 * @return ScanData
-	 */
-	virtual ScanData getScan(bool fromDevice = true) = 0;
+    /**
+     * @brief Get a scan from the device.
+     * @param fromDevice Specify if you want to get a scan from the device (true) or log (false). Default: true.
+     * @return ScanData
+     */
+    virtual ScanData getScan(bool fromDevice = true) = 0;
 };
 
 /**
@@ -55,58 +55,58 @@ template<typename ProtocolController>
 class ScanController : public virtual IScanController, public ProtocolController
 {
 protected:
-	std::size_t lastScanId = 0; ///< A scan id (starting from zero) that is used for new scans.
+    std::size_t lastScanIndex = 0; ///< A scan index (starting from zero) that is used for new scans.
 
-	/**
-	 * @brief Get a string that can be used for getting a scan.
-	 * @return A command for getting a scan.
-	 */
-	virtual std::string getScanCommand() const = 0;
+    /**
+     * @brief Get a string that can be used for getting a scan.
+     * @return A command for getting a scan.
+     */
+    virtual std::string getScanCommand() const = 0;
 
-	/**
-	 * @brief Parse the raw scan data.
-	 * @param in The input stream that stores the raw scan data.
-	 * @param data Output for the scanned data.
-	 * @return True if the parsing ends without an error.
-	 */
-	virtual bool parseScanData(std::istream& in, ScanData& data) = 0;
+    /**
+     * @brief Parse the raw scan data.
+     * @param input The input stream that stores the raw scan data.
+     * @param data Output for the scanned data.
+     * @return True if the parsing ends without an error.
+     */
+    virtual bool parseScanData(std::istream& input, ScanData& data) = 0;
 
 public:
-	using ProtocolController::ProtocolController;
+    using ProtocolController::ProtocolController;
 
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~ScanController() = default;
+    /**
+     * @brief Default destructor.
+     */
+    virtual ~ScanController() = default;
 
-	virtual ScanData getScan(bool fromDevice = true) override final;
+    virtual ScanData getScan(bool fromDevice = true) override final;
 };
 
 template<typename ProtocolController>
 ScanData ScanController<ProtocolController>::getScan(bool fromDevice)
 {
-	ScanData data;
+    ScanData data;
 
-	if(fromDevice)
-	{
-		ProtocolController::template sendCommand<>(getScanCommand());
-		data.time = epoch<std::chrono::milliseconds>().count();
+    if(fromDevice)
+    {
+        ProtocolController::template sendCommand<>(getScanCommand());
+        data.time = epoch<std::chrono::milliseconds>().count();
 
-		parseScanData(this->deviceOutput, data);
-	}
-	else
-	{
-		std::istringstream response(this->log->readCommand(getScanCommand()));
-		if(std::shared_ptr<const ITimedLog> timedLog = std::dynamic_pointer_cast<const ITimedLog>(this->getLog()))
-		{
-			data.time = timedLog->getLastCommandTimeAs<std::chrono::milliseconds>().count();
-		}
+        parseScanData(this->deviceOutput, data);
+    }
+    else
+    {
+        std::istringstream response(this->log->readCommand(getScanCommand()));
+        if(std::shared_ptr<const ITimedLog> timedLog = std::dynamic_pointer_cast<const ITimedLog>(this->getLog()))
+        {
+            data.time = timedLog->getLastCommandTimeAs<std::chrono::milliseconds>().count();
+        }
 
-		parseScanData(response, data);
-	}
-	if(!data.empty()) data.scanId = lastScanId++;
+        parseScanData(response, data);
+    }
+    if(!data.empty()) data.index = lastScanIndex++;
 
-	return data;
+    return data;
 }
 
 }

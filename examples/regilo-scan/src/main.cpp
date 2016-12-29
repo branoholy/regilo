@@ -33,168 +33,233 @@
 
 struct Arguments
 {
-	std::string device;
-	std::string protocol;
-	std::string endpoint;
-	std::string logPath;
-	bool help = false;
+    std::string device;
+    std::string protocol;
+    std::string endpoint;
+    std::string logPath;
+    bool help = false;
 };
 
+__attribute__((annotate("oclint:suppress[high ncss method]")))
+int run(const Arguments& args);
+
 void printHelp();
+
 void parseArgs(int argc, char **argv, Arguments& args);
+void parsePosArgs(int argc, char **argv, Arguments& args);
+
+regilo::IScanController* createController(const Arguments& args);
+regilo::ILog* createLog(const Arguments& args);
 
 int main(int argc, char **argv)
 {
-	std::cout.setf(std::ios_base::boolalpha);
+    std::cout.setf(std::ios_base::boolalpha);
 
-	Arguments args;
-	try
-	{
-		parseArgs(argc, argv, args);
-	}
-	catch(std::invalid_argument& e)
-	{
-		std::cout << "Error: " << e.what() << std::endl;
-		return 1;
-	}
+    Arguments args;
+    try
+    {
+        parseArgs(argc - 1, argv + 1, args);
+    }
+    catch(std::invalid_argument& e)
+    {
+        std::cout << "Error: " << e.what() << std::endl;
+        return 1;
+    }
 
-	if(args.help)
-	{
-		printHelp();
-		return 0;
-	}
+    if(args.help)
+    {
+        printHelp();
+        return 0;
+    }
 
-	std::cout << "Hello Regilo!" << std::endl;
+    return run(args);
+}
 
-	bool fromDevice = (args.protocol != "log");
-	regilo::IScanController *controller = nullptr;
-	regilo::INeatoController *neatoController = nullptr;
-	regilo::IHokuyoController *hokuyoController = nullptr;
+int run(const Arguments& args)
+{
+    std::cout << "Hello Regilo!" << std::endl;
 
-	if(args.device == "neato")
-	{
-		if(args.protocol == "serial") neatoController = new regilo::NeatoSerialController();
-		else neatoController = new regilo::NeatoSocketController();
+    bool fromDevice = args.protocol != "log";
+    regilo::IScanController *controller = createController(args);
 
-		controller = dynamic_cast<regilo::IScanController*>(neatoController);
-	}
-	else if(args.device == "hokuyo")
-	{
-		if(args.protocol == "serial") hokuyoController = new regilo::HokuyoSerialController();
-		else hokuyoController = new regilo::HokuyoSocketController();
+    std::cout << "Using " << args.device << ':' << args.protocol << " controller." << std::endl;
+    std::cout << "Connecting to " << args.endpoint << std::endl;
 
-		controller = dynamic_cast<regilo::IScanController*>(hokuyoController);
-	}
+    if(fromDevice)
+    {
+        controller->connect(args.endpoint);
+    }
 
-	std::cout << "Using " << args.device << ':' << args.protocol << " controller." << std::endl;
-	std::cout << "Connecting to " << args.endpoint << std::endl;
+    controller->setLog(std::shared_ptr<regilo::ILog>(createLog(args)));
 
-	regilo::TimedLog<> *log;
-	if(fromDevice)
-	{
-		controller->connect(args.endpoint);
-		if(!args.logPath.empty()) log = new regilo::TimedLog<>(args.logPath);
-	}
-	else log = new regilo::TimedLog<>(args.endpoint);
-	controller->setLog(std::shared_ptr<regilo::TimedLog<>>(log));
+    if(fromDevice && args.device == "neato")
+    {
+        auto *neatoController = dynamic_cast<regilo::INeatoController*>(controller);
 
-	if(fromDevice && args.device == "neato")
-	{
-		neatoController->setTestMode(true);
-		std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
+        neatoController->setTestMode(true);
+        std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
 
-		neatoController->setLdsRotation(true);
-		std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
-	}
+        neatoController->setLdsRotation(true);
+        std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
+    }
 
-	std::this_thread::sleep_for(std::chrono::seconds(3));
+    if(fromDevice)
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
 
-	regilo::ScanData data = controller->getScan(fromDevice);
-	std::cout << "Scan data:" << std::endl << data << std::endl;
+    regilo::ScanData data = controller->getScan(fromDevice);
+    std::cout << "Scan data:" << std::endl << data << std::endl;
 
-	if(fromDevice)
-	{
-		if(args.device == "neato")
-		{
-			neatoController->setLdsRotation(false);
-			std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
+    if(fromDevice)
+    {
+        if(args.device == "neato")
+        {
+            auto *neatoController = dynamic_cast<regilo::INeatoController*>(controller);
 
-			neatoController->setTestMode(false);
-			std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
-		}
-		else if(args.device == "hokuyo")
-		{
-			std::map<std::string, std::string> info = hokuyoController->getVersionInfo();
-			std::cout << "Version info: " << std::endl;
-			for(const auto& kw : info)
-			{
-				std::cout << kw.first << " = " << kw.second << std::endl;
-			}
-			std::cout << std::endl;
-		}
-	}
+            neatoController->setLdsRotation(false);
+            std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
 
-	delete controller;
+            neatoController->setTestMode(false);
+            std::cout << "Test mode: " << neatoController->getTestMode() << std::endl;
+        }
+        else if(args.device == "hokuyo")
+        {
+            auto *hokuyoController = dynamic_cast<regilo::IHokuyoController*>(controller);
 
-	return 0;
+            std::map<std::string, std::string> info = hokuyoController->getVersionInfo();
+            std::cout << "Version info: " << std::endl;
+            for(const auto& kw : info)
+            {
+                std::cout << kw.first << " = " << kw.second << std::endl;
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    delete controller;
+
+    return 0;
 }
 
 void printHelp()
 {
-	std::cout << "Usage: regilo-scan [options] <controller> <endpoint>" << std::endl
-			  << "Arguments:" << std::endl
-			  << "  <controller>  The controller name in the format \"device:protocol\". The device" << std::endl
-			  << "                part can be \"neato\" or \"hokuyo\". The protocol part can be" << std::endl
-			  << "                \"socket\", \"serial\", or \"log\"." << std::endl
-			  << "  <endpoint>    The endpoint that is used to connect to the device. It can be" << std::endl
-			  << "                a path to the device or input log, or ip and port." << std::endl
-			  << std::endl
-			  << "Options:" << std::endl
-			  << "  -l <file>     The path to the output log file." << std::endl
-			  << "  -h, --help    Show this help." << std::endl
-			  << std::endl
-			  << "Using regilo-" << regilo::Version::VERSION << std::endl;
+    std::cout
+        << "Usage: regilo-scan [options] <controller> <endpoint>\n"
+           "\n"
+           "Arguments:\n"
+           "  <controller>  The controller name in the format \"device:protocol\". The device\n"
+           "                part can be \"neato\" or \"hokuyo\". The protocol part can be\n"
+           "                \"socket\", \"serial\", or \"log\".\n"
+           "  <endpoint>    The endpoint that is used to connect to the device. It can be\n"
+           "                a path to the device or input log, or ip and port.\n"
+           "\n"
+           "Options:\n"
+           "  -l <file>     The path to the output log file.\n"
+           "  -h, --help    Show this help.\n"
+           "\n";
+
+    std::cout << "Using regilo-" << regilo::Version::VERSION << std::endl;
 }
 
 void parseArgs(int argc, char **argv, Arguments& args)
 {
-	int posArg = 0;
-	for(int i = 1; i < argc; i++)
-	{
-		std::string arg(argv[i]);
+    for(int i = 0; i < argc; i++)
+    {
+        std::string arg(argv[i]);
 
-		if(arg == "-l") args.logPath = std::string(argv[++i]);
-		else if(arg == "-h" || arg == "--help")
-		{
-			args.help = true;
-			return;
-		}
-		else if(arg.front() != '-')
-		{
-			if(posArg == 0)
-			{
-				std::size_t colonPos = arg.find(':');
-				if(colonPos == std::string::npos)
-					throw std::invalid_argument("Missing controller protocol (use \"socket\", \"serial\", or \"log\").");
+        if(arg == "-l") args.logPath = std::string(argv[++i]);
+        else if(arg == "-h" || arg == "--help")
+        {
+            args.help = true;
+            return;
+        }
+        else if(arg.front() == '-')
+        {
+            throw std::invalid_argument("Unknown argument \"" + arg + "\".");
+        }
+        else
+        {
+            parsePosArgs(argc - i, argv + i, args);
+            break;
+        }
+    }
 
-				args.device = arg.substr(0, colonPos);
-				if(args.device != "neato" && args.device != "hokuyo")
-					throw std::invalid_argument("Unknown controller device (use \"neato\" or \"hokuyo\").");
+    if(args.device.empty() || args.protocol.empty())
+    {
+        throw std::invalid_argument("Missing controller (see -h for more details).");
+    }
 
-				args.protocol = arg.substr(colonPos + 1);
-				if(args.protocol != "socket" && args.protocol != "serial" && args.protocol != "log")
-					throw std::invalid_argument("Unknown controller protocol (use \"socket\", \"serial\", or \"log\").");
-			}
-			else if(posArg == 1) args.endpoint = arg;
+    if(args.endpoint.empty())
+    {
+        throw std::invalid_argument("Missing endpoint (see -h for more details).");
+    }
+}
 
-			posArg++;
-		}
-		else throw std::invalid_argument("Unknown argument \"" + arg + "\".");
-	}
+void parsePosArgs(int argc, char **argv, Arguments& args)
+{
+    for(int i = 0; i < argc; i++)
+    {
+        std::string arg(argv[i]);
 
-	if(args.device.empty() || args.protocol.empty())
-		throw std::invalid_argument("Missing controller (see -h for more details).");
+        if(i == 0)
+        {
+            std::size_t colonPos = arg.find(':');
+            if(colonPos == std::string::npos)
+            {
+                throw std::invalid_argument("Missing controller protocol (use \"socket\", \"serial\", or \"log\").");
+            }
 
-	if(args.endpoint.empty())
-		throw std::invalid_argument("Missing endpoint (see -h for more details).");
+            args.device = arg.substr(0, colonPos);
+            if(args.device != "neato" && args.device != "hokuyo")
+            {
+                throw std::invalid_argument("Unknown controller device (use \"neato\" or \"hokuyo\").");
+            }
+
+            args.protocol = arg.substr(colonPos + 1);
+            if(args.protocol != "socket" && args.protocol != "serial" && args.protocol != "log")
+            {
+                throw std::invalid_argument("Unknown controller protocol (use \"socket\", \"serial\", or \"log\").");
+            }
+        }
+        else if(i == 1) args.endpoint = arg;
+    }
+}
+
+regilo::IScanController* createController(const Arguments& args)
+{
+    if(args.device == "neato")
+    {
+        if(args.protocol == "serial") return new regilo::NeatoSerialController();
+        return new regilo::NeatoSocketController();
+    }
+
+    if(args.device == "hokuyo")
+    {
+        if(args.protocol == "serial") return new regilo::HokuyoSerialController();
+        return new regilo::HokuyoSocketController();
+    }
+
+    return nullptr;
+}
+
+regilo::ILog* createLog(const Arguments& args)
+{
+    regilo::ILog *log = nullptr;
+    const std::string logPath = args.protocol == "log" ? args.endpoint : args.logPath;
+
+    if(!logPath.empty())
+    {
+        log = new regilo::Log(logPath);
+        log->readMetadata();
+        const std::string& type = log->getMetadata()->getType();
+
+        if(type == "timedlog")
+        {
+            delete log;
+            log = new regilo::TimedLog<>(logPath);
+        }
+    }
+
+    return log;
 }

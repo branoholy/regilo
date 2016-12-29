@@ -26,25 +26,27 @@
 
 #include "regilo/utils.hpp"
 
-SocketSimulator::SocketSimulator(const std::string& filePath, unsigned short port) : Simulator(filePath),
-	acceptor(ioService, bai::tcp::endpoint(bai::tcp::v4(), port)),
-	socket(ioService),
-	socketIStream(&socketIStreamBuffer),
-	socketOStream(&socketOStreamBuffer)
+SocketSimulator::SocketSimulator(const std::string& filePath, unsigned short port) :
+    Simulator(filePath),
+    acceptor(ioService, bai::tcp::endpoint(bai::tcp::v4(), port)),
+    socket(ioService),
+    socketIStream(&socketIStreamBuffer),
+    socketOStream(&socketOStreamBuffer)
 {
 }
 
-SocketSimulator::SocketSimulator(std::iostream& stream, unsigned short port) : Simulator(stream),
-	acceptor(ioService, bai::tcp::endpoint(bai::tcp::v4(), port)),
-	socket(ioService),
-	socketIStream(&socketIStreamBuffer),
-	socketOStream(&socketOStreamBuffer)
+SocketSimulator::SocketSimulator(std::iostream& stream, unsigned short port) :
+    Simulator(stream),
+    acceptor(ioService, bai::tcp::endpoint(bai::tcp::v4(), port)),
+    socket(ioService),
+    socketIStream(&socketIStreamBuffer),
+    socketOStream(&socketOStreamBuffer)
 {
 }
 
 SocketSimulator::~SocketSimulator()
 {
-	stop();
+    stop();
 }
 
 void SocketSimulator::start()
@@ -53,50 +55,50 @@ void SocketSimulator::start()
 
 void SocketSimulator::stop()
 {
-	if(isRunning()) acceptor.close();
+    if(isRunning()) acceptor.close();
 }
 
 bool SocketSimulator::isRunning() const
 {
-	return (acceptor.is_open() && socket.is_open());
+    return acceptor.is_open() && socket.is_open();
 }
 
 std::string SocketSimulator::getEndpoint() const
 {
-	return "127.0.0.1:" + std::to_string(acceptor.local_endpoint().port());
+    return "127.0.0.1:" + std::to_string(acceptor.local_endpoint().port());
 }
 
 bool SocketSimulator::run()
 {
-	acceptor.accept(socket);
-	return Simulator::run();
+    acceptor.accept(socket);
+    return Simulator::run();
 }
 
 std::string SocketSimulator::read()
 {
-	std::string response;
+    std::string response;
 
-	boost::system::error_code errorCode;
-	boost::asio::read_until(socket, socketIStreamBuffer, requestEnd, errorCode);
+    boost::system::error_code errorCode;
+    boost::asio::read_until(socket, socketIStreamBuffer, requestEnd, errorCode);
 
-	if(errorCode == boost::asio::error::eof) return "";
+    if(errorCode == boost::asio::error::eof) return "";
 
-	regilo::getLine(socketIStream, response, requestEnd);
+    regilo::getLine(socketIStream, response, requestEnd);
 
-	return response + requestEnd;
+    return response + requestEnd;
 }
 
 bool SocketSimulator::write(const std::string& data)
 {
-	socketOStream << data;
+    socketOStream << data;
 
-	try
-	{
-		size_t writtenBytes = boost::asio::write(socket, socketOStreamBuffer);
-		return (writtenBytes == data.length());
-	}
-	catch(boost::system::system_error&)
-	{
-		return false;
-	}
+    try
+    {
+        size_t writtenBytes = boost::asio::write(socket, socketOStreamBuffer);
+        return writtenBytes == data.length();
+    }
+    catch(boost::system::system_error&)
+    {
+        return false;
+    }
 }

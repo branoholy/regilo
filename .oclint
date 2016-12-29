@@ -1,0 +1,7 @@
+disable-rules:
+  - LongMethod # HighNcssMethod is enough
+  - AvoidDefaultArgumentsOnVirtualMethods
+rule-paths: []
+rule-configurations:
+  - key: LONG_LINE
+    value: 120

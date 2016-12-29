@@ -34,53 +34,53 @@ namespace regilo {
 class IController
 {
 public:
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~IController() = default;
+    /**
+     * @brief Default destructor.
+     */
+    virtual ~IController() = default;
 
-	/**
-	 * @brief Connect the controller to a device.
-	 * @param endpoint The device endpoint (a path, IP address, etc.).
-	 */
-	virtual void connect(const std::string& endpoint) = 0;
+    /**
+     * @brief Connect the controller to a device.
+     * @param endpoint The device endpoint (a path, IP address, etc.).
+     */
+    virtual void connect(const std::string& endpoint) = 0;
 
-	/**
-	 * @brief Test if the controller is connected.
-	 * @return True if connected.
-	 */
-	virtual bool isConnected() const = 0;
+    /**
+     * @brief Test if the controller is connected.
+     * @return True if connected.
+     */
+    virtual bool isConnected() const = 0;
 
-	/**
-	 * @brief Get the endpoint of device.
-	 * @return The device endpoint or empty string.
-	 */
-	virtual std::string getEndpoint() const = 0;
+    /**
+     * @brief Get the endpoint of device.
+     * @return The device endpoint or empty string.
+     */
+    virtual std::string getEndpoint() const = 0;
 
-	/**
-	 * @brief Get the current Log.
-	 * @return The Log or empty std::shared_ptr.
-	 */
-	virtual std::shared_ptr<ILog> getLog() = 0;
+    /**
+     * @brief Get the current Log.
+     * @return The Log or empty std::shared_ptr.
+     */
+    virtual std::shared_ptr<ILog> getLog() = 0;
 
-	/**
-	 * @brief Get the current Log (a const variant).
-	 * @return The Log or empty std::shared_ptr.
-	 */
-	virtual std::shared_ptr<const ILog> getLog() const = 0;
+    /**
+     * @brief Get the current Log (a const variant).
+     * @return The Log or empty std::shared_ptr.
+     */
+    virtual std::shared_ptr<const ILog> getLog() const = 0;
 
-	/**
-	 * @brief Set a Log (it can be shared between more controllers).
-	 * @param log Smart pointer to the Log.
-	 */
-	virtual void setLog(std::shared_ptr<ILog> log) = 0;
+    /**
+     * @brief Set a Log (it can be shared between more controllers).
+     * @param log Smart pointer to the Log.
+     */
+    virtual void setLog(std::shared_ptr<ILog> log) = 0;
 
-	/**
-	 * @brief Send a command to the device.
-	 * @param command A command with all parameters.
-	 * @return A string with a whole response to the command.
-	 */
-	virtual std::string sendCommand(const std::string& command) = 0;
+    /**
+     * @brief Send a command to the device.
+     * @param command A command with all parameters.
+     * @return A string with a whole response to the command.
+     */
+    virtual std::string sendCommand(const std::string& command) = 0;
 };
 
 }

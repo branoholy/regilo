@@ -36,33 +36,33 @@ namespace bai = ba::ip;
 class SocketController : public StreamController<bai::tcp::socket>
 {
 public:
-	using StreamController::StreamController;
+    using StreamController::StreamController;
 
-	/**
-	 * @brief Default destructor.
-	 */
-	virtual ~SocketController();
+    /**
+     * @brief Default destructor.
+     */
+    virtual ~SocketController();
 
-	/**
-	 * @brief Connect the controller to a device.
-	 * @param endpoint The endpoint with the IP address and port of the device (e.g. "10.0.0.1:12345").
-	 */
-	virtual void connect(const std::string& endpoint) override;
+    /**
+     * @brief Connect the controller to a device.
+     * @param endpoint The endpoint with the IP address and port of the device (e.g. "10.0.0.1:12345").
+     */
+    virtual void connect(const std::string& endpoint) override;
 
-	/**
-	 * @brief Connect the controller to a device.
-	 * @param ip The IP address of the device (e.g. "10.0.0.1").
-	 * @param port The port number of the device (e.g. 12345).
-	 */
-	void connect(const std::string& ip, unsigned short port);
+    /**
+     * @brief Connect the controller to a device.
+     * @param ipAddress The IP address of the device (e.g. "10.0.0.1").
+     * @param port The port number of the device (e.g. 12345).
+     */
+    void connect(const std::string& ipAddress, unsigned short port);
 
-	/**
-	 * @brief Connect the controller to a device.
-	 * @param endpoint The endpoint of the device.
-	 */
-	void connect(const bai::tcp::endpoint& endpoint);
+    /**
+     * @brief Connect the controller to a device.
+     * @param endpoint The endpoint of the device.
+     */
+    void connect(const bai::tcp::endpoint& endpoint);
 
-	virtual std::string getEndpoint() const override;
+    virtual std::string getEndpoint() const override;
 };
 
 }

@@ -32,218 +32,224 @@ InvalidLogException::InvalidLogException(const std::string& message) : std::runt
 }
 
 LogMetadata::LogMetadata(const std::string& type, int version) :
-	type(type), version(version)
+    type(type), version(version)
 {
 }
 
 Log::Log(const std::string& filePath) :
-	filePath(filePath),
-	fileStream(new std::fstream(filePath, std::fstream::in | std::fstream::out | std::fstream::app)),
-	stream(*fileStream)
+    filePath(filePath),
+    fileStream(new std::fstream(filePath, std::fstream::in | std::fstream::out | std::fstream::app)),
+    stream(*fileStream)
 {
 }
 
 Log::Log(std::iostream& stream) :
-	fileStream(nullptr),
-	stream(stream)
+    fileStream(nullptr),
+    stream(stream)
 {
 }
 
 Log::~Log()
 {
-	delete fileStream;
-	delete metadata;
+    delete fileStream;
+    delete metadata;
 }
 
 void Log::readName(std::istream& stream, char name)
 {
-	char logName;
-	stream >> logName;
+    char logName;
+    stream >> logName;
 
-	if(stream)
-	{
-		if(logName == '#')
-		{
-			std::string comment;
-			std::getline(stream, comment);
+    if(stream)
+    {
+        if(logName == '#')
+        {
+            std::string comment;
+            std::getline(stream, comment);
 
-			readName(stream, name);
-		}
-		else if(name != logName) throw InvalidLogException('\'' + std::string(1, logName) + "' found but '" + name + "' expected.");
-	}
+            readName(stream, name);
+        }
+        else if(name != logName)
+        {
+            throw InvalidLogException('\'' + std::string(1, logName) + "' found but '" + name + "' expected.");
+        }
+    }
 }
 
 void Log::readName(std::istream& stream, const std::string& name)
 {
-	std::string logName;
-	stream >> logName;
+    std::string logName;
+    stream >> logName;
 
-	if(stream)
-	{
-		if(logName.front() == '#')
-		{
-			std::string comment;
-			std::getline(stream, comment);
+    if(stream)
+    {
+        if(logName.front() == '#')
+        {
+            std::string comment;
+            std::getline(stream, comment);
 
-			readName(stream, name);
-		}
-		else if(name != logName) throw InvalidLogException('\'' + logName + "' found but '" + name + "' expected.");
-	}
+            readName(stream, name);
+        }
+        else if(name != logName)
+        {
+            throw InvalidLogException('\'' + logName + "' found but '" + name + "' expected.");
+        }
+    }
 }
 
 std::string Log::readValue(std::istream& stream)
 {
-	std::size_t length;
-	stream >> length;
+    std::size_t length;
+    stream >> length;
 
-	// Read the space between length and data.
-	stream.get();
+    // Read the space between length and data.
+    stream.get();
 
-	std::string value;
-	if(stream)
-	{
-		char *data = new char[length];
-		stream.read(data, length);
+    std::string value;
+    if(stream)
+    {
+        char *data = new char[length];
+        stream.read(data, length);
 
-		value = std::string(data, length);
-		delete[] data;
-	}
+        value = std::string(data, length);
+        delete[] data;
+    }
 
-	return value;
+    return value;
 }
 
 std::string Log::readNameValue(std::istream& stream, char name)
 {
-	readName(stream, name);
-	return readValue(stream);
+    readName(stream, name);
+    return readValue(stream);
 }
 
 std::string Log::readNameValue(std::istream& stream, const std::string& name)
 {
-	readName(stream, name);
-	return readValue(stream);
+    readName(stream, name);
+    return readValue(stream);
 }
 
 void Log::readMetadata()
 {
-	if(!metadataRead)
-	{
-		std::string metaLine;
-		std::stringstream metaStream;
-		while(std::getline(stream, metaLine) && !metaLine.empty())
-		{
-			if(metaLine.front() == '#') continue;
+    if(!metadataRead)
+    {
+        std::string metaLine;
+        std::stringstream metaStream;
+        while(std::getline(stream, metaLine) && !metaLine.empty())
+        {
+            if(metaLine.front() == '#') continue;
 
-			metaStream << metaLine << std::endl;
-		}
+            metaStream << metaLine << std::endl;
+        }
 
-		readMetadata(metaStream);
-		metadataRead = true;
-	}
+        readMetadata(metaStream);
+        metadataRead = true;
+    }
 }
 
 void Log::readMetadata(std::istream& metaStream)
 {
-	if(metadata == nullptr) metadata = new LogMetadata();
+    if(metadata == nullptr) metadata = new LogMetadata();
 
-	readName(metaStream, "type");
-	metaStream >> metadata->type;
+    readName(metaStream, "type");
+    metaStream >> metadata->type;
 
-	readName(metaStream, "version");
-	metaStream >> metadata->version;
+    readName(metaStream, "version");
+    metaStream >> metadata->version;
 }
 
 void Log::writeMetadata(std::ostream& metaStream)
 {
-	if(metadata == nullptr) metadata = new LogMetadata();
+    if(metadata == nullptr) metadata = new LogMetadata();
 
-	metaStream << "type " << metadata->type << std::endl;
-	metaStream << "version " << metadata->version << std::endl;
+    metaStream << "type " << metadata->type << std::endl;
+    metaStream << "version " << metadata->version << std::endl;
 }
 
 std::string Log::readData(std::string& logCommand)
 {
-	logCommand = readNameValue(stream, 'c');
-	stream.get(); // Read the new line after the command
+    logCommand = readNameValue(stream, 'c');
+    stream.get(); // Read the new line after the command
 
-	std::string response = readNameValue(stream, 'r');
-	stream.get(); // Read the new line after the response
+    std::string response = readNameValue(stream, 'r');
+    stream.get(); // Read the new line after the response
 
-	return response;
+    return response;
 }
 
 std::string Log::read()
 {
-	std::string logCommand;
-	return read(logCommand);
+    std::string logCommand;
+    return read(logCommand);
 }
 
 std::string Log::read(std::string& logCommand)
 {
-	std::lock_guard<std::mutex> streamLock(streamMutex);
+    std::lock_guard<std::mutex> streamLock(streamMutex);
 
-	readMetadata();
+    readMetadata();
 
-	std::string response = readData(logCommand);
+    std::string response = readData(logCommand);
 
-	std::string responseEnd;
-	while(std::getline(stream, responseEnd) && !responseEnd.empty())
-	{
-		if(responseEnd.front() != '#') break;
-	}
+    std::string responseEnd;
+    while(std::getline(stream, responseEnd) && !responseEnd.empty())
+    {
+        if(responseEnd.front() != '#') break;
+    }
 
-	if(!responseEnd.empty()) throw InvalidLogException("Missing a new line after data.");
+    if(!responseEnd.empty()) throw InvalidLogException("Missing a new line after data.");
 
-	return response;
+    return response;
 }
 
 std::string Log::readCommand(const std::string& command)
 {
-	std::string logCommand;
-	return readCommand(command, logCommand);
+    std::string logCommand;
+    return readCommand(command, logCommand);
 }
 
 std::string Log::readCommand(const std::string& command, std::string& logCommand)
 {
-	std::string response;
-	do
-	{
-		response = read(logCommand);
-	}
-	while(!(boost::algorithm::starts_with(logCommand, command) || isEnd()));
+    std::string response;
+    do
+    {
+        response = read(logCommand);
+    }
+    while(!(boost::algorithm::starts_with(logCommand, command) || isEnd()));
 
-	return response;
+    return response;
 }
 
 void Log::writeData(const std::string& command, const std::string& response)
 {
-	stream << "c " << command.length() << ' ' << command << std::endl;
+    stream << "c " << command.length() << ' ' << command << std::endl;
 
-	stream << "r " << response.length();
-	if(!response.empty()) stream << ' ' << response;
-	stream << std::endl;
+    stream << "r " << response.length();
+    if(!response.empty()) stream << ' ' << response;
+    stream << std::endl;
 }
 
 void Log::write(const std::string& command, const std::string& response)
 {
-	std::lock_guard<std::mutex> streamLock(streamMutex);
+    std::lock_guard<std::mutex> streamLock(streamMutex);
 
-	if(!metadataWritten)
-	{
-		std::ostringstream metaStream;
-		writeMetadata(metaStream);
+    if(!metadataWritten)
+    {
+        std::ostringstream metaStream;
+        writeMetadata(metaStream);
 
-		stream << metaStream.str() << std::endl;
-		metadataWritten = true;
-	}
+        stream << metaStream.str() << std::endl;
+        metadataWritten = true;
+    }
 
-	writeData(command, response);
-	stream << std::endl;
+    writeData(command, response);
+    stream << std::endl;
 }
 
 void Log::close()
 {
-	if(fileStream != nullptr) fileStream->close();
+    if(fileStream != nullptr) fileStream->close();
 }
 
 }

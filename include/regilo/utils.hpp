@@ -34,8 +34,8 @@ namespace regilo {
 template<typename T>
 T epoch()
 {
-	auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
-	return std::chrono::duration_cast<T>(sinceEpoch);
+    auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<T>(sinceEpoch);
 }
 
 /**

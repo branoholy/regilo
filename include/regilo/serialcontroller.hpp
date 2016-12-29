@@ -34,18 +34,18 @@ namespace regilo {
 class SerialController : public StreamController<ba::serial_port>
 {
 private:
-	std::string endpoint;
+    std::string endpoint;
 
 public:
-	using StreamController::StreamController;
+    using StreamController::StreamController;
 
-	/**
-	 * @brief Connect the controller to a device.
-	 * @param endpoint The endpoint with the path to the device (e.g. "/dev/ttyACM0").
-	 */
-	virtual void connect(const std::string& endpoint) override;
+    /**
+     * @brief Connect the controller to a device.
+     * @param endpoint The endpoint with the path to the device (e.g. "/dev/ttyACM0").
+     */
+    virtual void connect(const std::string& endpoint) override;
 
-	virtual inline std::string getEndpoint() const override { return endpoint; }
+    virtual inline std::string getEndpoint() const override { return endpoint; }
 };
 
 }

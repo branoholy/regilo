@@ -32,11 +32,17 @@ namespace regilo {
 class Version
 {
 public:
-	static const std::string VERSION; ///< The whole version number in format <major>[.<minor>[.<patch>[.<tweak>]]].
-	static const std::string VERSION_MAJOR; ///< The major part of the version number (format <major>[.<minor>[.<patch>[.<tweak>]]]).
-	static const std::string VERSION_MINOR; ///< The minor part of the version number (format <major>[.<minor>[.<patch>[.<tweak>]]]).
-	static const std::string VERSION_PATCH; ///< The patch part of the version number (format <major>[.<minor>[.<patch>[.<tweak>]]]).
-	static const std::string VERSION_TWEAK; ///< The tweak part of the version number (format <major>[.<minor>[.<patch>[.<tweak>]]]).
+    ///< The whole version number in format <major>[.<minor>[.<patch>]].
+    static const std::string VERSION;
+
+    ///< The major part of the version number (format <major>[.<minor>[.<patch>]]).
+    static const std::string VERSION_MAJOR;
+
+    ///< The minor part of the version number (format <major>[.<minor>[.<patch>]]).
+    static const std::string VERSION_MINOR;
+
+    ///< The patch part of the version number (format <major>[.<minor>[.<patch>]]).
+    static const std::string VERSION_PATCH;
 };
 
 }
