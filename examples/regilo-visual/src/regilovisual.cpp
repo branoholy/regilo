@@ -30,11 +30,27 @@
 #include <regilo/serialcontroller.hpp>
 #include <regilo/socketcontroller.hpp>
 
-RegiloVisual::RegiloVisual(regilo::IScanController *controller, bool useScanner, bool manualScanning, bool moveScanning) : wxApp(),
+RegiloVisual::RegiloVisual(regilo::IScanController *controller, bool useScanner, bool manualScanning, bool moveScanning, double orientation) : wxApp(),
 	controller(controller), useScanner(useScanner), manualScanning(manualScanning), moveScanning(moveScanning),
+	orientation(orientation), safeDistanceW(400), safeDistanceH(30), dangerPart(0), emergency(true),
 	fullscreen(false), zoom(0.08),
-	radarColor(0, 200, 0), pointColor(200, 200, 200), radarAngle(0), radarRayLength(4000)
+	radarColor(0, 200, 0), pointColor(200, 200, 200), radarAngle(orientation), radarRayLength(4000)
 {
+	safeBox = wxRect(0, 0, 1300 + 2 * safeDistanceW, 750 + 2 * safeDistanceH);
+
+	if(useScanner)
+	{
+		/*
+		if(controller->getLog() != nullptr)
+		{
+			moveController.setLog(controller->getLog());
+		}
+		*/
+
+		moveController.connect("192.168.1.100:12346");
+		moveController.REQUEST_END = "";
+		moveController.readResponse = false;
+	}
 }
 
 bool RegiloVisual::OnInit()
@@ -46,6 +62,9 @@ bool RegiloVisual::OnInit()
 	wxInitAllImageHandlers();
 	radarGradient.LoadFile(pathList.FindValidPath("images/radar-gradient.png"));
 	radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+
+	car.LoadFile(pathList.FindValidPath("images/car-black.png"));
+	carZoom = zoomImage(car, zoom);
 
 	// Frame
 	frame = new wxFrame(NULL, wxID_ANY, "Regilo Visual", wxDefaultPosition, wxSize(600, 400));
@@ -70,6 +89,7 @@ bool RegiloVisual::OnInit()
 
 		zoom *= 2;
 		radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+		carZoom = zoomImage(car, zoom);
 
 		int width, height;
 		panel->GetSize(&width, &height);
@@ -87,6 +107,7 @@ bool RegiloVisual::OnInit()
 
 		zoom *= 0.5;
 		radarGradientZoom = zoomImage(radarGradient, zoom * 10);
+		carZoom = zoomImage(car, zoom);
 
 		int width, height;
 		panel->GetSize(&width, &height);
@@ -140,6 +161,7 @@ bool RegiloVisual::OnInit()
 	});
 
 	frame->Show(true);
+	frame->Maximize(true);
 
 	return true;
 }
@@ -183,6 +205,15 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				setStatusText("Going up... Done!", 0);
 				controllerMutex.unlock();
 			}
+			else if(moveController.isConnected())
+			{
+				moveControllerMutex.lock();
+				setStatusText("Going up...", 0);
+				moveController.sendCommand("w");
+				setStatusText("Going up... Done!", 0);
+				direction++;
+				moveControllerMutex.unlock();
+			}
 			break;
 
 		case WXK_DOWN:
@@ -195,6 +226,15 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 
 				setStatusText("Going down... Done!", 0);
 				controllerMutex.unlock();
+			}
+			else if(moveController.isConnected())
+			{
+				moveControllerMutex.lock();
+				setStatusText("Going down...", 0);
+				moveController.sendCommand("x");
+				setStatusText("Going down... Done!", 0);
+				direction--;
+				moveControllerMutex.unlock();
 			}
 			break;
 
@@ -210,6 +250,15 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				setStatusText("Turning left... Done!", 0);
 				controllerMutex.unlock();
 			}
+			else if(moveController.isConnected())
+			{
+				moveControllerMutex.lock();
+				setStatusText("Turning left...", 0);
+				if(keyEvent.ControlDown()) moveController.sendCommand("a");
+				else moveController.sendCommand("A");
+				setStatusText("Turning left... Done!", 0);
+				moveControllerMutex.unlock();
+			}
 			break;
 
 		case WXK_RIGHT:
@@ -224,6 +273,15 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				setStatusText("Turning right... Done!", 0);
 				controllerMutex.unlock();
 			}
+			else if(moveController.isConnected())
+			{
+				moveControllerMutex.lock();
+				setStatusText("Turning right...", 0);
+				if(keyEvent.ControlDown()) moveController.sendCommand("d");
+				else moveController.sendCommand("D");
+				setStatusText("Turning right... Done!", 0);
+				moveControllerMutex.unlock();
+			}
 			break;
 
 		case WXK_SPACE:
@@ -237,6 +295,15 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				setStatusText("Stopping... Done!", 0);
 				controllerMutex.unlock();
 			}
+			else if(moveController.isConnected())
+			{
+				moveControllerMutex.lock();
+				setStatusText("Stopping...", 0);
+				moveController.sendCommand("s");
+				setStatusText("Stopping... Done!", 0);
+				direction = 0;
+				moveControllerMutex.unlock();
+			}
 			break;
 
 		case 'S':
@@ -245,6 +312,10 @@ void RegiloVisual::setMotorByKey(wxKeyEvent& keyEvent)
 				setStatusText("Manual scanning...", 0);
 				scanAndShow();
 			}
+			break;
+
+		case 'E':
+			emergency = !emergency;
 			break;
 
 		case WXK_F11:
@@ -319,6 +390,11 @@ void RegiloVisual::drawRadarGradient(wxDC& dc, int width2, int height2)
 void RegiloVisual::repaint(wxPaintEvent&)
 {
 	wxPaintDC dc(panel);
+
+	// wxBitmap bufferBitmap(panel->GetSize());
+	// wxBufferedPaintDC dc(panel);
+	// dc.SelectObject(bufferBitmap);
+
 	wxGCDC gcdc(dc);
 
 	// Draw backgroud
@@ -343,6 +419,60 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	{
 		gcdc.DrawCircle(width2, height2, int(radius * zoom));
 	}
+
+	// Draw car
+	wxPoint carPos;
+	wxRect rotatedSafeBox;
+	wxImage rotatedCarZoom = carZoom.Rotate(orientation, wxPoint(carZoom.GetWidth() / 2, carZoom.GetHeight() / 2));
+	if(orientation == 0)
+	{
+		rotatedSafeBox.SetSize(wxSize(zoom * safeBox.GetWidth(), zoom * safeBox.GetHeight()));
+		rotatedSafeBox.SetPosition(wxPoint(width2 - zoom * (150 + safeDistanceW), height2 - zoom * safeBox.GetHeight() / 2));
+		carPos.x = width2 - zoom * 150;
+		carPos.y = height2 - rotatedCarZoom.GetHeight() / 2;
+	}
+	else
+	{
+		rotatedSafeBox.SetSize(wxSize(zoom * safeBox.GetHeight(), zoom * safeBox.GetWidth()));
+		rotatedSafeBox.SetPosition(wxPoint(width2 - zoom * safeBox.GetHeight() / 2, height2 - zoom * (safeBox.GetWidth() - 150 - safeDistanceW)));
+		carPos.x = width2 - rotatedCarZoom.GetWidth() / 2;
+		carPos.y = height2 - (rotatedCarZoom.GetHeight() - zoom * 150);
+	}
+	dc.SetPen(*wxRED_PEN);
+	dc.SetBrush(*wxTRANSPARENT_BRUSH);
+	dc.DrawRectangle(rotatedSafeBox);
+
+	if(dangerPart != 0)
+	{
+		dc.SetBrush(*wxRED_BRUSH);
+		if(dangerPart == 1)
+		{
+			if(orientation == 0)
+			{
+				rotatedSafeBox.width *= 0.5;
+				rotatedSafeBox.x += rotatedSafeBox.width;
+			}
+			else
+			{
+				rotatedSafeBox.height *= 0.5;
+			}
+		}
+		else if(dangerPart == -1)
+		{
+			if(orientation == 0)
+			{
+				rotatedSafeBox.width *= 0.5;
+			}
+			else
+			{
+				rotatedSafeBox.height *= 0.5;
+				rotatedSafeBox.y += rotatedSafeBox.height;
+			}
+		}
+		dc.DrawRectangle(rotatedSafeBox);
+	}
+
+	dc.DrawBitmap(rotatedCarZoom, carPos);
 
 	// Draw radar ray
 	radarMutex.lock();
@@ -374,6 +504,29 @@ void RegiloVisual::repaint(wxPaintEvent&)
 	}
 
 	controllerMutex.unlock();
+
+	if(!emergency)
+	{
+		std::string message = "EMERGENCY STOP: OFF";
+
+		dc.SetTextForeground(*wxRED);
+		dc.SetFont(*wxTheFontList->FindOrCreateFont(40, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+
+		wxSize messageSize = dc.GetTextExtent(message);
+		dc.DrawText(message, width2 - messageSize.GetWidth() / 2, 100);
+	}
+
+/*
+	if(bufferBitmap.IsOk())
+	{
+		static int id = 0;
+
+		std::ostringstream oss;
+		oss << std::setw(4) << std::setfill('0') << id++;
+
+		bufferBitmap.SaveFile("lidar-animace/lidar-" + oss.str() + ".png", wxBITMAP_TYPE_PNG);
+	}
+*/
 }
 
 void RegiloVisual::stopScanThread()
@@ -394,6 +547,8 @@ void RegiloVisual::scanAndShow()
 	bool emptyData = data.empty();
 	if(emptyData) stopScanThread();
 
+	if(emergency) emergencyStop();
+
 	controllerMutex.unlock();
 
 	this->GetTopWindow()->GetEventHandler()->CallAfter([this, emptyData] ()
@@ -401,6 +556,56 @@ void RegiloVisual::scanAndShow()
 		if(emptyData) setStatusText("No more scans to show (EOF).", 0);
 		else frame->Refresh();
 	});
+}
+
+void RegiloVisual::emergencyStop()
+{
+	wxRect posSafeBox = safeBox;
+	posSafeBox.SetPosition(wxPoint(-150 - safeDistanceW, - safeBox.GetHeight() / 2));
+
+	dangerPart = 0;
+	for(const regilo::ScanRecord& record : data)
+	{
+		if(record.error) continue;
+
+		double x = record.distance * std::cos(record.angle);
+		double y = record.distance * std::sin(record.angle);
+
+		if(posSafeBox.Contains(x, y))
+		{
+			double centerX = posSafeBox.GetLeft() + posSafeBox.GetWidth() / 2;
+
+			if((direction > 0 && x > centerX) || (direction < 0 && x < centerX))
+			{
+				if(direction > 0 && x > centerX) dangerPart = 1;
+				if(direction < 0 && x < centerX) dangerPart = -1;
+
+				std::cout << "Emergency STOP!" << std::endl;
+
+				if(moveController.isConnected())
+				{
+					moveControllerMutex.lock();
+
+					this->GetTopWindow()->GetEventHandler()->CallAfter([this]()
+					{
+						setStatusText("Emergency STOP...", 0);
+					});
+
+					moveController.sendCommand("s");
+					direction = 0;
+
+					this->GetTopWindow()->GetEventHandler()->CallAfter([this]()
+					{
+						setStatusText("Emergency STOP... Done!", 0);
+					});
+
+					moveControllerMutex.unlock();
+				}
+
+				break;
+			}
+		}
+	}
 }
 
 void RegiloVisual::setStatusText(const std::string& text, int i)

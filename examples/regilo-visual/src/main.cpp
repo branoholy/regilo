@@ -39,6 +39,7 @@ struct Arguments
 	std::string logPath;
 	bool manualScanning = false;
 	bool autoScanning = false;
+	double orientation = 0;
 	bool help = false;
 };
 
@@ -109,7 +110,7 @@ int main(int argc, char **argv)
 		std::cout << "LDS rotation: " << neatoController->getLdsRotation() << std::endl;
 	}
 
-	RegiloVisual *app = new RegiloVisual(controller, fromDevice, args.manualScanning, args.autoScanning);
+	RegiloVisual *app = new RegiloVisual(controller, fromDevice, args.manualScanning, args.autoScanning, args.orientation);
 	RegiloVisual::Display(app, argc, argv);
 
 	if(fromDevice && args.device == "neato")
@@ -140,6 +141,7 @@ void printHelp()
 			  << "  -l <file>     The path to the output log file." << std::endl
 			  << "  -m            Turn on manual scanning (by pressing key S)." << std::endl
 			  << "  -a            Turn on automatic scanning before move." << std::endl
+			  << "  -o            Default orientation in degrees (default: 0)." << std::endl
 			  << "  -h, --help    Show this help." << std::endl
 			  << std::endl
 			  << "Using regilo-" << regilo::Version::VERSION << std::endl;
@@ -155,6 +157,7 @@ void parseArgs(int argc, char **argv, Arguments& args)
 		if(arg == "-l") args.logPath = std::string(argv[++i]);
 		else if(arg == "-m") args.manualScanning = true;
 		else if(arg == "-a") args.autoScanning = true;
+		else if(arg == "-o") args.orientation = M_PI * std::stod(argv[++i]) / 180;
 		else if(arg == "-h" || arg == "--help")
 		{
 			args.help = true;

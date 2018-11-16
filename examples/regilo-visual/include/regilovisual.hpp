@@ -33,6 +33,7 @@
 
 #include <regilo/scancontroller.hpp>
 #include <regilo/scandata.hpp>
+#include <regilo/socketcontroller.hpp>
 
 class wxGCDC;
 
@@ -45,6 +46,13 @@ private:
 	bool useScanner;
 	bool manualScanning;
 	bool moveScanning;
+	double orientation;
+
+	int safeDistanceW;
+	int safeDistanceH;
+	wxRect safeBox;
+	int dangerPart;
+	bool emergency;
 
 	wxFrame *frame;
 	wxPanel *panel;
@@ -70,8 +78,16 @@ private:
 	wxImage radarGradient;
 	wxImage radarGradientZoom;
 
+	wxImage car;
+	wxImage carZoom;
+
+	regilo::SocketController moveController;
+	std::mutex moveControllerMutex;
+	int direction;
+
 	void stopScanThread();
 	void scanAndShow();
+	void emergencyStop();
 
 	wxImage zoomImage(const wxImage& image, double zoom);
 
@@ -82,7 +98,7 @@ private:
 	void refreshStatusBar();
 
 public:
-	RegiloVisual(regilo::IScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false);
+	RegiloVisual(regilo::IScanController *controller, bool useScanner = true, bool manualScanning = false, bool moveScanning = false, double orientation = 0);
 
 	virtual bool OnInit();
 	virtual int OnExit();
